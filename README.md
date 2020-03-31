@@ -1,6 +1,7 @@
 - Download the whole repo wherever you want to have your workspace, for example, in the ```/home/user``` folder
 
 ```
+cd ~
 git clone https://github.com/Leytha/roboespas_ws
 ```
 
