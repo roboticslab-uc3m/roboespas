@@ -11,6 +11,17 @@ export ROS_WORKSPACE=~/roboespas_ws #catkin_ws
 export ROS_MASTER_URI=http://192.168.1.53:11311
 export ROS_IP=192.168.1.53
 ```
+Restart the terminal and check it worked by typing 
+```
+roscd
+```
+It should lead you to ```~/roboespas_ws```
+- Compile the workspace
+```
+roscd
+cd src/
+catkin_make
+```
 
 - Execute in an Ubuntu terminal: ```roslaunch iiwa_gazebo iiwa_world.launch```.
 
