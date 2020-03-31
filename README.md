@@ -1,4 +1,8 @@
-- Download the whole repo wherever you want to have your workspace. 
+- Download the whole repo wherever you want to have your workspace, for example, in the ```/home/user``` folder
+
+```
+git clone https://github.com/Leytha/roboespas_ws
+```
 
 - Modify .bashrc to use this workspace and set the ROS_IP and ROS_WORKSPACE env variables. Change the IP for your IP (check it using ```ifconfig```).
 ```
