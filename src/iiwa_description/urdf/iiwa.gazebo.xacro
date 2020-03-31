@@ -6,7 +6,7 @@
     
     <!-- Load Gazebo lib and set the robot namespace -->
     <gazebo>
-	<plugin name="iiwa_matlab_plugin" filename="libiiwa_matlab_plugin.so"/>
+	    <plugin name="iiwa_gazebo_plugin" filename="libiiwa_gazebo_plugin.so"/>
     </gazebo>
 
     <!-- Link0 -->
