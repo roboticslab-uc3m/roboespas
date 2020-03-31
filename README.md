@@ -1,7 +1,12 @@
-Place all these folders except ```MatlabExamples``` inside the /src folder of your workspace and execute ```catkin_make```.
+- Download the whole repo wherever you want to have your workspace. 
 
-Place the MatlabExamples folder wherever you prefer.
+- Modify .bashrc to use this workspace and set the ROS_IP and ROS_WORKSPACE env variables. Change the IP for your IP (check it using ```ifconfig```).
+```
+export ROS_WORKSPACE=~/roboespas_ws #catkin_ws
+export ROS_MASTER_URI=http://192.168.1.53:11311
+export ROS_IP=192.168.1.53
+```
 
-Execute in an Ubuntu terminal: ```roslaunch iiwa_gazebo iiwa_world.launch```.
+- Execute in an Ubuntu terminal: ```roslaunch iiwa_gazebo iiwa_world.launch```.
 
-In Matlab, execute the file ```LBRTorqueControlExample.m``` and watch IIWA in Gazebo simulator moving.
+- In Matlab, modify the IP in the file ```LBRTorqueControlExample.m``` (lines 30-31) inside the ```MatlabExamples``` folder, then play the script and watch IIWA in Gazebo simulator moving.
