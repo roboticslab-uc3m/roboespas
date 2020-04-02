@@ -7,7 +7,7 @@ git clone https://github.com/Leytha/roboespas_ws
 
 - Modify .bashrc to use this workspace and set the ROS_IP and ROS_WORKSPACE env variables. Change the IP for your IP (check it using ```ifconfig```).
 ```
-export ROS_WORKSPACE=~/roboespas_ws #catkin_ws
+export ROS_WORKSPACE=~/roboespas_ws
 export ROS_MASTER_URI=http://192.168.1.53:11311
 export ROS_IP=192.168.1.53
 ```
