@@ -19,7 +19,6 @@ It should lead you to ```~/roboespas_ws```
 - Compile the workspace
 ```
 roscd
-cd src/
 catkin_make
 ```
 
