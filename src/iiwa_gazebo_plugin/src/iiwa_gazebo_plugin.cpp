@@ -45,7 +45,7 @@ namespace gazebo
             // simulation iteration.
             this->updateConnection = event::Events::ConnectWorldUpdateBegin(
             boost::bind(&ModelPush::OnUpdate, this, _1));
-            this->n = new ros::NodeHandle("iiwa_gazebo_plugin");
+            this->n = new ros::NodeHandle("iiwa_gazebo");
             this->joint_state_pub = n->advertise<sensor_msgs::JointState>("joint_state", 1);
             this->joint_torque_sub = n->subscribe("joint_command", 1, &ModelPush::JointStateCallback, this);
             this->pastCommandCounter = 0;

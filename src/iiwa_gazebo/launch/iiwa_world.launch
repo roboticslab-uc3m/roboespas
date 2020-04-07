@@ -1,6 +1,6 @@
 <launch>
     
-    <!-- Loads thee iiwa.world environment in Gazebo. -->
+    <!-- Loads the iiwa.world environment in Gazebo. -->
     
     <!-- These are the arguments you can pass this launch file, for example paused:=true -->
     <arg name="paused" default="false"/>
@@ -31,5 +31,4 @@
           args="-urdf -model mw_iiwa -param robot_description"/>
     
     
-    </launch>
-    
+</launch>

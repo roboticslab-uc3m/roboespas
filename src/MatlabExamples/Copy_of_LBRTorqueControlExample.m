@@ -50,6 +50,7 @@ load lbr_waypoints.mat
 % tt.
 sample_time = 0.001; 
 tt = 0:sample_time:5;
+
 % Generate desired motion trajectory for each joint.
 % exampleHelperJointTrajectoryGeneration generates joint trajectories from 
 % given time and joint configuration waypoints. 
@@ -67,13 +68,10 @@ for i = 1:n
     tauFeedForward(i,:) = inverseDynamics(lbr, qDesired(i,:), qdotDesired(i,:), qddotDesired(i,:));
 end
 
-%Info used: qDesired, qdotDesired, qddotDesired, tauFeedForward, tt
-
 %% Reset LBR to Home Configuration in Gazebo
 % Initialize empty vector
 tic
-clear points
-%points=robotics.ros.msggen.trajectory_msgs.JointTrajectoryPoint.empty(size(tauFeedForward,1),0);
+clear points;
 for i=1:size(tauFeedForward,1)
     points(i)=rosmessage('trajectory_msgs/JointTrajectoryPoint');
 end
@@ -85,12 +83,16 @@ for i=1:size(tauFeedForward,1)
     points(i).TimeFromStart=rosduration(tt(i));
 end
 toc
-%
 %Fill trajectory
 [client, goalMsg] = rosactionclient('iiwa_command');
 waitForServer(client);
 goalMsg.TrajectoryDesired.JointNames= {'joint_1', 'joint_2', 'joint_3', 'joint_4', 'joint_5', 'joint_6', 'joint_7'};
 goalMsg.TrajectoryDesired.Points=points;
+%client.FeedbackFcn = @(~) disp('a');
+sendGoal(client, goalMsg);
+%while (client.GoalState=='active')
+%    disp(['Feedback: ',showdetails(msg)]);
+%end
 %%
 
 % Given: tauFeedForward, qDesired, qdotDesired, cdt
@@ -110,9 +112,8 @@ msg.JointNames = {'mw_iiwa_joint_1', 'mw_iiwa_joint_2', 'mw_iiwa_joint_3',...
 msg.JointPositions = homeConfiguration(lbr);
 
 call(mdlConfigClient, msg);
-sendGoalAndWait(client, goalMsg);
 
-%% Computed Torque Control
+% Computed Torque Control
 
 % Specify PD gains.
 weights = [0.3, 0.8, 0.6, 0.6, 0.3, 0.2, 0.1];
@@ -142,31 +143,35 @@ call(mdlConfigClient, msg)
 
 clear torques_commanded
 clear torques_read
-for i = 1:size(points,2)
+for i = 1:n
     % Get joint state from Gazebo.
     jsMsg = receive(jointStateSub);
 
     %Get timestamp
     t=jsMsg.Header.Stamp.seconds;
     % Set the start time.
-    if i==1
+    if once
         tStart = t;
+        once = 0;
     end
     % Find the corresponding index h in tauFeedForward vector for joint 
     % state time stamp t.
-    tdiff=points(i+1).TimeFromStart.seconds-points(i).TimeFromStart.seconds;
-    h = ceil((t - tStart + 1e-8)/tdiff);
+    h = ceil((t - tStart + 1e-8)/sample_time);
     if h>n
         break
     end
     
     % Inquire feed-forward torque at the time when the joint state is
     % updated (Gazebo sim time).
-    tau1 = points(h).Effort';%tauFeedForward(h,:);
-
+    tau1 = tauFeedForward(h,:);
+    % Log feed-forward torque.
+    feedForwardTorque(i,:) = tau1;
+    
     % Compute PD compensation torque based on joint position and velocity
     % errors.
-    tau2 = Kp.*(points(h).Positions' - jsMsg.Position') + Kd.*(points(h).Velocities' - jsMsg.Velocity');
+    q = jsMsg.Position';
+    qdot=jsMsg.Velocity';
+    tau2 = Kp.*(qDesired(h,:) - q) + Kd.*(qdotDesired(h,:) - qdot);
     tau = tau1 + tau2;
 
     % Send torque to Gazebo.
@@ -174,13 +179,13 @@ for i = 1:size(points,2)
     send(jointTorquePub,jtMsg);    
 
     %Save info to plot afterwards
-    feedForwardTorque(i,:) = tau1;
     torques_commanded(i,:)=tau;
     torques_read(i,:)=jsMsg.Effort';
     pdTorque(i,:) = tau2';
     timePoints(i) = t-tStart;
     Q(i,:) = q';
-    QDesired(i,:) = qDesired(h,:);  
+    QDesired(i,:) = qDesired(h,:);
+    
 end
 
 % With the joint torques sent, the LBR robot should follow the trajectory. This image shows snapshots of the robot overlaid
