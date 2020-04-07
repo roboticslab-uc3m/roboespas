@@ -59,11 +59,15 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
+add_service_files(
+    FILES
+    FromJointTrajectory.srv
+    ToJointTrajectory.srv
+    FromJointStateVec.srv
+    ToJointStateVec.srv
 #   Service1.srv
 #   Service2.srv
-# )
+)
 
 ## Generate actions in the 'action' folder
 add_action_files(
@@ -143,6 +147,7 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/iiwa_command_node.cpp)
 add_executable(iiwa_command src/iiwa_command_node.cpp)
+add_executable(msg_transform_helper src/msg_transform_helper_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -159,6 +164,7 @@ add_executable(iiwa_command src/iiwa_command_node.cpp)
 #   ${catkin_LIBRARIES}
 # )
 target_link_libraries(iiwa_command ${catkin_LIBRARIES})
+target_link_libraries(msg_transform_helper ${catkin_LIBRARIES})
 
 #############
 ## Install ##

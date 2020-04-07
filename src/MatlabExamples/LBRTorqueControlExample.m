@@ -24,6 +24,7 @@ rosinit;
 
 [jointTorquePub, jtMsg] = rospublisher('/iiwa_gazebo/joint_command');
 jointStateSub = rossubscriber('/iiwa_gazebo/joint_state');
+[fromJointTrajSrvCli, fromJointSrvMsg] = rossvcclient('/msg_transform_helper/from_joint_traj');
 
 %% Create an LBR RigidBodyTree Object from URDF
 lbr = importrobot('iiwa14.urdf');
@@ -110,9 +111,21 @@ msg.JointNames = {'mw_iiwa_joint_1', 'mw_iiwa_joint_2', 'mw_iiwa_joint_3',...
 msg.JointPositions = homeConfiguration(lbr);
 
 call(mdlConfigClient, msg);
-sendGoalAndWait(client, goalMsg);
+resultMsg = sendGoalAndWait(client, goalMsg);
 
-%% Computed Torque Control
+%%
+%% Compare torques
+figure;
+for i=1:7
+    subplot(7,1,i);
+    plot(resultMsg.TrajectoryCommanded.Points(i).Efforttorques_commanded(:,i));
+    hold on;
+    plot(torques_read(:,i));
+    legend('commanded', 'read');
+end
+
+
+%% Send from Matlab
 
 % Specify PD gains.
 weights = [0.3, 0.8, 0.6, 0.6, 0.3, 0.2, 0.1];
@@ -155,9 +168,11 @@ for i = 1:size(points,2)
     % Find the corresponding index h in tauFeedForward vector for joint 
     % state time stamp t.
     tdiff=points(i+1).TimeFromStart.seconds-points(i).TimeFromStart.seconds;
-    h = ceil((t - tStart + 1e-8)/tdiff);
+    h = ceil((t - tStart + 1e-8)/tdiff)
+    disp(['i: ', num2str(i)])
     if h>n
-        break
+        disp('break');
+    %    break
     end
     
     % Inquire feed-forward torque at the time when the joint state is
@@ -179,7 +194,7 @@ for i = 1:size(points,2)
     torques_read(i,:)=jsMsg.Effort';
     pdTorque(i,:) = tau2';
     timePoints(i) = t-tStart;
-    Q(i,:) = q';
+    Q(i,:) = jsMsg.Position';
     QDesired(i,:) = qDesired(h,:);  
 end
 

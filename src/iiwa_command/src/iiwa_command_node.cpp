@@ -20,7 +20,6 @@ class IiwaCommandNode
     ros::NodeHandle nh;
     //Iiwa command action server variables
     actionlib::SimpleActionServer<iiwa_command::IiwaCommandAction> as;
-    std::string as_name;
     iiwa_command::IiwaCommandFeedback as_feedback;
     iiwa_command::IiwaCommandResult as_result;
     //Iiwa gazebo state subscriber
@@ -32,8 +31,7 @@ class IiwaCommandNode
     public:
 
     IiwaCommandNode(std::string name) :
-    as(nh, name, boost::bind(&IiwaCommandNode::callback_iiwa_command, this, _1), false),
-    as_name(name) //Create the action server
+    as(nh, name, boost::bind(&IiwaCommandNode::callback_iiwa_command, this, _1), false) //Create the action server
     {
 	    ROS_INFO("Node registered as %s\n", name.c_str());
         as.start();
@@ -59,14 +57,20 @@ class IiwaCommandNode
         ros::Time tStartTraj;
         std::vector<trajectory_msgs::JointTrajectoryPoint> points = goal->trajectory_desired.points;
 
-        ros::Rate r(1000);
-        for (int i=0; i < points.size(); i++)
+        //Variables returned
+        trajectory_msgs::JointTrajectory trajectory_commanded;
+        std::vector<sensor_msgs::JointState> trajectory_joint_state;
+
+        for (int i=0; i < points.size()-1; i++)
         {
-            //Get current joint state and current stamp
+            //Get current joint state and save it in trajectory_followed
             sensor_msgs::JointState js=curr_joint_state;
+            trajectory_joint_state.push_back(js);
             //Fill tstartTraj if i==0
-            if (i==0) 
+            if (i==0)
+            {
                 tStartTraj=js.header.stamp;
+            }
             //Calculate current iteration expected duration depending on points
             ros::Duration it_dur=points[i+1].time_from_start - points[i].time_from_start;
             //Get current index depending on how much time has passed since the beginning
@@ -81,77 +85,44 @@ class IiwaCommandNode
             Eigen::VectorXd qdot_des = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned> (points[h].velocities.data(), points[h].velocities.size());
             //Calculate tau to correct the desired tau
             Eigen::VectorXd tau_added = Kp.cwiseProduct(q_des - q_curr) + Kd.cwiseProduct(qdot_des - qdot_curr);
-            //Sum both taus
+            //Calculate tau to send and it to point_command
             Eigen::VectorXd tau_total = tau_des + tau_added;
             std::vector<double> tau_total_vec(tau_total.data(), tau_total.data() + tau_total.size());
-            //Cout
-            ROS_INFO("Point %d\n", i);
-            ROS_INFO("h: %d\n", h);
-            ROS_INFO("Tdiff: %f\n", it_dur.toSec());
+            trajectory_msgs::JointTrajectoryPoint point_command;
+            point_command.effort = tau_total_vec;
+            trajectory_commanded.points.push_back(point_command);
+
+            //Cout calculations
+/*
+            std::cout << "i " << i << std::endl;
+            std::cout << "tStartTraj: " << tStartTraj.toSec() << std::endl;
+            std::cout << "tCurr: " << js.header.stamp.toSec() << std::endl;
+            std::cout << "it_dur: " << it_dur.toSec() << std::endl;
+            std::cout << "h: " << h << std::endl;
             std::cout << "q_curr: " << q_curr.transpose() << std::endl << "qdot_curr: " << qdot_curr.transpose() << std::endl;
             std::cout << "tau_des: " << tau_des.transpose() << std::endl << "q_des: " << q_des.transpose() << std::endl << "qdot_des: " << qdot_des.transpose() << std::endl; 
             std::cout << "tau_added: " << tau_added.transpose() << std::endl;
-            std::cout << "tau_total: " << tau_total.transpose() << std::endl;
+            std::cout << "tau_total: " << tau_total.transpose() << std::endl;*/
 
-            //Send tau   
-            trajectory_msgs::JointTrajectoryPoint point_published;
-            point_published.effort = tau_total_vec;
-            iiwa_gazebo_command_pub.publish(point_published);
 
             //Publish feedback                     
             //as_feedback.joint_state = curr_joint_state;
             //as.publishFeedback(as_feedback);
-            ros::Time tStartIt = js.header.stamp;
-            ros::Time tEndIt=curr_joint_state.header.stamp;
-            ros::Duration tProcess = tEndIt-tStartIt;
+
+            //Send point_commanded
+            iiwa_gazebo_command_pub.publish(point_command);
+
+            //Calculate time to sleep and sleep
+            /*ros::Duration tProcess = curr_joint_state.header.stamp-js.header.stamp;
             ros::Duration tSleep = it_dur-tProcess;
             std::cout << "time process: " << tProcess.toSec() << std::endl;
-            std::cout << "time sleep: " << tSleep.toSec() << std::endl;
-            tSleep.sleep();
-            //ros::Time time_end = ros::Time::now();
-            //r.sleep();
+            std::cout << "time sleep: " << tSleep.toSec() << std::endl;*/
+            ros::Duration(0.000001).sleep();
         }
         
-        trajectory_msgs::JointTrajectory trajectory_commanded;
+        as_result.trajectory_joint_state=trajectory_joint_state;
         as_result.trajectory_commanded=trajectory_commanded;
         as.setSucceeded(as_result);
-
-        /*// push_back the seeds for the fibonacci sequence
-        feedback_.sequence.clear();
-        feedback_.sequence.push_back(0);
-        feedback_.sequence.push_back(1);
-
-        // publish info to the console for the user
-        ROS_INFO("%s: Executing, creating fibonacci sequence of order %i with seeds %i, %i", action_name_.c_str(), goal->order, feedback_.sequence[0], feedback_.sequence[1]);
-
-        // start executing the action
-        for(int i=1; i<=goal->order; i++)
-        {
-            // check that preempt has not been requested by the client
-            if (as_.isPreemptRequested() || !ros::ok())
-            {
-                ROS_INFO("%s: Preempted", action_name_.c_str());
-                // set the action state to preempted
-                as_.setPreempted();
-                success = false;
-                break;
-            }
-            feedback_.sequence.push_back(feedback_.sequence[i] + feedback_.sequence[i-1]);
-            // publish the feedback
-            as_.publishFeedback(feedback_);
-            // this sleep is not necessary, the sequence is computed at 1 Hz for demonstration purposes
-            r.sleep();
-
-        }
-
-        if(success)
-        {
-            result_.sequence = feedback_.sequence;
-            ROS_INFO("%s: Succeeded", action_name_.c_str());
-            // set the action state to succeeded
-            as_.setSucceeded(result_);
-        }
-        */
     }
 };
 
