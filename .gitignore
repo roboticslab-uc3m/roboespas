@@ -52,5 +52,5 @@ CATKIN_IGNORE
 
 #Added
 .catkin_workspace
-src/matlab_gen
+src/matlab_gen/
 
