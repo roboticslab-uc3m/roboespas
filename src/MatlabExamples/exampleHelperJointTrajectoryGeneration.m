@@ -31,7 +31,7 @@ if nargout == 1
     q = pchip(tWaypoints,qWaypoints,tt); 
 else
     ndof = size(qWaypoints,2);
-    dt = 0.01;
+    dt = tt(end)-tt(end-1);
     Q = [qWaypoints(1,:);  qWaypoints; qWaypoints(end,:)]';
     T = [0, tWaypoints+dt, tWaypoints(end)+2*dt] ;
     tt = [0, tt + dt, tt(end)+2*dt];

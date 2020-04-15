@@ -26,7 +26,7 @@ class IiwaCommandNode
     ros::Subscriber iiwa_gazebo_state_sub;
     //Iiwa gazebo command publisher
     ros::Publisher iiwa_gazebo_command_pub;
-    sensor_msgs::JointState curr_joint_state;
+    sensor_msgs::JointState read_joint_state;
 
     public:
 
@@ -41,7 +41,7 @@ class IiwaCommandNode
     }
     void callback_iiwa_gazebo_state(const sensor_msgs::JointState& iiwa_gazebo_state_msg)
     {
-        curr_joint_state=iiwa_gazebo_state_msg;
+        read_joint_state=iiwa_gazebo_state_msg;
     }
     void callback_iiwa_command(const iiwa_command::IiwaCommandGoalConstPtr &goal)
     {
@@ -53,73 +53,58 @@ class IiwaCommandNode
         Kp = 100*weights;
         Kd = 2*weights;
 
-        //Variables used inside 
-        ros::Time tStartTraj;
-        std::vector<trajectory_msgs::JointTrajectoryPoint> points = goal->trajectory_desired.points;
+        //Variables used
+        std::vector<trajectory_msgs::JointTrajectoryPoint> goal_points = goal->trajectory_desired.points;
 
         //Variables returned
         trajectory_msgs::JointTrajectory trajectory_commanded;
         std::vector<sensor_msgs::JointState> trajectory_joint_state;
 
-        for (int i=0; i < points.size()-1; i++)
+        //Assume the sample_time is continuous all along the trajectory, and equal to the difference between the first stamp and the second
+        double sample_time = (goal_points[1].time_from_start - goal_points[0].time_from_start).toSec();
+        //Initialize the index that will contain the current index of the trajectory depending on the time that has passed
+        int i=0;
+
+        //Get the time at which the trajectory starts being sent
+        ros::Time tStartTraj = read_joint_state.header.stamp;
+        while (i<goal_points.size())
         {
-            //Get current joint state and save it in trajectory_followed
-            sensor_msgs::JointState js=curr_joint_state;
-            trajectory_joint_state.push_back(js);
-            //Fill tstartTraj if i==0
-            if (i==0)
-            {
-                tStartTraj=js.header.stamp;
-            }
-            //Calculate current iteration expected duration depending on points
-            ros::Duration it_dur=points[i+1].time_from_start - points[i].time_from_start;
-            //Get current index depending on how much time has passed since the beginning
-            int h=ceil((js.header.stamp.toSec()-tStartTraj.toSec() + 1e-8)/it_dur.toSec())-1;
-            //Get variables used as Eigen vectors or ros::Durations
+            //read_joint_state may change during this iteration, save it in a different variable to fix it
+            sensor_msgs::JointState joint_state=read_joint_state;
+            double time_from_start=joint_state.header.stamp.toSec()-tStartTraj.toSec();
+            //Get the index in the goal_points vector corresponding to the current time
+            i = time_from_start/sample_time;
+            //If the index is outside the goal_points vector, exit the while loop
+            if (i>=goal_points.size()) 
+                break;
+            //Get variables used as Eigen vectors / ROS durations
             // - Current q_curr / qdot_curr
-            Eigen::VectorXd q_curr = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(js.position.data(), js.position.size());
-            Eigen::VectorXd qdot_curr = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned> (js.velocity.data(), js.velocity.size());
-            // - Desired tau_des, q_des, qdot_des
-            Eigen::VectorXd tau_des = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(points[h].effort.data(), points[h].effort.size());
-            Eigen::VectorXd q_des = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned> (points[h].positions.data(), points[h].positions.size());
-            Eigen::VectorXd qdot_des = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned> (points[h].velocities.data(), points[h].velocities.size());
+            Eigen::VectorXd q_curr = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(joint_state.position.data(), joint_state.position.size());
+            Eigen::VectorXd qdot_curr = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned> (joint_state.velocity.data(), joint_state.velocity.size());
+            // - Desired tau_des, q_des, qdot_des for index i
+            Eigen::VectorXd tau_des = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(goal_points[i].effort.data(), goal_points[i].effort.size());
+            Eigen::VectorXd q_des = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned> (goal_points[i].positions.data(), goal_points[i].positions.size());
+            Eigen::VectorXd qdot_des = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned> (goal_points[i].velocities.data(), goal_points[i].velocities.size());
             //Calculate tau to correct the desired tau
             Eigen::VectorXd tau_added = Kp.cwiseProduct(q_des - q_curr) + Kd.cwiseProduct(qdot_des - qdot_curr);
             //Calculate tau to send and it to point_command
             Eigen::VectorXd tau_total = tau_des + tau_added;
             std::vector<double> tau_total_vec(tau_total.data(), tau_total.data() + tau_total.size());
             trajectory_msgs::JointTrajectoryPoint point_command;
+            point_command.positions = goal_points[i].positions;
+            point_command.velocities = goal_points[i].velocities;
+            point_command.accelerations = goal_points[i].accelerations;
             point_command.effort = tau_total_vec;
+            point_command.time_from_start = ros::Duration(time_from_start);
+            //Save point_commanded and joint_state into vectors
             trajectory_commanded.points.push_back(point_command);
-
-            //Cout calculations
-/*
-            std::cout << "i " << i << std::endl;
-            std::cout << "tStartTraj: " << tStartTraj.toSec() << std::endl;
-            std::cout << "tCurr: " << js.header.stamp.toSec() << std::endl;
-            std::cout << "it_dur: " << it_dur.toSec() << std::endl;
-            std::cout << "h: " << h << std::endl;
-            std::cout << "q_curr: " << q_curr.transpose() << std::endl << "qdot_curr: " << qdot_curr.transpose() << std::endl;
-            std::cout << "tau_des: " << tau_des.transpose() << std::endl << "q_des: " << q_des.transpose() << std::endl << "qdot_des: " << qdot_des.transpose() << std::endl; 
-            std::cout << "tau_added: " << tau_added.transpose() << std::endl;
-            std::cout << "tau_total: " << tau_total.transpose() << std::endl;*/
-
-
-            //Publish feedback                     
-            //as_feedback.joint_state = curr_joint_state;
-            //as.publishFeedback(as_feedback);
-
-            //Send point_commanded
+            trajectory_joint_state.push_back(joint_state);
+            //Command gazebo robot
             iiwa_gazebo_command_pub.publish(point_command);
-
-            //Calculate time to sleep and sleep
-            /*ros::Duration tProcess = curr_joint_state.header.stamp-js.header.stamp;
-            ros::Duration tSleep = it_dur-tProcess;
-            std::cout << "time process: " << tProcess.toSec() << std::endl;
-            std::cout << "time sleep: " << tSleep.toSec() << std::endl;*/
-            ros::Duration(0.000001).sleep();
+            //Sleep for a fixed amount of time, in this case we use the sample_time but it doesn't matter if you raise it a bit more/less, as the next chosen index will depend on the amount of time passed since the beginning and the command sent will adjust to it, not depending on the control time
+            std::cout << i << std::endl;
+            ros::Duration(sample_time).sleep();
         }
-        
         as_result.trajectory_joint_state=trajectory_joint_state;
         as_result.trajectory_commanded=trajectory_commanded;
         as.setSucceeded(as_result);
