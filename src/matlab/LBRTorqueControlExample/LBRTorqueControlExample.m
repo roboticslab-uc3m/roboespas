@@ -48,6 +48,7 @@ end
 setenv('ROS_MASTER_URI', 'http://192.168.1.53:11311');
 setenv('ROS_IP', '192.168.1.53');
 rosinit;
+ptree=rosparam;
 % Create actionlib to send a trajectory to gazebo iiwa robot, and some
 % services to create and read the joint_trajectory messages faster
 [iiwaCommandASrv_cli, iiwaCommandASrv_msg] = rosactionclient('iiwa_command');
@@ -67,7 +68,7 @@ jointState_sub = rossubscriber('/iiwa_gazebo/joint_state');
 lbr = importrobot('iiwa14.urdf');
 lbr.DataFormat = 'row';
 lbr.Gravity = [0 0 -9.80];
-sample_time = 0.001; 
+sample_time = get(ptree, '/iiwa_command/sample_time');
 tt = 0:sample_time:5;
 
 load lbr_waypoints.mat

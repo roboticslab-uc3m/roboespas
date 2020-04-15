@@ -27,6 +27,8 @@ class IiwaCommandNode
     //Iiwa gazebo command publisher
     ros::Publisher iiwa_gazebo_command_pub;
     sensor_msgs::JointState read_joint_state;
+    //Parameters
+    double sample_time;
 
     public:
 
@@ -38,15 +40,17 @@ class IiwaCommandNode
         ROS_INFO("Action server %s started", name.c_str());
         iiwa_gazebo_command_pub = nh.advertise<trajectory_msgs::JointTrajectoryPoint>("/iiwa_gazebo/joint_command", 1000, false);
         iiwa_gazebo_state_sub = nh.subscribe("/iiwa_gazebo/joint_state", 1000, &IiwaCommandNode::callback_iiwa_gazebo_state, this);
+        if (!nh.getParam("/iiwa_command/sample_time", sample_time))
+        {
+            ROS_ERROR("Failed to read 'sample_time' on param server");
+        }
     }
     void callback_iiwa_gazebo_state(const sensor_msgs::JointState& iiwa_gazebo_state_msg)
     {
         read_joint_state=iiwa_gazebo_state_msg;
     }
     void callback_iiwa_command(const iiwa_command::IiwaCommandGoalConstPtr &goal)
-    {
-        //Data
-        double  sample_time=0.001;
+    {       
         //PD Gains
         Eigen::VectorXd weights(7);
         Eigen::VectorXd Kp(7);
@@ -70,6 +74,7 @@ class IiwaCommandNode
         while (i<goal_points.size())
         {
             //read_joint_state may change during this iteration, save it in a different variable to fix it
+            std::cout << sample_time << std::endl;
             sensor_msgs::JointState joint_state=read_joint_state;
             double time_from_start=(ros::Time::now()-tStartTraj).toSec(); 
             //Get the index in the goal_points vector corresponding to the current time
