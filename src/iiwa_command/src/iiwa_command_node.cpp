@@ -45,6 +45,8 @@ class IiwaCommandNode
     }
     void callback_iiwa_command(const iiwa_command::IiwaCommandGoalConstPtr &goal)
     {
+        //Data
+        double  sample_time=0.001;
         //PD Gains
         Eigen::VectorXd weights(7);
         Eigen::VectorXd Kp(7);
@@ -60,18 +62,16 @@ class IiwaCommandNode
         trajectory_msgs::JointTrajectory trajectory_commanded;
         std::vector<sensor_msgs::JointState> trajectory_joint_state;
 
-        //Assume the sample_time is continuous all along the trajectory, and equal to the difference between the first stamp and the second
-        double sample_time = (goal_points[1].time_from_start - goal_points[0].time_from_start).toSec();
         //Initialize the index that will contain the current index of the trajectory depending on the time that has passed
         int i=0;
 
         //Get the time at which the trajectory starts being sent
-        ros::Time tStartTraj = read_joint_state.header.stamp;
+        ros::Time tStartTraj = ros::Time::now();//read_joint_state.header.stamp;
         while (i<goal_points.size())
         {
             //read_joint_state may change during this iteration, save it in a different variable to fix it
             sensor_msgs::JointState joint_state=read_joint_state;
-            double time_from_start=joint_state.header.stamp.toSec()-tStartTraj.toSec();
+            double time_from_start=(ros::Time::now()-tStartTraj).toSec(); 
             //Get the index in the goal_points vector corresponding to the current time
             i = time_from_start/sample_time;
             //If the index is outside the goal_points vector, exit the while loop
