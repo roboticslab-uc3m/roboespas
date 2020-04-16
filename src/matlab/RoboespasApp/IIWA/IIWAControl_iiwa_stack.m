@@ -2,7 +2,7 @@ classdef IIWAControl < handle
     % Summary of this class goes here
     %   Detailed explanation goes here
     properties(Constant)
-        MasterIP = '160.69.69.100';
+        MasterIP  = '192.168.1.53';
         MasterPort = '11311';
         
         InputIdentifier='cap';
@@ -11,7 +11,7 @@ classdef IIWAControl < handle
         CommandedMiddlePause = 2; %Seconds
         CommandedIdentifier='adj';
         
-        %!!Trucadas ambas a right porque el robot está pegado a la mesa
+        %!!Trucadas ambas a right porque el robot estï¿½ pegado a la mesa
         ReferencePositionLeft = [ -1.43034565448761, 1.277533888816833, -2.738382339477539, 1.576292872428894, -1.003308653831482, -0.4687036871910095, -0.3838373422622681]; % %[-2.27228709005705;1.27528126290555;-2.76711361378742;1.61695719633329;-0.970375948889415;-0.409916398365001; -1.24954618283254]; %
         ReferencePositionRight = [ -1.43034565448761, 1.277533888816833, -2.738382339477539, 1.576292872428894, -1.003308653831482, -0.4687036871910095, -0.3838373422622681]; % 
         
@@ -100,6 +100,12 @@ classdef IIWAControl < handle
                 if (robotics.ros.internal.Global.isNodeActive)
                     rosshutdown;
                 end
+                if (isunix)
+                    [~, result] = system('ifconfig');
+                else
+                    [~, result] = system('ipconfig');
+                end
+                result
                 dir = ['http://', obj.MasterIP, ':', obj.MasterPort];
                 rosinit(dir, 'NodeName', 'Matlab');
                 warning('off', 'MATLAB:MKDIR:DirectoryExists');
@@ -164,7 +170,7 @@ classdef IIWAControl < handle
                 if (~isempty(obj.DataCommanded))
                    	obj.SendJointPosition(obj.DataCommanded.q(:,1));
                 else
-                    ME=MException('IIWAControl:EmptyDataCommanded', 'DataCommanded está vacío');
+                    ME=MException('IIWAControl:EmptyDataCommanded', 'DataCommanded estï¿½ vacï¿½o');
                     throw(ME);
                 end
             end
@@ -249,7 +255,7 @@ classdef IIWAControl < handle
                     obj.ConfigurationClient.call(obj.ConfigurationMsg);
                     obj.ConfigurationClient.call(obj.ConfigurationMsg);
                 catch
-                    ME = MException('IIWAControl:ControlPositionError1', 'Mueva el robot a una posición más alejada de singularidades, resetee ROSSmartServo en el SmartPad e intentelo de nuevo');
+                    ME = MException('IIWAControl:ControlPositionError1', 'Mueva el robot a una posiciï¿½n mï¿½s alejada de singularidades, resetee ROSSmartServo en el SmartPad e intentelo de nuevo');
                     throw(ME);
                 end
             end    
@@ -314,11 +320,11 @@ classdef IIWAControl < handle
                         data_input_withoutpauses = delete_pause_init_end(obj.DataInput);
                         obj.DataInputShow = change_velocity(data_input_withoutpauses, velocity);
                     else
-                        ME=MException('IIWAControl:EmptyDataInput', 'DataInput está vacío');
+                        ME=MException('IIWAControl:EmptyDataInput', 'DataInput estï¿½ vacï¿½o');
                         throw(ME);
                     end
                 else
-                    ME=MException('IIWAControl:EmptyDataAdjusted', 'DataAdjusted está vacío');
+                    ME=MException('IIWAControl:EmptyDataAdjusted', 'DataAdjusted estï¿½ vacï¿½o');
                     throw(ME);
                 end
             end
@@ -355,7 +361,7 @@ classdef IIWAControl < handle
         % PLOT FUNCTIONS
         % Plot trajectories
         function PlotJointPositionTrajectories(obj, origin, arg, display)
-            sgtitle(display, 'Posición articular');
+            sgtitle(display, 'Posiciï¿½n articular');
             switch origin
                 case 'results'
                     i_trial = arg;
@@ -437,7 +443,7 @@ classdef IIWAControl < handle
             end
         end
         function PlotJointAccelerationTrajectories(obj, origin, arg, display)
-            sgtitle(display, 'Aceleración articular');
+            sgtitle(display, 'Aceleraciï¿½n articular');
             switch origin
                 case 'results'
                     i_trial = arg;
@@ -478,7 +484,7 @@ classdef IIWAControl < handle
             end
         end
         function PlotCartesianPositionTrajectories(obj, origin, arg, display)
-            sgtitle(display, 'Posición cartesiana');
+            sgtitle(display, 'Posiciï¿½n cartesiana');
             switch origin
                 case 'results'
                     i_trial = arg;
@@ -516,7 +522,7 @@ classdef IIWAControl < handle
                 case 'adjust'
                     if(obj.ROSConnected)
                         display.WindowState = 'maximized';
-                        display.Name = 'Posición cartesiana';
+                        display.Name = 'Posiciï¿½n cartesiana';
                         hold on;
                         obj.PlotCartesianPositionTrajectory(obj.DataInputShow, obj.ColorDataInput, display);
                         obj.PlotCartesianPositionTrajectory(obj.DataCommanded, obj.ColorDataCommanded, display);
@@ -537,7 +543,7 @@ classdef IIWAControl < handle
                             if(strcmp(display.Type, 'uitab'))
                                 ax = subplot(1,1,1,'Parent', display);%uiaxes(display, 'Position', display.InnerPosition*0.92);
                             else
-                                display.Name = 'Posición cartesiana 3D';
+                                display.Name = 'Posiciï¿½n cartesiana 3D';
                                 display.WindowState = 'maximized';
                                 ax = axes;
                             end
@@ -553,7 +559,7 @@ classdef IIWAControl < handle
                             if(strcmp(display.Type, 'uitab'))
                                 ax = subplot(1,1,1,'Parent', display);%uiaxes(display, 'Position', display.InnerPosition*0.92);
                             else
-                                display.Name = 'Posición cartesiana 3D';
+                                display.Name = 'Posiciï¿½n cartesiana 3D';
                                 display.WindowState = 'maximized';
                                 ax = axes;
                             end
@@ -576,7 +582,7 @@ classdef IIWAControl < handle
                             if(strcmp(display.Type, 'uitab'))
                                 ax = subplot(1,1,1,'Parent', display);%uiaxes(display, 'Position', display.InnerPosition*0.92);
                             else
-                                display.Name = 'Posición cartesiana 3D';
+                                display.Name = 'Posiciï¿½n cartesiana 3D';
                                 display.WindowState = 'maximized';
                                 ax = axes;
                             end
@@ -591,7 +597,7 @@ classdef IIWAControl < handle
                             if(strcmp(display.Type, 'uitab'))
                                 ax = subplot(1,1,1,'Parent', display);%uiaxes(display, 'Position', display.InnerPosition*0.92);
                             else
-                                display.Name = 'Posición cartesiana 3D';
+                                display.Name = 'Posiciï¿½n cartesiana 3D';
                                 display.WindowState = 'maximized';
                                 ax = axes;
                             end
@@ -612,7 +618,7 @@ classdef IIWAControl < handle
                 case 'adjust'
                     if (obj.ROSConnected)
                         display.WindowState = 'maximized';
-                        display.Name = 'Posición cartesiana 3D';
+                        display.Name = 'Posiciï¿½n cartesiana 3D';
                         hold on;
                         ax = axes;
                         obj.Plot3DCartesianPositionTrajectory(obj.DataInputShow,obj.ColorDataInput, ax);
@@ -689,7 +695,7 @@ classdef IIWAControl < handle
                         else
                             obj.CalculateMinMeanMax(obj.DataOutput);
                             obj.CalculateMinMeanMaxJointError(obj.DataCommanded, obj.DataOutput);
-                            sgtitle(display, 'Error de repetibilidad de posición articular ejecutada frente a comandada');
+                            sgtitle(display, 'Error de repetibilidad de posiciï¿½n articular ejecutada frente a comandada');
                             obj.PlotJointPositionRepeatibility(display); 
                         end
                     end
@@ -702,7 +708,7 @@ classdef IIWAControl < handle
                         else
                             obj.CalculateMinMeanMax(trajectoryOutput);
                             obj.CalculateMinMeanMaxJointError(trajectoryCommanded{1}, trajectoryOutput);
-                            sgtitle(display, 'Error de repetibilidad de posición articular ejecutada frente a comandada');
+                            sgtitle(display, 'Error de repetibilidad de posiciï¿½n articular ejecutada frente a comandada');
                             obj.PlotJointPositionRepeatibility(display);
                         end
                     else
@@ -759,7 +765,7 @@ classdef IIWAControl < handle
                         else
                             obj.CalculateMinMeanMax(obj.DataOutput);
                             obj.CalculateMinMeanMaxJointError(obj.DataCommanded, obj.DataOutput);
-                            sgtitle(display, 'Error de repetibilidad de aceleración articular ejecutada frente a comandada');
+                            sgtitle(display, 'Error de repetibilidad de aceleraciï¿½n articular ejecutada frente a comandada');
                             obj.PlotJointAccelerationRepeatibility(display); 
                         end    
                     end
@@ -772,7 +778,7 @@ classdef IIWAControl < handle
                         else
                             obj.CalculateMinMeanMax(trajectoryOutput);
                             obj.CalculateMinMeanMaxJointError(trajectoryCommanded{1}, trajectoryOutput);
-                            sgtitle(display, 'Error de repetibilidad de aceleración articular ejecutada frente a comandada');
+                            sgtitle(display, 'Error de repetibilidad de aceleraciï¿½n articular ejecutada frente a comandada');
                             obj.PlotJointAccelerationRepeatibility(display);
                         end
                     else
@@ -794,7 +800,7 @@ classdef IIWAControl < handle
                         else
                             obj.CalculateMinMeanMax(obj.DataOutput);
                             obj.CalculateMinMeanMaxCartesianError(obj.DataCommanded, obj.DataOutput);
-                            sgtitle(display, 'Error de repetibilidad de posición cartesiana ejecutada frente a comandada');
+                            sgtitle(display, 'Error de repetibilidad de posiciï¿½n cartesiana ejecutada frente a comandada');
                             obj.PlotCartesianPositionRepeatibility(display); 
                         end
                     end
@@ -807,7 +813,7 @@ classdef IIWAControl < handle
                         else
                             obj.CalculateMinMeanMax(trajectoryOutput);
                             obj.CalculateMinMeanMaxCartesianError(trajectoryCommanded{1}, trajectoryOutput);
-                            sgtitle(display, 'Error de repetibilidad de posición cartesiana ejecutada frente a comandada');
+                            sgtitle(display, 'Error de repetibilidad de posiciï¿½n cartesiana ejecutada frente a comandada');
                             obj.PlotCartesianPositionRepeatibility(display);
                         end
                     else
@@ -871,7 +877,7 @@ classdef IIWAControl < handle
                     if(obj.ROSConnected)
                         meanOutput = get_mean(obj.DataOutput);
                         obj.CalculateMinMeanMaxJointError(meanOutput, obj.DataOutput);
-                        sgtitle(display, 'Repetibilidad del error de posición articular ejecutada');
+                        sgtitle(display, 'Repetibilidad del error de posiciï¿½n articular ejecutada');
                         obj.PlotJointPositionRepeatibility(display);
                     end
                 case 'database'
@@ -882,7 +888,7 @@ classdef IIWAControl < handle
                                 [trajectoryOutput, ~] = IIWAControl.SetTrajectoryFromFile(Trajectory);
                                 meanOutput = get_mean(trajectoryOutput);
                                 obj.CalculateMinMeanMaxJointError(meanOutput, trajectoryOutput);
-                                sgtitle(display, 'Repetibilidad del error de posición articular ejecutada');
+                                sgtitle(display, 'Repetibilidad del error de posiciï¿½n articular ejecutada');
                                 obj.PlotJointPositionRepeatibility(display);
                             else
                                 ME=MException('IIWAControl:PlotJointPositionRepeatibilityError', 'Number of trials insufficient. Must be greater than 1');
@@ -943,7 +949,7 @@ classdef IIWAControl < handle
                     if(obj.ROSConnected)
                         meanOutput = get_mean(obj.DataOutput);
                         obj.CalculateMinMeanMaxJointError(meanOutput, obj.DataOutput);
-                        sgtitle(display, 'Repetibilidad del error de aceleración articular ejecutada');
+                        sgtitle(display, 'Repetibilidad del error de aceleraciï¿½n articular ejecutada');
                         obj.PlotJointAccelerationRepeatibility(display);
                     end
                 case 'database'
@@ -954,7 +960,7 @@ classdef IIWAControl < handle
                                 [trajectoryOutput, ~] = IIWAControl.SetTrajectoryFromFile(Trajectory);
                                 meanOutput = get_mean(trajectoryOutput);
                                 obj.CalculateMinMeanMaxJointError(meanOutput, trajectoryOutput);
-                                sgtitle(display, 'Repetibilidad del error de aceleración articular ejecutada');
+                                sgtitle(display, 'Repetibilidad del error de aceleraciï¿½n articular ejecutada');
                                 obj.PlotJointAccelerationRepeatibility(display);
                             else
                                 ME=MException('IIWAControl:PlotJointAccelerationRepeatibilityError', 'Number of trials insufficient. Must be greater than 1');
@@ -979,7 +985,7 @@ classdef IIWAControl < handle
                     if(obj.ROSConnected)
                         meanOutput = get_mean(obj.DataOutput);
                         obj.CalculateMinMeanMaxCartesianError(meanOutput, obj.DataOutput);
-                        sgtitle(display, 'Repetibilidad del error de posición cartesiana ejecutada');
+                        sgtitle(display, 'Repetibilidad del error de posiciï¿½n cartesiana ejecutada');
                         obj.PlotCartesianPositionRepeatibility(display);
                     end
                 case 'database'
@@ -990,7 +996,7 @@ classdef IIWAControl < handle
                                 [trajectoryOutput, ~] = IIWAControl.SetTrajectoryFromFile(Trajectory);
                                 meanOutput = get_mean(trajectoryOutput);
                                 obj.CalculateMinMeanMaxCartesianError(meanOutput, trajectoryOutput);
-                                sgtitle(display, 'Repetibilidad del error de posición cartesiana ejecutada');
+                                sgtitle(display, 'Repetibilidad del error de posiciï¿½n cartesiana ejecutada');
                                 obj.PlotCartesianPositionRepeatibility(display);
                             else
                                 ME=MException('IIWAControl:PlotCartesianPositionRepeatibilityError', 'Number of trials insufficient. Must be greater than 1');
@@ -1355,8 +1361,8 @@ classdef IIWAControl < handle
                     ax(i) = subplot(4,2,s(i), 'Parent', display);
                     hold(ax(i), 'on');
                     plot(ax(i), Data.t, rad2deg(Data.q(i,:)), Color);
-                    title(ax(i), ['Posición J', num2str(i)]);
-                    ylabel(ax(i), 'q[º]');
+                    title(ax(i), ['Posiciï¿½n J', num2str(i)]);
+                    ylabel(ax(i), 'q[ï¿½]');
                     xlabel(ax(i), 't[s]');
                     if (bLimits)
                         plot(ax(i), Data.t, ones(1, size(Data.t,2)).*rad2deg(obj.ThetaMax(i)), [Color, '--']);
@@ -1374,7 +1380,7 @@ classdef IIWAControl < handle
                     hold(ax(i), 'on');
                     plot(ax(i), Data.t, rad2deg(Data.qdot(i,:)), Color);
                     title(ax(i), ['Velocidad J', num2str(i)]);
-                    ylabel(ax(i), 'dq[º/s]');
+                    ylabel(ax(i), 'dq[ï¿½/s]');
                     xlabel(ax(i), 't[s]');
                     if (bLimits)
                         plot(ax(i), Data.t, ones(1, size(Data.t,2)).*rad2deg(obj.ThetaDotMax(i)), [Color, '--']);
@@ -1391,8 +1397,8 @@ classdef IIWAControl < handle
                     ax(i) = subplot(4,2,s(i), 'Parent', display);
                     hold(ax(i), 'on');
                     plot(ax(i), Data.t, rad2deg(Data.qdotdot(i,:)), Color);
-                    title(ax(i), ['Aceleración J', num2str(i)]);
-                    ylabel(ax(i), 'ddq[º/s^2]');
+                    title(ax(i), ['Aceleraciï¿½n J', num2str(i)]);
+                    ylabel(ax(i), 'ddq[ï¿½/s^2]');
                     xlabel(ax(i), 't[s]');
                     if (bLimits)
                         plot(ax(i), Data.t, ones(1, size(Data.t,2)).*rad2deg(obj.ThetaDotDotMax(i)), [Color, '--']);
@@ -1408,7 +1414,7 @@ classdef IIWAControl < handle
                     ax(i) = subplot(2,3,i, 'Parent', display);
                     hold(ax(i), 'on');
                     plot(ax(i), Data.t, 100*Data.x.pos(i,:), Color);
-                    title(ax(i), ['Posición cartesiana ', obj.NameCoord(i)]);
+                    title(ax(i), ['Posiciï¿½n cartesiana ', obj.NameCoord(i)]);
                     ylabel(ax(i), 'x_{pos}[cm]');
                     xlabel(ax(i), 't[s]');
                 end
@@ -1417,7 +1423,7 @@ classdef IIWAControl < handle
                     hold(ax(i+3), 'on');
                     plot(ax(i+3), Data.t, rad2deg(Data.x.ori(i,:)), Color);
                     title(ax(i+3), ['Cartesiana R', obj.NameCoord(3+i)]);
-                    ylabel(ax(i+3), 'x_{ori}[º]');
+                    ylabel(ax(i+3), 'x_{ori}[ï¿½]');
                     xlabel(ax(i+3), 't[s]');
                 end
             end
@@ -1447,7 +1453,7 @@ classdef IIWAControl < handle
                     hold(ax(i+3), 'on');
                     plot(ax(i+3), Data.t, rad2deg(Data.xdot.ori(i,:)), Color);
                     title(ax(i+3), ['Velocidad R', obj.NameCoord(3+i)]);
-                    ylabel(ax(i+3), 'dx_{ori}[º/s]');
+                    ylabel(ax(i+3), 'dx_{ori}[ï¿½/s]');
                     xlabel(ax(i+3), 't[s]');
                 end
             end
@@ -1466,8 +1472,8 @@ classdef IIWAControl < handle
                 plot(ax(j), obj.DataMean.t, rad2deg(obj.DataMin.q(j,:)), obj.ColorDataOutput);
                 plot(ax(j), obj.DataMean.t, rad2deg(obj.DataMean.q(j,:)), obj.ColorDataOutput, 'LineWidth', 1);
                 plot(ax(j), DataCommanded.t, rad2deg(DataCommanded.q(j,:)), [obj.ColorDataCommanded, '--'], 'LineWidth', 0.8);
-                title(ax(j), strcat('Posición J', num2str(j)))
-                ylabel(ax(j), 'q[º]');
+                title(ax(j), strcat('Posiciï¿½n J', num2str(j)))
+                ylabel(ax(j), 'q[ï¿½]');
                 xlabel(ax(j), 't[s]');
             end
         end
@@ -1485,7 +1491,7 @@ classdef IIWAControl < handle
                 plot(ax(j), obj.DataMean.t, rad2deg(obj.DataMean.qdot(j,:)), obj.ColorDataOutput, 'LineWidth', 1);
                 plot(ax(j), DataCommanded.t, rad2deg(DataCommanded.qdot(j,:)), [obj.ColorDataCommanded, '--'], 'LineWidth', 0.8);
                 title(ax(j), strcat('Velocidad J', num2str(j)))
-                ylabel(ax(j), 'dq[º/s]');
+                ylabel(ax(j), 'dq[ï¿½/s]');
                 xlabel(ax(j), 't[s]');
             end
         end
@@ -1502,8 +1508,8 @@ classdef IIWAControl < handle
                 plot(ax(j), obj.DataMin.t, rad2deg(obj.DataMin.qdotdot(j,:)), obj.ColorDataOutput);
                 plot(ax(j), obj.DataMean.t, rad2deg(obj.DataMean.qdotdot(j,:)), obj.ColorDataOutput, 'LineWidth', 1);
                 plot(ax(j), DataCommanded.t, rad2deg(DataCommanded.qdotdot(j,:)), [obj.ColorDataCommanded, '--'], 'LineWidth', 0.8);
-                title(ax(j), strcat('Aceleración J', num2str(j)))
-                ylabel(ax(j), 'ddq[º/s^2]');
+                title(ax(j), strcat('Aceleraciï¿½n J', num2str(j)))
+                ylabel(ax(j), 'ddq[ï¿½/s^2]');
                 xlabel(ax(j), 't[s]');
             end
         end
@@ -1519,7 +1525,7 @@ classdef IIWAControl < handle
                 plot(ax(xcoord), obj.DataMin.t, 100*(obj.DataMin.x.pos(xcoord,:)), obj.ColorDataOutput);
                 plot(ax(xcoord), obj.DataMean.t, 100*(obj.DataMean.x.pos(xcoord,:)), obj.ColorDataOutput, 'LineWidth', 1);
                 plot(ax(xcoord), DataCommanded.t, 100*(DataCommanded.x.pos(xcoord,:)), [obj.ColorDataCommanded, '--'], 'LineWidth', 0.8);
-                title(ax(xcoord), ['Posición cartesiana ', obj.NameCoord(xcoord)]);
+                title(ax(xcoord), ['Posiciï¿½n cartesiana ', obj.NameCoord(xcoord)]);
                 ylabel(ax(xcoord), 'x_{pos}[cm]');
                 xlabel(ax(xcoord), 't[s]');
             end
@@ -1533,7 +1539,7 @@ classdef IIWAControl < handle
                 plot(ax(rxcoord+3), obj.DataMean.t, rad2deg(obj.DataMean.x.ori(rxcoord,:)), obj.ColorDataOutput, 'LineWidth', 1);
                 plot(ax(rxcoord+3), DataCommanded.t, rad2deg(DataCommanded.x.ori(rxcoord,:)), [obj.ColorDataCommanded, '--'], 'LineWidth', 0.8);
                 title(ax(rxcoord+3), ['Cartesiana R', obj.NameCoord(rxcoord+3)]);
-                ylabel(ax(rxcoord+3), 'x_{ori}[º]');
+                ylabel(ax(rxcoord+3), 'x_{ori}[ï¿½]');
                 xlabel(ax(rxcoord+3), 't[s]');
             end
         end
@@ -1563,18 +1569,18 @@ classdef IIWAControl < handle
                 plot(ax(rxcoord+3), obj.DataMean.t, rad2deg(obj.DataMean.xdot.ori(rxcoord,:)), obj.ColorDataOutput, 'LineWidth', 1);
                 plot(ax(rxcoord+3), DataCommanded.t, rad2deg(DataCommanded.xdot.ori(rxcoord,:)), [obj.ColorDataCommanded, '--'], 'LineWidth', 0.8);
                 title(ax(rxcoord+3), ['Velocidad R', obj.NameCoord(rxcoord+3)]);
-                ylabel(ax(rxcoord+3), 'dx_{ori}[º/s]');
+                ylabel(ax(rxcoord+3), 'dx_{ori}[ï¿½/s]');
                 xlabel(ax(rxcoord+3), 't[s]');
             end
         end
         % Plot execution error
         function PlotJointPositionError_(obj, Data1, Data2, display)
             if (~isempty(Data1) && ~isempty(Data2))
-                sgtitle(display, 'Error posición articular');
+                sgtitle(display, 'Error posiciï¿½n articular');
                 if(strcmp(display.Type, 'uitab'))
                     ax = subplot(1,1,1, 'Parent', display);%uiaxes(display, 'Position', display.InnerPosition*0.92);
                 else
-                    display.Name = 'Error posición articular';
+                    display.Name = 'Error posiciï¿½n articular';
                     display.WindowState = 'maximized';
                     ax = axes;
                 end
@@ -1588,11 +1594,11 @@ classdef IIWAControl < handle
                     dashedcolor=['--', obj.ColorsJoints(i)];
                     plot(ax, t_error, ones(size(t_error))*rad2deg(rms_q(i)), dashedcolor);
                 end
-                legend(ax, 'J1', ['rms_{J1} = ', num2str(rad2deg(rms_q(1))), 'º'],'J2', ['rms_{J2} = ', num2str(rad2deg(rms_q(2))), 'º'], 'J3', ['rms_{J3} = ', num2str(rad2deg(rms_q(3))), 'º'], ...
-                     'J4', ['rms_{J4} = ', num2str(rad2deg(rms_q(4))), 'º'], 'J5', ['rms_{J5} = ', num2str(rad2deg(rms_q(5))), 'º'], 'J6', ['rms_{J6} = ', num2str(rad2deg(rms_q(6))), 'º'], ...
-                     'J7', ['rms_{J7} = ', num2str(rad2deg(rms_q(7))), 'º']);
-                title(ax, ['Error medio posición articular = ', num2str(rad2deg(mean(rms_q))), 'º']);
-                ylabel(ax, 'E_{p}(q)[º]');
+                legend(ax, 'J1', ['rms_{J1} = ', num2str(rad2deg(rms_q(1))), 'ï¿½'],'J2', ['rms_{J2} = ', num2str(rad2deg(rms_q(2))), 'ï¿½'], 'J3', ['rms_{J3} = ', num2str(rad2deg(rms_q(3))), 'ï¿½'], ...
+                     'J4', ['rms_{J4} = ', num2str(rad2deg(rms_q(4))), 'ï¿½'], 'J5', ['rms_{J5} = ', num2str(rad2deg(rms_q(5))), 'ï¿½'], 'J6', ['rms_{J6} = ', num2str(rad2deg(rms_q(6))), 'ï¿½'], ...
+                     'J7', ['rms_{J7} = ', num2str(rad2deg(rms_q(7))), 'ï¿½']);
+                title(ax, ['Error medio posiciï¿½n articular = ', num2str(rad2deg(mean(rms_q))), 'ï¿½']);
+                ylabel(ax, 'E_{p}(q)[ï¿½]');
                 xlabel(ax, 't[s]');
             end
         end
@@ -1616,21 +1622,21 @@ classdef IIWAControl < handle
                     dashedcolor=['--', obj.ColorsJoints(i)];
                     plot(ax, t_error, ones(size(t_error))*rad2deg(rms_qdot(i)), dashedcolor);
                 end
-                legend(ax, 'J1', ['rms_{J1} = ', num2str(rad2deg(rms_qdot(1))), 'º/s'],'J2', ['rms_{J2} = ', num2str(rad2deg(rms_qdot(2))), 'º/s'], 'J3', ['rms_{J3} = ', num2str(rad2deg(rms_qdot(3))), 'º/s'], ...
-                     'J4', ['rms_{J4} = ', num2str(rad2deg(rms_qdot(4))), 'º/s'], 'J5', ['rms_{J5} = ', num2str(rad2deg(rms_qdot(5))), 'º/s'], 'J6', ['rms_{J6} = ', num2str(rad2deg(rms_qdot(6))), 'º/s'], ...
-                     'J7', ['rms_{J7} = ', num2str(rad2deg(rms_qdot(7))), 'º/s']);
-                title(ax, ['Error medio velocidad articular = ', num2str(rad2deg(mean(rms_qdot))), 'º/s']);
-                ylabel(ax, 'E_{p}(dq)[º/s]');
+                legend(ax, 'J1', ['rms_{J1} = ', num2str(rad2deg(rms_qdot(1))), 'ï¿½/s'],'J2', ['rms_{J2} = ', num2str(rad2deg(rms_qdot(2))), 'ï¿½/s'], 'J3', ['rms_{J3} = ', num2str(rad2deg(rms_qdot(3))), 'ï¿½/s'], ...
+                     'J4', ['rms_{J4} = ', num2str(rad2deg(rms_qdot(4))), 'ï¿½/s'], 'J5', ['rms_{J5} = ', num2str(rad2deg(rms_qdot(5))), 'ï¿½/s'], 'J6', ['rms_{J6} = ', num2str(rad2deg(rms_qdot(6))), 'ï¿½/s'], ...
+                     'J7', ['rms_{J7} = ', num2str(rad2deg(rms_qdot(7))), 'ï¿½/s']);
+                title(ax, ['Error medio velocidad articular = ', num2str(rad2deg(mean(rms_qdot))), 'ï¿½/s']);
+                ylabel(ax, 'E_{p}(dq)[ï¿½/s]');
                 xlabel(ax, 't[s]');
         	end
         end
         function PlotJointAccelerationError_(obj, Data1, Data2, display)
         	if (~isempty(Data1) && ~isempty(Data2))
-                sgtitle(display, 'Error aceleración articular');
+                sgtitle(display, 'Error aceleraciï¿½n articular');
                 if(strcmp(display.Type, 'uitab'))
                     ax = subplot(1,1,1,'Parent', display);%uiaxes(display, 'Position', display.InnerPosition*0.92);
                 else
-                    display.Name = 'Error aceleración articular';
+                    display.Name = 'Error aceleraciï¿½n articular';
                     display.WindowState = 'maximized';
                     ax = axes;
                 end
@@ -1644,17 +1650,17 @@ classdef IIWAControl < handle
                     dashedcolor=['--', obj.ColorsJoints(i)];
                     plot(ax, t_error, ones(size(t_error))*rad2deg(rms_qdotdot(i)), dashedcolor);
                 end
-                legend(ax, 'J1', ['rms_{J1} = ', num2str(rad2deg(rms_qdotdot(1))), 'º/s^2'],'J2', ['rms_{J2} = ', num2str(rad2deg(rms_qdotdot(2))), 'º/s^2'], 'J3', ['rms_{J3} = ', num2str(rad2deg(rms_qdotdot(3))), 'º/s^2'], ...
-                     'J4', ['rms_{J4} = ', num2str(rad2deg(rms_qdotdot(4))), 'º/s^2'], 'J5', ['rms_{J5} = ', num2str(rad2deg(rms_qdotdot(5))), 'º/s^2'], 'J6', ['rms_{J6} = ', num2str(rad2deg(rms_qdotdot(6))), 'º/s^2'], ...
-                     'J7', ['rms_{J7} = ', num2str(rad2deg(rms_qdotdot(7))), 'º/s^2']);
-                title(ax, ['Error medio aceleración articular = ', num2str(rad2deg(mean(rms_qdotdot))), 'º/s^2']);
-                ylabel(ax, 'E_{p}(ddq)[º/s^2]');
+                legend(ax, 'J1', ['rms_{J1} = ', num2str(rad2deg(rms_qdotdot(1))), 'ï¿½/s^2'],'J2', ['rms_{J2} = ', num2str(rad2deg(rms_qdotdot(2))), 'ï¿½/s^2'], 'J3', ['rms_{J3} = ', num2str(rad2deg(rms_qdotdot(3))), 'ï¿½/s^2'], ...
+                     'J4', ['rms_{J4} = ', num2str(rad2deg(rms_qdotdot(4))), 'ï¿½/s^2'], 'J5', ['rms_{J5} = ', num2str(rad2deg(rms_qdotdot(5))), 'ï¿½/s^2'], 'J6', ['rms_{J6} = ', num2str(rad2deg(rms_qdotdot(6))), 'ï¿½/s^2'], ...
+                     'J7', ['rms_{J7} = ', num2str(rad2deg(rms_qdotdot(7))), 'ï¿½/s^2']);
+                title(ax, ['Error medio aceleraciï¿½n articular = ', num2str(rad2deg(mean(rms_qdotdot))), 'ï¿½/s^2']);
+                ylabel(ax, 'E_{p}(ddq)[ï¿½/s^2]');
                 xlabel(ax, 't[s]');
         	end
         end
         function PlotCartesianPositionError_(obj, Data1, Data2, display)
             if (~isempty(Data1) && ~isempty(Data2))
-                sgtitle(display, 'Error posición cartesiana');
+                sgtitle(display, 'Error posiciï¿½n cartesiana');
                 ax(1) = subplot(1,2,1, 'Parent', display);
                 hold(ax(1), 'on');
                 % Get position cartesian error
@@ -1674,7 +1680,7 @@ classdef IIWAControl < handle
                 % Show rms values in legend
                 legend(ax(1), 'X', ['rms_{X} = ', num2str(100*rms_xpos(1),3), 'cm'], 'Y', ['rms_{Y} = ', num2str(100*rms_xpos(2),3), 'cm'], 'Z', ['rms_{Z} = ', num2str(100*rms_xpos(3),3), 'cm'], 'Euclidean', ['rms_{euc}=', num2str(100*rms_euc_xpos,3), 'cm']);
                 % And euclidean rms value in the title
-                title(ax(1), ['Error medio posición cartesiana = ', num2str(100*rms_euc_xpos,3), 'cm']);
+                title(ax(1), ['Error medio posiciï¿½n cartesiana = ', num2str(100*rms_euc_xpos,3), 'cm']);
                 ylabel(ax(1), 'E_{p}(x_{pos})[cm]');
                 xlabel(ax(1), 't[s]');
                 
@@ -1695,8 +1701,8 @@ classdef IIWAControl < handle
                 dashedcolor=['--', 'k'];
                 plot(ax(2), t_error, ones(size(t_error))*rad2deg(rms_euc_xori), dashedcolor);
                 % Show rms values in the legend
-                legend(ax(2), 'RX', ['rms_{RX} = ', num2str(rad2deg(rms_xori(1)),3), 'º'], 'RY', ['rms_{RY} = ', num2str(rad2deg(rms_xori(2)),3), 'º'], 'RZ', ['rms_{RZ} = ', num2str(rad2deg(rms_xori(3)),3), 'º'], 'Euclidean', ['rms_{euc}=', num2str(rad2deg(rms_euc_xpos),3), 'º']);
-                title(ax(2), ['Error medio orientación cartesiana = ', num2str(rad2deg(rms_euc_xori),3), 'º']);
+                legend(ax(2), 'RX', ['rms_{RX} = ', num2str(rad2deg(rms_xori(1)),3), 'ï¿½'], 'RY', ['rms_{RY} = ', num2str(rad2deg(rms_xori(2)),3), 'ï¿½'], 'RZ', ['rms_{RZ} = ', num2str(rad2deg(rms_xori(3)),3), 'ï¿½'], 'Euclidean', ['rms_{euc}=', num2str(rad2deg(rms_euc_xpos),3), 'ï¿½']);
+                title(ax(2), ['Error medio orientaciï¿½n cartesiana = ', num2str(rad2deg(rms_euc_xori),3), 'ï¿½']);
                 % And the rms euclidean value in the title
                 ylabel(ax(2), 'E_{p}(x_{ori})[cm]');
                 xlabel(ax(2), 't[s]');
@@ -1724,7 +1730,7 @@ classdef IIWAControl < handle
                 % Show the rms values in the legend
                 legend(ax(1), 'X', ['rms_{X} = ', num2str(100*rms_xdotpos(1)), 'cm/s'], 'Y', ['rms_{Y} = ', num2str(100*rms_xdotpos(2)), 'cm/s'], 'Z', ['rms_{Z} = ', num2str(100*rms_xdotpos(3)), 'cm/s'], 'Euclidean', ['rms_{euc}=', num2str(100*rms_euc_xdotpos), 'cm/s']);
                 % And the rms euclidean cartesian error in the title
-                title(ax(1), ['Error medio posición vel. cartesiana = ', num2str(100*rms_euc_xdotpos), 'cm/s']);
+                title(ax(1), ['Error medio posiciï¿½n vel. cartesiana = ', num2str(100*rms_euc_xdotpos), 'cm/s']);
                 % Labels
                 ylabel(ax(1), 'E_{p}(dx_{pos})[cm]');
                 xlabel(ax(1), 't[s]');
@@ -1746,9 +1752,9 @@ classdef IIWAControl < handle
                 dashedcolor=['--', 'k'];
                 plot(ax(2), t_error, ones(size(t_error))*rad2deg(rms_euc_xdotori), dashedcolor);
                 % Show the rms values in the legend
-                legend(ax(2), 'RX', ['rms_{RX} = ', num2str(rad2deg(rms_xdotori(1))), 'º/s'], 'RY', ['rms_{RY} = ', num2str(rad2deg(rms_xdotori(2))), 'º/s'], 'RZ', ['rms_{RZ} = ', num2str(rad2deg(rms_xdotori(3))), 'º/s'], 'Euclidean', ['rms_{euc}=', num2str(rad2deg(rms_euc_xdotpos)), 'Âº/s']);
+                legend(ax(2), 'RX', ['rms_{RX} = ', num2str(rad2deg(rms_xdotori(1))), 'ï¿½/s'], 'RY', ['rms_{RY} = ', num2str(rad2deg(rms_xdotori(2))), 'ï¿½/s'], 'RZ', ['rms_{RZ} = ', num2str(rad2deg(rms_xdotori(3))), 'ï¿½/s'], 'Euclidean', ['rms_{euc}=', num2str(rad2deg(rms_euc_xdotpos)), 'Âº/s']);
                 % And the rms euclidean orientation error in the title
-                title(ax(2), ['Error medio orientación vel. cartesiana = ', num2str(rad2deg(rms_euc_xdotori)), 'º/s']);  
+                title(ax(2), ['Error medio orientaciï¿½n vel. cartesiana = ', num2str(rad2deg(rms_euc_xdotori)), 'ï¿½/s']);  
                 % Labels
                 ylabel(ax(2), 'E_{p}(dx_{ori})[cm]');
                 xlabel(ax(2), 't[s]');
@@ -1767,8 +1773,8 @@ classdef IIWAControl < handle
                 plot(ax(j), obj.MeanError.t, rad2deg(obj.MaxError.q(j,:)), obj.ColorDataOutput);
                 plot(ax(j), obj.MeanError.t, rad2deg(obj.MinError.q(j,:)), obj.ColorDataOutput);
                 plot(ax(j), obj.MeanError.t, rad2deg(obj.MeanError.q(j,:)), obj.ColorDataOutput, 'LineWidth', 2);
-                title(ax(j), strcat('Error posición J', num2str(j), ' = ', num2str(rms(rad2deg(obj.MeanError.q(j,:)))),'º'))
-                ylabel(ax(j), 'E(q)[º]');
+                title(ax(j), strcat('Error posiciï¿½n J', num2str(j), ' = ', num2str(rms(rad2deg(obj.MeanError.q(j,:)))),'ï¿½'))
+                ylabel(ax(j), 'E(q)[ï¿½]');
                 xlabel(ax(j), 't[s]');
             end
             f = get(ax(end), 'Children');
@@ -1786,8 +1792,8 @@ classdef IIWAControl < handle
                 plot(ax(j), obj.MeanError.t, rad2deg(obj.MaxError.qdot(j,:)), obj.ColorDataOutput);
                 plot(ax(j), obj.MeanError.t, rad2deg(obj.MinError.qdot(j,:)), obj.ColorDataOutput);
                 plot(ax(j), obj.MeanError.t, rad2deg(obj.MeanError.qdot(j,:)), obj.ColorDataOutput, 'LineWidth', 2);
-                title(ax(j), strcat('Error velocidad J', num2str(j), ' = ', num2str(rms(rad2deg(obj.MeanError.qdot(j,:)))),'º/s'))
-                ylabel(ax(j), 'E(dq)[º/s]');
+                title(ax(j), strcat('Error velocidad J', num2str(j), ' = ', num2str(rms(rad2deg(obj.MeanError.qdot(j,:)))),'ï¿½/s'))
+                ylabel(ax(j), 'E(dq)[ï¿½/s]');
                 xlabel(ax(j), 't[s]');
             end
             f = get(ax(end), 'Children');
@@ -1805,8 +1811,8 @@ classdef IIWAControl < handle
                 plot(ax(j), obj.MeanError.t, rad2deg(obj.MaxError.qdotdot(j,:)), obj.ColorDataOutput);
                 plot(ax(j), obj.MeanError.t, rad2deg(obj.MinError.qdotdot(j,:)), obj.ColorDataOutput);
                 plot(ax(j), obj.MeanError.t, rad2deg(obj.MeanError.qdotdot(j,:)), obj.ColorDataOutput, 'LineWidth', 2);
-                title(ax(j), strcat('Error aceleración J', num2str(j), ' = ', num2str(rms(rad2deg(obj.MeanError.qdotdot(j,:)))),'º/s^2'))
-                ylabel(ax(j), 'E(ddq)[º/s^2]');
+                title(ax(j), strcat('Error aceleraciï¿½n J', num2str(j), ' = ', num2str(rms(rad2deg(obj.MeanError.qdotdot(j,:)))),'ï¿½/s^2'))
+                ylabel(ax(j), 'E(ddq)[ï¿½/s^2]');
                 xlabel(ax(j), 't[s]');
             end
             f = get(ax(end), 'Children');
@@ -1835,7 +1841,7 @@ classdef IIWAControl < handle
             plot(ax(4), obj.MeanError.t, 100*obj.MaxEucError.x.pos, 'b');
             plot(ax(4), obj.MeanError.t, 100*obj.MinEucError.x.pos, 'b');
             plot(ax(4), obj.MeanError.t, 100*obj.MeanEucError.x.pos, 'b', 'LineWidth', 2);
-            title(ax(4), ['Error posición cartesiana = ', num2str(rms(100*obj.MeanEucError.x.pos)), 'cm'])
+            title(ax(4), ['Error posiciï¿½n cartesiana = ', num2str(rms(100*obj.MeanEucError.x.pos)), 'cm'])
             ylabel(ax(4), 'E(x)[cm]')
             xlabel(ax(4), 't[s]')
             f = get(ax(4), 'Children');
@@ -1851,8 +1857,8 @@ classdef IIWAControl < handle
                 plot(ax(rxcoord+4), obj.MeanError.t, rad2deg(obj.MaxError.x.ori(rxcoord,:)), 'r');
                 plot(ax(rxcoord+4), obj.MeanError.t, rad2deg(obj.MinError.x.ori(rxcoord,:)), 'r');
                 plot(ax(rxcoord+4), obj.MeanError.t, rad2deg(obj.MeanError.x.ori(rxcoord,:)), 'r', 'LineWidth', 2);
-                title(ax(rxcoord+4), ['Error cartesiano R', obj.NameCoord(rxcoord+3),' = ', num2str(rms(rad2deg(obj.MeanError.x.ori(rxcoord,:)))), 'º'], 'FontSize', 10.5)
-                ylabel(ax(rxcoord+4), 'E(x)[º]')
+                title(ax(rxcoord+4), ['Error cartesiano R', obj.NameCoord(rxcoord+3),' = ', num2str(rms(rad2deg(obj.MeanError.x.ori(rxcoord,:)))), 'ï¿½'], 'FontSize', 10.5)
+                ylabel(ax(rxcoord+4), 'E(x)[ï¿½]')
                 xlabel(ax(rxcoord+4), 't[s]')
             end
             ax(8) = subplot(2,2,4, 'Parent', display);
@@ -1862,8 +1868,8 @@ classdef IIWAControl < handle
             plot(ax(8), obj.MeanError.t, rad2deg(obj.MaxEucError.x.ori), 'r');
             plot(ax(8), obj.MeanError.t, rad2deg(obj.MinEucError.x.ori), 'r');
             plot(ax(8), obj.MeanError.t, rad2deg(obj.MeanEucError.x.ori), 'r', 'LineWidth', 2);
-            title(ax(8), ['Error orientación cartesiana = ', num2str(rms(rad2deg(obj.MeanEucError.x.ori))), 'º'])
-            ylabel(ax(8), 'E(x)[º]')
+            title(ax(8), ['Error orientaciï¿½n cartesiana = ', num2str(rms(rad2deg(obj.MeanEucError.x.ori))), 'ï¿½'])
+            ylabel(ax(8), 'E(x)[ï¿½]')
             xlabel(ax(8), 't[s]')
             f = get(ax(8), 'Children');
             legend(f(1), 'Error medio');
@@ -1891,7 +1897,7 @@ classdef IIWAControl < handle
             plot(ax(4), obj.MeanError.t, 100*obj.MaxEucError.xdot.pos, 'b');
             plot(ax(4), obj.MeanError.t, 100*obj.MinEucError.xdot.pos, 'b');
             plot(ax(4), obj.MeanError.t, 100*obj.MeanEucError.xdot.pos, 'b', 'LineWidth', 2);
-            title(ax(4), ['Error posición vel. cartesiana = ', num2str(rms(100*obj.MeanEucError.xdot.pos)), 'cm/s'])
+            title(ax(4), ['Error posiciï¿½n vel. cartesiana = ', num2str(rms(100*obj.MeanEucError.xdot.pos)), 'cm/s'])
             ylabel(ax(4), 'E(dx)[cm]')
             xlabel(ax(4), 't[s]')
             f = get(ax(4), 'Children');
@@ -1907,8 +1913,8 @@ classdef IIWAControl < handle
                 plot(ax(rxcoord+4), obj.MeanError.t, rad2deg(obj.MaxError.xdot.ori(rxcoord,:)), 'r');
                 plot(ax(rxcoord+4), obj.MeanError.t, rad2deg(obj.MinError.xdot.ori(rxcoord,:)), 'r');
                 plot(ax(rxcoord+4), obj.MeanError.t, rad2deg(obj.MeanError.xdot.ori(rxcoord,:)), 'r', 'LineWidth', 2);
-                title(ax(rxcoord+4), ['Error velocidad cartesiana R', obj.NameCoord(rxcoord+3),' = ', num2str(rms(rad2deg(obj.MeanError.xdot.ori(rxcoord,:)))), 'º/s'], 'FontSize', 10.5)
-                ylabel(ax(rxcoord+4), 'E(dx)[º]')
+                title(ax(rxcoord+4), ['Error velocidad cartesiana R', obj.NameCoord(rxcoord+3),' = ', num2str(rms(rad2deg(obj.MeanError.xdot.ori(rxcoord,:)))), 'ï¿½/s'], 'FontSize', 10.5)
+                ylabel(ax(rxcoord+4), 'E(dx)[ï¿½]')
                 xlabel(ax(rxcoord+4), 't[s]')
             end
             ax(8) = subplot(2,2,4, 'Parent', display);
@@ -1918,8 +1924,8 @@ classdef IIWAControl < handle
             plot(ax(8), obj.MeanError.t, rad2deg(obj.MaxEucError.xdot.ori), 'r');
             plot(ax(8), obj.MeanError.t, rad2deg(obj.MinEucError.xdot.ori), 'r');
             plot(ax(8), obj.MeanError.t, rad2deg(obj.MeanEucError.xdot.ori), 'r', 'LineWidth', 2);
-            title(ax(8), ['Error orientación vel. cartesiana = ', num2str(rms(rad2deg(obj.MeanEucError.xdot.ori))), 'º/s'])
-            ylabel(ax(8), 'E(dx)[º]')
+            title(ax(8), ['Error orientaciï¿½n vel. cartesiana = ', num2str(rms(rad2deg(obj.MeanEucError.xdot.ori))), 'ï¿½/s'])
+            ylabel(ax(8), 'E(dx)[ï¿½]')
             xlabel(ax(8), 't[s]')
             f = get(ax(8), 'Children');
             legend(f(1), 'Error medio')

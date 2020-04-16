@@ -60,8 +60,6 @@ iiwaCommandASrv_cli.ResultFcn = @(~,msg) disp('IiwaCommand action server result 
 [toJointTrajSrv_cli, toJointTrajSrv_msg] = rossvcclient('/msg_transform_helper/to_joint_traj');
 [fromJointStateVecSrv_cli, fromJointStateVecSrv_msg] = rossvcclient('/msg_transform_helper/from_joint_state_vec');
 [toJointStateVecSrv_cli, toJointStateVecSrv_msg] = rossvcclient('/msg_transform_helper/to_joint_state_vec');
-[jointTorque_pub, jt_msg] = rospublisher('/iiwa_gazebo/joint_command');
-jointState_sub = rossubscriber('/iiwa_gazebo/joint_state');
 [mdlConfig_cli, mdlConfig_msg] = rossvcclient('gazebo/set_model_configuration');
 
 %% Create an LBR RigidBodyTree Object from URDF
@@ -98,10 +96,10 @@ waitForServer(iiwaCommandASrv_cli);
 iiwaCommandASrv_msg.TrajectoryDesired = jointTrajMsg.JointTrajectory;
 
 %Fill mdl config msg
-mdlConfig_msg.ModelName = 'mw_iiwa';
+mdlConfig_msg.ModelName = 'iiwa';
 mdlConfig_msg.UrdfParamName = 'robot_description';
-mdlConfig_msg.JointNames = {'mw_iiwa_joint_1', 'mw_iiwa_joint_2', 'mw_iiwa_joint_3',...
-                  'mw_iiwa_joint_4', 'mw_iiwa_joint_5', 'mw_iiwa_joint_6', 'mw_iiwa_joint_7'};
+mdlConfig_msg.JointNames = {'iiwa_joint_1', 'iiwa_joint_2', 'iiwa_joint_3',...
+                  'iiwa_joint_4', 'iiwa_joint_5', 'iiwa_joint_6', 'iiwa_joint_7'};
 mdlConfig_msg.JointPositions = homeConfiguration(lbr);
 
 %% Move the robot
