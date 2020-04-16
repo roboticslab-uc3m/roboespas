@@ -11,10 +11,10 @@
     <!-- |    controllers for the single joints, using the "trajectory" argument.            | -->
     <!-- ===================================================================================== -->
     
-    <arg name="hardware_interface" default="PositionJointInterface" />
+    <arg name="hardware_interface" default="EffortJointInterface" />
     <arg name="robot_name" default="iiwa" />
     <arg name="model" default="iiwa14"/>
-    <arg name="trajectory" default="true"/>
+    <arg name="trajectory" default="false"/>
     
     <!-- Loads the Gazebo world. -->
     <include file="$(find iiwa_gazebo)/launch/iiwa_world.launch">
@@ -36,7 +36,7 @@
     </group>
     
     <!-- Spawn controllers - it uses an Effort Controller for each joint -->
-    <group ns="$(arg robot_name)" unless="$(arg trajectory)">
+    <!--group ns="$(arg robot_name)" unless="$(arg trajectory)">
         
         <include file="$(find iiwa_control)/launch/iiwa_control.launch">
             <arg name="hardware_interface" value="$(arg hardware_interface)" />
@@ -52,7 +52,7 @@
             <arg name="model" value="$(arg model)" />
         </include>
         
-    </group>
+    </group-->
     
     
 </launch>

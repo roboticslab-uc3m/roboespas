@@ -1,1 +1,4 @@
 /iiwa_command/sample_time: 0.001
+/parametro_prueba: 'iiwa_command'
+/config_gazebo/max_update_rate: 1000.0
+/config_gazebo/time_step: 0.0001

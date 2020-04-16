@@ -1,10 +1,12 @@
 <launch>
 
-    <!-- roslaunch iiwa_gazebo iiwa_world.launch-->
-    <include file="$(find iiwa_gazebo)/launch/iiwa_world.launch" />
     
     <!--Load parameters-->
     <rosparam command="load" file="$(find iiwa_command)/config/params.yaml"/>
+
+    <!-- roslaunch iiwa_gazebo iiwa_world.launch-->
+    <include file="$(find iiwa_gazebo)/launch/iiwa_gazebo.launch" />
+
 
     <!-- Launch iiwa_command nodes -->
     <node pkg="iiwa_command" name="iiwa_command" type="iiwa_command" respawn="true" output="screen" launch-prefix="xterm -e"/>

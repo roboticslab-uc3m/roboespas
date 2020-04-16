@@ -4,13 +4,14 @@
   <!--Import the lbr iiwa macro -->
   <xacro:include filename="$(find iiwa_gazebo)/urdf/iiwa14.xacro"/>
   
+  <xacro:arg name="hardware_interface" default="PositionJointInterface"/>   
   <xacro:arg name="robot_name" default="iiwa"/>
 
   <!-- Fix to world just for testing -->
   <link name="world"/>
 
   <!--iiwa-->
-  <xacro:iiwa14 robot_name="$(arg robot_name)" parent="world">
+  <xacro:iiwa14 hardware_interface="$(arg hardware_interface)" robot_name="$(arg robot_name)" parent="world">
     <origin xyz="0 0 0.0" rpy="0 0 0"/>
   </xacro:iiwa14>
 
