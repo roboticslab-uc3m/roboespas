@@ -8,6 +8,7 @@
     <arg name="gui" default="true"/>
     <arg name="headless" default="false"/>
     <arg name="debug" default="false"/>
+    <arg name="hardware_interface" default="PositionJointInterface"/>
     <arg name="robot_name" default="mw_iiwa" />
     <arg name="model" default="iiwa14"/>
     
