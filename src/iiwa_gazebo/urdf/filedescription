@@ -5,9 +5,5 @@ iiwa_gazebo/launch/iiwa14_upload.launch
     ├── iiwa14.xacro
     │   ├── iiwa_gazebo/meshes folder
     │   ├── iiwa.gazebo.xacro
-    │   ├── transmissions.xacro
     │   └── utilities.xacro
     └── materials.xacro
-
-To generate iiwa14.urdf execute:
-rosrun xacro xacro --inorder /home/leytha/roboespas_ws/src/iiwa_gazebo/urdf/iiwa14.urdf.xacro robot_name:="iiwa" hardware_interface:="PositionJointInterface" -o ~/roboespas_ws/src/iiwa_gazebo/urdf/iiwa14.urdf
