@@ -50,7 +50,8 @@ class IiwaCommandNode
         read_joint_state=iiwa_gazebo_state_msg;
     }
     void callback_iiwa_command(const iiwa_command::IiwaCommandGoalConstPtr &goal)
-    {       
+    {   
+        ROS_INFO("IiwaCommand action server active");
         //PD Gains
         Eigen::VectorXd weights(7);
         Eigen::VectorXd Kp(7);
@@ -58,6 +59,12 @@ class IiwaCommandNode
         weights << 0.3, 0.8, 0.6, 0.6, 0.3, 0.2, 0.1;
         Kp = 100*weights;
         Kd = 2*weights;
+
+        //Check sample_time from parameter server
+        if (!nh.getParam("/iiwa_command/sample_time", sample_time))
+        {
+            ROS_ERROR("Failed to read 'sample_time' on param server");
+        }
 
         //Variables used
         std::vector<trajectory_msgs::JointTrajectoryPoint> goal_points = goal->trajectory_desired.points;
@@ -74,7 +81,6 @@ class IiwaCommandNode
         while (i<goal_points.size())
         {
             //read_joint_state may change during this iteration, save it in a different variable to fix it
-            std::cout << sample_time << std::endl;
             sensor_msgs::JointState joint_state=read_joint_state;
             double time_from_start=(ros::Time::now()-tStartTraj).toSec(); 
             //Get the index in the goal_points vector corresponding to the current time
@@ -107,12 +113,16 @@ class IiwaCommandNode
             //Command gazebo robot
             iiwa_gazebo_command_pub.publish(point_command);
             //Sleep for a fixed amount of time, in this case we use the sample_time but it doesn't matter if you raise it a bit more/less, as the next chosen index will depend on the amount of time passed since the beginning and the command sent will adjust to it, not depending on the control time
-            std::cout << i << std::endl;
+            as_feedback.joint_state = joint_state;
+            as_feedback.point_commanded = point_command;
+            as_feedback.time_from_start=time_from_start;
+            as.publishFeedback(as_feedback);
             ros::Duration(sample_time).sleep();
         }
         as_result.trajectory_joint_state=trajectory_joint_state;
         as_result.trajectory_commanded=trajectory_commanded;
         as.setSucceeded(as_result);
+        ROS_INFO("IiwaCommand action server result sent");
     }
 };
 

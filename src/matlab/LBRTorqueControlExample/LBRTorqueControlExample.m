@@ -24,7 +24,7 @@
 
 % Generate desired motion trajectory for each joint.
 % exampleHelperJointTrajectoryGeneration generates joint trajectories from 
-% given time and joint configuration waypoints. 
+% given ti.me and joint configuration waypoints. 
 % The trajectories are generated using pchip so that the interpolated 
 % joint position does not violate joint limits as long as the waypoints do not.
 
@@ -53,79 +53,58 @@ ptree=rosparam;
 % services to create and read the joint_trajectory messages faster
 [iiwaCommandASrv_cli, iiwaCommandASrv_msg] = rosactionclient('iiwa_command');
 iiwaCommandASrv_cli.ActivationFcn = @(~) disp('IiwaCommand action server active');
-iiwaCommandASrv_cli.FeedbackFcn = @(~,msg) disp('IiwaCommand feedback received');
+iiwaCommandASrv_cli.FeedbackFcn = @(~,msg) (1); %Clean feedback function so it doesn't print the result every time it receives something
 iiwaCommandASrv_cli.ResultFcn = @(~,msg) disp('IiwaCommand action server result received');
 
-[fromJointTrajSrv_cli, fromJointTrajSrv_msg] = rossvcclient('/msg_transform_helper/from_joint_traj');
-[toJointTrajSrv_cli, toJointTrajSrv_msg] = rossvcclient('/msg_transform_helper/to_joint_traj');
-[fromJointStateVecSrv_cli, fromJointStateVecSrv_msg] = rossvcclient('/msg_transform_helper/from_joint_state_vec');
-[toJointStateVecSrv_cli, toJointStateVecSrv_msg] = rossvcclient('/msg_transform_helper/to_joint_state_vec');
 [mdlConfig_cli, mdlConfig_msg] = rossvcclient('gazebo/set_model_configuration');
+plotter=IiwaPlotter();
 
 %% Create an LBR RigidBodyTree Object from URDF
-lbr = importrobot('iiwa14.urdf');
-lbr.DataFormat = 'row';
-lbr.Gravity = [0 0 -9.80];
 sample_time = get(ptree, '/iiwa_command/sample_time');
-tt = 0:sample_time:5;
-
+iiwa_robot = importrobot('iiwa14.urdf');
+iiwa_robot.DataFormat = 'row';
+iiwa_robot.Gravity = [0 0 -9.80];
 load lbr_waypoints.mat
-
-[qDesired, qdotDesired, qddotDesired, tt] = exampleHelperJointTrajectoryGeneration(tWaypoints, qWaypoints, tt);
-sample_time_new=tt(2)-tt(1);
-if (abs(max(tt(2:end)-tt(1:end-1))-sample_time)>sample_time)
-    disp('error with tt')
-end
-tauDesired = zeros(size(qDesired,1),7);
-for i = 1:size(qDesired,1)
-    tauDesired(i,:) = inverseDynamics(lbr, qDesired(i,:), qdotDesired(i,:), qddotDesired(i,:));
-end
+traj_des=IiwaTrajectory(iiwa_robot, 'desired', tWaypoints, qWaypoints, 0:sample_time:5);
 
 %% Reset LBR to Home Configuration in Gazebo
-%Build joint trajectory msg
-toJointTrajSrv_msg.JointNames={'joint_1', 'joint_2', 'joint_3', 'joint_4', 'joint_5', 'joint_6', 'joint_7'};
-toJointTrajSrv_msg.Efforts=reshape(tauDesired', size(tauDesired,1)*size(tauDesired,2), 1);
-toJointTrajSrv_msg.Positions=reshape(qDesired', size(qDesired,1)*size(qDesired,2), 1);
-toJointTrajSrv_msg.Velocities=reshape(qdotDesired', size(qdotDesired,1)*size(qdotDesired,2), 1);
-toJointTrajSrv_msg.Accelerations=reshape(qddotDesired', size(qddotDesired,1)*size(qddotDesired,2), 1);
-toJointTrajSrv_msg.Stamps=tt;
-jointTrajMsg=toJointTrajSrv_cli.call(toJointTrajSrv_msg);
-
 % Fill action client desired trajectory
 waitForServer(iiwaCommandASrv_cli);
-iiwaCommandASrv_msg.TrajectoryDesired = jointTrajMsg.JointTrajectory;
+iiwaCommandASrv_msg.TrajectoryDesired = IiwaMsgTransformer.toJointTraj(traj_des);
 
 %Fill mdl config msg
 mdlConfig_msg.ModelName = 'iiwa';
 mdlConfig_msg.UrdfParamName = 'robot_description';
 mdlConfig_msg.JointNames = {'iiwa_joint_1', 'iiwa_joint_2', 'iiwa_joint_3',...
                   'iiwa_joint_4', 'iiwa_joint_5', 'iiwa_joint_6', 'iiwa_joint_7'};
-mdlConfig_msg.JointPositions = homeConfiguration(lbr);
+mdlConfig_msg.JointPositions = homeConfiguration(iiwa_robot);
 
-%% Move the robot
+%% Move the robot while plotting the feedback
 call(mdlConfig_cli, mdlConfig_msg);
+figure;
+hold on;
+
+% Comment this to stop plot while executing
+iiwaCommandASrv_cli.FeedbackFcn=@(~, msg) plotter.effortPoint(msg);
 resultMsg = sendGoalAndWait(iiwaCommandASrv_cli, iiwaCommandASrv_msg);
 
 %% Compare torques
 % Transform into vectors
-fromJointTrajSrv_msg.JointTrajectory=resultMsg.TrajectoryCommanded;
-traj_comm=fromJointTrajSrv_cli.call(fromJointTrajSrv_msg);
-fromJointStateVecSrv_msg.JointStateVec=resultMsg.TrajectoryJointState;
-traj_read=fromJointStateVecSrv_cli.call(fromJointStateVecSrv_msg);
+traj_comm = IiwaTrajectory('commanded', resultMsg.TrajectoryCommanded);
+traj_output = IiwaTrajectory('output', resultMsg.TrajectoryJointState);
 
-data_comm=toDataStruct(traj_comm);
-data_read=toDataStruct(traj_read);
-%%
-figure;
 for i=1:7
     subplot(7,1,i);
-    plot(data_comm.effort(i,:));
+    plot(traj_comm.t, traj_comm.effort(:,i), 'b');
     hold on;
-    plot(data_read.effort(i,:));
+    plot(traj_output.t, traj_output.effort(:,i), 'r');
     legend('commanded', 'read');
 end 
 
 %% Inspect Results
+
 % Plot and inspect the actual joint torques and positions versus the desired values. Note that with the feed-forward torque,
 % the PD torques should oscillate around zero.
-%exampleHelperLBRPlot(i-1, timePoints, feedForwardTorque, pdTorque, Q, QDesired )
+%data_des=toDataStruct(traj_
+plotter.effortWithPD(traj_des, traj_comm);
+%TODO: plotter.position
