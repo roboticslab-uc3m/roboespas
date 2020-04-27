@@ -88,23 +88,14 @@ hold on;
 iiwaCommandASrv_cli.FeedbackFcn=@(~, msg) plotter.effortPoint(msg);
 resultMsg = sendGoalAndWait(iiwaCommandASrv_cli, iiwaCommandASrv_msg);
 
-%% Compare torques
-% Transform into vectors
+% Transform into IiwaTrajectories
 traj_comm = IiwaTrajectory('commanded', resultMsg.TrajectoryCommanded);
 traj_output = IiwaTrajectory('output', resultMsg.TrajectoryJointState);
 
-for i=1:7
-    subplot(7,1,i);
-    plot(traj_comm.t, traj_comm.effort(:,i), 'b');
-    hold on;
-    plot(traj_output.t, traj_output.effort(:,i), 'r');
-    legend('commanded', 'read');
-end 
-
 %% Inspect Results
 
+plotter.joint_efforts(traj_comm, traj_output);
 % Plot and inspect the actual joint torques and positions versus the desired values. Note that with the feed-forward torque,
 % the PD torques should oscillate around zero.
-%data_des=toDataStruct(traj_
 plotter.effortWithPD(traj_des, traj_comm);
-%TODO: plotter.position
+plotter.joint_positions(traj_comm, traj_output);
