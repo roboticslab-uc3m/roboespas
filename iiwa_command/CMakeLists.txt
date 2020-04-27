@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   genmsg
   actionlib_msgs
   actionlib
+  message_generation
 )
 
 ## System dependencies are found with CMake's conventions
@@ -52,11 +53,11 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
+#add_message_files(
+#    FILES
 #   Message1.msg
 #   Message2.msg
-# )
+#)
 
 ## Generate services in the 'srv' folder
 add_service_files(
@@ -65,8 +66,6 @@ add_service_files(
     ToJointTrajectory.srv
     FromJointStateVec.srv
     ToJointStateVec.srv
-#   Service1.srv
-#   Service2.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -116,7 +115,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES iiwa_command
-  CATKIN_DEPENDS roscpp rospy sensor_msgs std_msgs trajectory_msgs
+  CATKIN_DEPENDS roscpp rospy sensor_msgs std_msgs trajectory_msgs message_generation message_runtime actionlib_msgs
 #  DEPENDS system_lib
 )
 
@@ -145,9 +144,10 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/iiwa_command_node.cpp)
-add_executable(iiwa_command src/iiwa_command_node.cpp)
 add_executable(msg_transform_helper src/msg_transform_helper_node.cpp)
+add_executable(iiwa_command src/iiwa_command_node.cpp)
+add_dependencies(iiwa_command ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(msg_transform_helper ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -163,8 +163,8 @@ add_executable(msg_transform_helper src/msg_transform_helper_node.cpp)
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
-target_link_libraries(iiwa_command ${catkin_LIBRARIES})
 target_link_libraries(msg_transform_helper ${catkin_LIBRARIES})
+target_link_libraries(iiwa_command ${catkin_LIBRARIES})
 
 #############
 ## Install ##
