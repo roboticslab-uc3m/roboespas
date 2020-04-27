@@ -26,12 +26,15 @@ classdef IiwaPlotter < handle
         end
         function effortWithPD(traj_des, traj_comm)
             figure;
-            pdTorque=traj_comm.effort - traj_des.effort;
+            ts_des=timeseries(traj_comm.effort, traj_comm.t);
+            ts_comm=timeseries(traj_des.effort, traj_des.t);
+            [ts_des, ts_comm] = synchronize(ts_des, ts_comm, 'Intersection');
+            ts_pdTorque=ts_comm-ts_des;
             for j = 1:7
                 subplot(7,1,j);
                 plot(traj_des.t, traj_des.effort(:,j), IiwaPlotter.ColorDesired); hold on
-                plot(traj_des.t, pdTorque(:,j), IiwaPlotter.ColorOthers);
-                plot(traj_des.t, traj_comm.effort(:,j), IiwaPlotter.ColorCommanded);
+                plot(ts_pdTorque.Time, ts_pdTorque.Data(:,j), IiwaPlotter.ColorOthers);
+                plot(traj_comm.t, traj_comm.effort(:,j), IiwaPlotter.ColorCommanded);
                 if j == 1
                     legend('Torque desired (N)','PD torque','Total torque');
                     title('Commanded and output efforts with PD efforts')

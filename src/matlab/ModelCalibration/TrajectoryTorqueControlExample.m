@@ -40,7 +40,7 @@
 % Compose the required service message. It includes the joint names and 
 % corresponding joint positions to send to Gazebo. Call the service using 
 % this message.
-%% Connect to ROS Network from MATLAB&reg;
+%% Connect to ROS Network
 % Connect with ROS master
 if (robotics.ros.internal.Global.isNodeActive)
     rosshutdown;
@@ -60,12 +60,12 @@ iiwaCommandASrv_cli.ResultFcn = @(~,msg) disp('IiwaCommand action server result 
 plotter=IiwaPlotter();
 
 %% Create an LBR RigidBodyTree Object from URDF
-sample_time = get(ptree, '/iiwa_command/sample_time');
+control_step_size = get(ptree, '/iiwa_command/control_step_size');
 iiwa_robot = importrobot('iiwa14.urdf');
 iiwa_robot.DataFormat = 'row';
 iiwa_robot.Gravity = [0 0 -9.80];
 load lbr_waypoints.mat
-traj_des=IiwaTrajectory(iiwa_robot, 'desired', tWaypoints, qWaypoints, 0:sample_time:5);
+traj_des=IiwaTrajectory(iiwa_robot, 'desired', tWaypoints, qWaypoints, 0:control_step_size:5);
 
 %% Reset LBR to Home Configuration in Gazebo
 % Fill action client desired trajectory

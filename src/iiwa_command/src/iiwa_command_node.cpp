@@ -28,7 +28,7 @@ class IiwaCommandNode
     ros::Publisher iiwa_gazebo_command_pub;
     sensor_msgs::JointState read_joint_state;
     //Parameters
-    double sample_time;
+    double control_step_size;
 
     public:
 
@@ -40,9 +40,9 @@ class IiwaCommandNode
         ROS_INFO("Action server %s started", name.c_str());
         iiwa_gazebo_command_pub = nh.advertise<trajectory_msgs::JointTrajectoryPoint>("/iiwa_gazebo/joint_command", 1000, false);
         iiwa_gazebo_state_sub = nh.subscribe("/iiwa_gazebo/joint_state", 1000, &IiwaCommandNode::callback_iiwa_gazebo_state, this);
-        if (!nh.getParam("/iiwa_command/sample_time", sample_time))
+        if (!nh.getParam("/iiwa_command/control_step_size", control_step_size))
         {
-            ROS_ERROR("Failed to read 'sample_time' on param server");
+            ROS_ERROR("Failed to read 'control_step_size' on param server");
         }
     }
     void callback_iiwa_gazebo_state(const sensor_msgs::JointState& iiwa_gazebo_state_msg)
@@ -60,10 +60,10 @@ class IiwaCommandNode
         Kp = 100*weights;
         Kd = 2*weights;
 
-        //Check sample_time from parameter server
-        if (!nh.getParam("/iiwa_command/sample_time", sample_time))
+        //Check control_step_size from parameter server
+        if (!nh.getParam("/iiwa_command/control_step_size", control_step_size))
         {
-            ROS_ERROR("Failed to read 'sample_time' on param server");
+            ROS_ERROR("Failed to read 'control_step_size' on param server");
         }
 
         //Variables used
@@ -84,7 +84,7 @@ class IiwaCommandNode
             sensor_msgs::JointState joint_state=read_joint_state;
             double time_from_start=(ros::Time::now()-tStartTraj).toSec(); 
             //Get the index in the goal_points vector corresponding to the current time
-            i = time_from_start/sample_time;
+            i = time_from_start/control_step_size;
             //If the index is outside the goal_points vector, exit the while loop
             if (i>=goal_points.size()) 
                 break;
@@ -112,12 +112,12 @@ class IiwaCommandNode
             trajectory_joint_state.push_back(joint_state);
             //Command gazebo robot
             iiwa_gazebo_command_pub.publish(point_command);
-            //Sleep for a fixed amount of time, in this case we use the sample_time but it doesn't matter if you raise it a bit more/less, as the next chosen index will depend on the amount of time passed since the beginning and the command sent will adjust to it, not depending on the control time
+            //Sleep for a fixed amount of time, in this case we use the control_step_size but it doesn't matter if you raise it a bit more/less, as the next chosen index will depend on the amount of time passed since the beginning and the command sent will adjust to it, not depending on the control time
             as_feedback.joint_state = joint_state;
             as_feedback.point_commanded = point_command;
             as_feedback.time_from_start=time_from_start;
             as.publishFeedback(as_feedback);
-            ros::Duration(sample_time).sleep();
+            ros::Duration(control_step_size).sleep();
         }
         as_result.trajectory_joint_state=trajectory_joint_state;
         as_result.trajectory_commanded=trajectory_commanded;
