@@ -11,6 +11,8 @@
 
 #define HOLD_FRAMES 100
 
+//Based on Matlab tutorial https://es.mathworks.com/help/robotics/examples/control-lbr-manipulator-motion-through-joint-torque.html
+
 namespace gazebo
 {
     class ModelPush : public ModelPlugin
