@@ -87,12 +87,20 @@ namespace gazebo
                 wrenches.push_back(joints[i]->GetForceTorque(1));
             }
             //Torques in each joint, check the rotation direction for each joint at home position
-            js_msg.effort.push_back(-wrenches[0].body2Torque.z);
+/*            js_msg.effort.push_back(-wrenches[0].body2Torque.z);
             js_msg.effort.push_back(-wrenches[1].body2Torque.y);
             js_msg.effort.push_back(-wrenches[2].body2Torque.z);
             js_msg.effort.push_back(wrenches[3].body2Torque.y);
             js_msg.effort.push_back(-wrenches[4].body2Torque.z);
             js_msg.effort.push_back(-wrenches[5].body2Torque.y);
+            js_msg.effort.push_back(-wrenches[6].body2Torque.z);
+*/
+			js_msg.effort.push_back(-wrenches[0].body2Torque.z);
+            js_msg.effort.push_back(wrenches[1].body1Torque.y);
+            js_msg.effort.push_back(-wrenches[2].body2Torque.z);
+            js_msg.effort.push_back(-wrenches[3].body1Torque.y);
+			js_msg.effort.push_back(-wrenches[4].body2Torque.z);
+            js_msg.effort.push_back(wrenches[5].body1Torque.y);
             js_msg.effort.push_back(-wrenches[6].body2Torque.z);
             js_msg.name={"joint_1", "joint_2", "joint_3", "joint_4", "joint_5", "joint_6", "joint_7"};
             js_msg.header.stamp=ros::Time::now();
