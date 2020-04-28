@@ -37,6 +37,9 @@ This way Matlab will send joint torque values all together as a trajectory.
 - In Matlab, modify the IP in the file ```TrajectoryTorqueControlExample.m``` (lines 6-7) inside the ```TorqueControlExample``` folder, then play the script and watch IIWA in Gazebo simulator moving.
 
 
-## Data used
+## Other files used
 ### Dataset trajectories:
 https://drive.google.com/drive/folders/1mvBHLigwaf9ykC70j0tyhNbo1mdIiZAx
+
+### Extreme Learning Machine
+https://es.mathworks.com/matlabcentral/fileexchange/69812-extreme-learning-machine-for-classification-and-regression
