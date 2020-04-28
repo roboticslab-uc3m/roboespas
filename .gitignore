@@ -54,4 +54,5 @@ CATKIN_IGNORE
 .catkin_workspace
 src/matlab_gen/
 src_other/
+*.mat
 

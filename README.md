@@ -1,9 +1,10 @@
 - If you haven't created a catkin_workspace, do so
+```
 cd ~
 mkdir your_ws
 cd your_ws
 mkdir src
-
+```
 - Download the packages in the src folder
 ```
 cd ~
