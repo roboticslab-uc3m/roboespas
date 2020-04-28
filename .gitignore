@@ -55,4 +55,5 @@ CATKIN_IGNORE
 src/matlab_gen/
 src_other/
 matlab/RoboespasApp/trials.mat
+matlab_gen/
 

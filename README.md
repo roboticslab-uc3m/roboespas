@@ -23,6 +23,23 @@ roscd
 cd src/
 catkin_make
 ```
+- Re-generate messages (jump to 3 if you have not generate matlab messages before)
+
+1. Delete previously created messages.
+In Matlab prompt
+```
+rosgenmsg('/home/user/your_ws/src/roboespas')
+```
+Open ```javaclasspath.txt``` file that you are linked and delete all the content.
+Delete ```/home/user/your_ws/src/roboespas/matlab_gen``` folder.
+2. Restart Matlab
+3. Generate messages
+```
+rosgenmsg('/home/user/your_ws/src/roboespas')
+```
+Follow the instructions (add to javaclasspath.txt the files given, and add to path the folder)
+4. Restart Matlab.
+
 ## Torque command example
 ### Option 1: Control iiwa_gazebo without using iiwa_command action server
 This way Matlab will send joint torque values point by point.

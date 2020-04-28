@@ -18,10 +18,12 @@ classdef IiwaMsgTransformer < handle
                 iiwa_traj.qdotdot=reshape(input.Accelerations, 7, size(input.Accelerations,1)/7, 1)';
                 iiwa_traj.effort=reshape(input.Efforts, 7, size(input.Efforts,1)/7, 1)';
             elseif isa(input, 'robotics.ros.msggen.trajectory_msgs.JointTrajectory')
+                %De jointTrajectory a iiwaTrajectory
                 fromJointTrajSrv_msg.JointTrajectory=input;
                 fromJointTrajSrv_res=fromJointTrajSrv_cli.call(fromJointTrajSrv_msg);
                 iiwa_traj=IiwaMsgTransformer.toIiwaTrajectory(name, fromJointTrajSrv_res);
             elseif isa(input, 'robotics.ros.msggen.sensor_msgs.JointState')
+                %De vector de joint states a iiwatrajectory
                 fromJointStateVecSrv_msg.JointStateVec=input;
                 fromJointStateSrv_res=fromJointStateVecSrv_cli.call(fromJointStateVecSrv_msg);
                 iiwa_traj=IiwaMsgTransformer.toIiwaTrajectory(name, fromJointStateSrv_res);
