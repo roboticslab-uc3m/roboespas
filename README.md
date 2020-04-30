@@ -32,7 +32,9 @@ rosgenmsg('/home/user/your_ws/src/roboespas')
 ```
 Open ```javaclasspath.txt``` file that you are linked and delete all the content.
 Delete ```/home/user/your_ws/src/roboespas/matlab_gen``` folder.
+
 2. Restart Matlab
+
 3. Generate messages
 ```
 rosgenmsg('/home/user/your_ws/src/roboespas')
