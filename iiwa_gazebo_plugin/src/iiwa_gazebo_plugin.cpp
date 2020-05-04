@@ -9,7 +9,7 @@
 #include "sensor_msgs/JointState.h"
 #include "trajectory_msgs/JointTrajectoryPoint.h"
 
-#define HOLD_FRAMES 100
+#define HOLD_FRAMES 10
 
 //Based on Matlab tutorial https://es.mathworks.com/help/robotics/examples/control-lbr-manipulator-motion-through-joint-torque.html
 
@@ -26,8 +26,8 @@ namespace gazebo
         int pastCommandCounter;
         int pastReadCounter;
         std::vector<float> pastCommandJointTorque;
-        std::vector<float> pastCommandJointPosition;
-        std::vector<float> pastReadJointPosition;
+        std::vector<float> pastCommandJointPosition= {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        std::vector<float> pastReadJointPosition = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
         int nFrame=1;
 
         public: void JointStateCallback(const trajectory_msgs::JointTrajectoryPoint::ConstPtr& msg)
@@ -52,7 +52,7 @@ namespace gazebo
             {
                 ROS_INFO("%f", pastCommandJointTorque[i]);
             }
-            ROS_INFO("joint_position");
+            ROS_INFO("joint_position command");
             for (int i=0; i<pastCommandJointPosition.size(); i++)
             {
                 ROS_INFO("%f", pastCommandJointPosition[i]);
@@ -125,26 +125,12 @@ namespace gazebo
                 }
                 else
                 {
-                    if (this->applyPastRead)
+                    this->applyPastCommand = true;
+                    this->pastCommandCounter = 0;
+                    ROS_INFO("joint_position hold");
+                    for (int i=0; i<pastCommandJointPosition.size(); i++)
                     {
-                        for (int i=0; i<joints.size(); i++)
-                        {
-                            joints[i]->SetPosition(0, this->pastReadJointPosition[i]);
-                        }
-                        this->pastReadCounter += 1;
-                        if (this->pastReadCounter >= HOLD_FRAMES) 
-                        { 
-                            this->applyPastRead = false;
-                        }
-                    }
-                    else
-                    {
-                        this->pastReadCounter +=1;
-                        if (this->pastReadCounter >= HOLD_FRAMES*2)
-                        {
-                            this->pastReadCounter = 0;
-                            this->applyPastRead = true;
-                        }
+                        ROS_INFO("%f", pastCommandJointPosition[i]);
                     }
                 }
                 
