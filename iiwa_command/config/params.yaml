@@ -1,6 +1,8 @@
 /iiwa_command/control_step_size: 0.001
-/iiwa_gazebo_plugin/control_type: joint_position #any other thing->joint_position
+/iiwa_gazebo_plugin/control_type: joint_position #joint_position*/joint_torque
+/iiwa_gazebo_plugin/max_joint_position_inc: 0.003
 /iiwa_limits/cartesian_velocity: 250 #mm/s
 /iiwa_limits/joint_position: [170.0, 120.0, 170.0, 120.0, 170.0, 120.0, 175.0]
 /iiwa_limits/joint_velocity: [75.0, 75.0, 90.0, 90.0, 144.0, 135.0, 135.0]
 /iiwa_limits/joint_torque: [176.0, 176.0, 110.0, 110.0, 110.0, 40.0, 40.0]
+

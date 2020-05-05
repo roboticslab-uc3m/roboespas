@@ -4,10 +4,12 @@
 #include <gazebo/common/common.hh>
 #include <stdio.h>
 #include <iostream>
+#include <cmath> 
 
 #include "ros/ros.h"
 #include "sensor_msgs/JointState.h"
 #include "trajectory_msgs/JointTrajectoryPoint.h"
+
 
 #define HOLD_FRAMES 10
 
@@ -26,9 +28,10 @@ namespace gazebo
         int pastCommandCounter;
         int pastReadCounter;
         std::vector<float> pastCommandJointTorque;
-        std::vector<float> pastCommandJointPosition= {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-        std::vector<float> pastReadJointPosition = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        std::vector<float> pastCommandJointPosition= {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
         int nFrame=1;
+        std::string control_type = "joint_position"; //It is read from parameters server initially and it can be "joint_position" or "joint_torque"
+        float max_joint_position_inc = 0.003;
 
         public: void JointStateCallback(const trajectory_msgs::JointTrajectoryPoint::ConstPtr& msg)
         {
@@ -43,10 +46,31 @@ namespace gazebo
             {
                 this->pastCommandJointTorque.push_back(msg->effort[i]);
             }
+            //Check the commanded position is in the range of feasible joint positions
+            bool in_range = true;
+            ROS_INFO("diff: ");
             for (int i=0; i < msg->positions.size(); i++)
             {
-                this->pastCommandJointPosition.push_back(msg->positions[i]);
+                float diff=std::abs(msg->positions[i]-pastCommandJointPosition[i+1]);
+                ROS_INFO("%f", diff);
+                if (diff > max_joint_position_inc)//
+                {
+                    in_range=false;
+                }
             }
+            ROS_INFO("in range: %d", in_range);
+            if (in_range)
+            {
+                for (int i=0; i < msg->positions.size(); i++)
+                {
+                    this->pastCommandJointPosition.push_back(msg->positions[i]);
+                }
+            }
+            else
+            {
+                ROS_ERROR("Joint position commanded not in range.");
+            }
+            /*
             ROS_INFO("joint_torque");
             for (int i=0; i<pastCommandJointTorque.size(); i++)
             {
@@ -57,7 +81,7 @@ namespace gazebo
             {
                 ROS_INFO("%f", pastCommandJointPosition[i]);
             }
-            ROS_INFO("--");
+            ROS_INFO("--");*/
         }
 
         public: 
@@ -75,7 +99,8 @@ namespace gazebo
             this->joint_torque_sub = nh->subscribe("joint_command", 1, &ModelPush::JointStateCallback, this);
             this->pastCommandCounter = 0;
             this->applyPastCommand = false;
-
+            nh->getParam("/iiwa_gazebo_plugin/control_type", control_type);
+            nh->getParam("/iiwa_gazebo_plugin/max_joint_position_inc", max_joint_position_inc); 
             ROS_INFO("Finished loading IIWA Gazebo Command Plugin.");
         }
 
@@ -83,8 +108,6 @@ namespace gazebo
         public: 
         void OnUpdate(const common::UpdateInfo & _info)/*_info*/
         {
-            std::string control_type;
-            nh->getParam("/iiwa_gazebo_plugin/control_type", control_type);
             physics::Joint_V joints = this->model->GetJoints();
             //COMMAND ROBOT DEPENDING ON THE TYPE OF CONTROL
             if (strcmp(control_type.c_str(), "joint_torque")==0)
@@ -127,24 +150,15 @@ namespace gazebo
                 {
                     this->applyPastCommand = true;
                     this->pastCommandCounter = 0;
-                    ROS_INFO("joint_position hold");
-                    for (int i=0; i<pastCommandJointPosition.size(); i++)
-                    {
-                        ROS_INFO("%f", pastCommandJointPosition[i]);
-                    }
                 }
                 
             }
 
-
-
-            //PUBLISH JOINT STATE AND UPDATE PASTREADJOINTPOSITION
-            this->pastReadJointPosition.clear();
+            //PUBLISH JOINT STATE
             sensor_msgs::JointState js_msg;
             std::vector<physics::JointWrench> wrenches;
             for (int i = 1; i < joints.size(); i++)
             {
-                pastReadJointPosition.push_back(joints[i]->GetAngle(0).Radian());
                 js_msg.position.push_back(joints[i]->GetAngle(0).Radian());
                 js_msg.velocity.push_back(joints[i]->GetVelocity(0));
                 wrenches.push_back(joints[i]->GetForceTorque(1));
