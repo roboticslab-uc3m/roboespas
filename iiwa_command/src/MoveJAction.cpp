@@ -34,6 +34,7 @@ class MoveJAction
     std::string robot_mode;
     Eigen::VectorXd max_vel;
     Eigen::VectorXd max_pos;
+    double error_joint_position_stop=0.0001;
 
     public:
 
@@ -83,6 +84,10 @@ class MoveJAction
     void callback_MoveJ(const iiwa_command::MoveJGoalConstPtr &goal)
     {   
         ROS_INFO("MoveJ action server active");
+        //Variables returned
+        trajectory_msgs::JointTrajectory trajectory_commanded;
+        std::vector<sensor_msgs::JointState> trajectory_joint_state;
+
         //Check position is not empty
         if (goal->joint_position.empty())
         {
@@ -90,8 +95,11 @@ class MoveJAction
             as.setSucceeded(as_result);
             return;
         }
-        //Check position is inside the workspace
-        //TODO
+
+        //TODO: Check position is inside the workspace
+        //TODO: Limit velocity
+        //TODO: Move more/less depending on the distance to the goal
+        /*
         //Build trajectory to send
         //Read percentage velocity from parameter server
         double velocity=0.5; //from 0 to 1
@@ -101,86 +109,61 @@ class MoveJAction
         }
         //Calculate joint_velocity for each joint using the velocity percentage and the maximum velocity
         std::cout << velocity << std::endl;
-        Eigen::VectorXd qdot = velocity*max_vel;
+        Eigen::VectorXd qdot = velocity*max_vel;*/
+
 
         //First save in an Eigen vector q_goal and q_curr
         std::vector<double> q_goal_vec=goal->joint_position;
         Eigen::VectorXd q_goal = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned> (q_goal_vec.data(), q_goal_vec.size());
-        Eigen::VectorXd q_curr = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(joint_state.position.data(), joint_state.position.size());
-        //Calculate the difference in radians
-        Eigen::VectorXd q_inc = q_goal-q_curr;
-        //Calculate the minimum time to reach that point given      
-        Eigen::VectorXd times = q_inc.array()/qdot.array();
-        //Get maximum time, which will be the one used
-        double time_used = times.maxCoeff();
-        std::cout << "time: " << time_used << std::endl;
         //Check maximum increment in radians for joint_position
         if (!nh.getParam("/iiwa_limits/joint_position_inc", max_joint_position_inc))
         {
             ROS_ERROR("Failed to read '/iiwa_limits/joint_position_inc' on param server");
         }
-        //Get maximum sample step size for this max increment in radians for joint position
-        double max_sample_step_size = max_joint_position_inc * time_used / q_inc.maxCoeff();
-
-        as.setSucceeded(as_result);
-        /*
-        //Variables used
-        std::vector<trajectory_msgs::JointTrajectoryPoint> goal_points = goal->trajectory_desired.points;
-
-        //Variables returned
-        trajectory_msgs::JointTrajectory trajectory_commanded;
-        std::vector<sensor_msgs::JointState> trajectory_joint_state;
-
-        //Initialize the index that will contain the current index of the trajectory depending on the time that has passed
-        int i=0;
-
-        //Get the time at which the trajectory starts being sent
+        max_joint_position_inc=max_joint_position_inc*0.9; //To ensure its inside the limits
         ros::Time tStartTraj = ros::Time::now();
-        while (i<goal_points.size())
+        bool cont=true;
+        while (cont)
         {
-            //read_joint_state may change during this iteration, save it in a different variable to fix it
-            sensor_msgs::JointState joint_state=joint_state;
-            double time_from_start=(ros::Time::now()-tStartTraj).toSec(); 
-            //Get the index in the goal_points vector corresponding to the current time
-            i = time_from_start/control_step_size;
-            //If the index is outside the goal_points vector, exit the while loop
-            if (i>=goal_points.size()) 
-                break;
-            //Get variables used as Eigen vectors / ROS durations
-            // - Current q_curr / qdot_curr
-            Eigen::VectorXd q_curr = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(joint_state.position.data(), joint_state.position.size());
-            Eigen::VectorXd qdot_curr = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned> (joint_state.velocity.data(), joint_state.velocity.size());
-            // - Desired tau_des, q_des, qdot_des for index i
-            Eigen::VectorXd tau_des = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(goal_points[i].effort.data(), goal_points[i].effort.size());
-            Eigen::VectorXd q_des = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned> (goal_points[i].positions.data(), goal_points[i].positions.size());
-            Eigen::VectorXd qdot_des = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned> (goal_points[i].velocities.data(), goal_points[i].velocities.size());
-            //Calculate tau to correct the desired tau
-            Eigen::VectorXd tau_added = Kp.cwiseProduct(q_des - q_curr) + Kd.cwiseProduct(qdot_des - qdot_curr);
-            //Calculate tau to send and it to point_command
-            Eigen::VectorXd tau_total = tau_des + tau_added;
-            std::vector<double> tau_total_vec(tau_total.data(), tau_total.data() + tau_total.size());
+            sensor_msgs::JointState freezed_joint_state = joint_state;
+            //Get current position;
+            Eigen::VectorXd q_curr = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(freezed_joint_state.position.data(), freezed_joint_state.position.size());
+            //Calculate the difference in radians        
+            Eigen::VectorXd q_diff = q_goal-q_curr;
+            //Calculate the sign (direction) of the movement to be done
+            Eigen::VectorXd sign_diff = q_diff.array().sign();
+            //Check which of the joints are not yet near their goal position
+            Eigen::VectorXd far = (q_diff.array().abs()>=max_joint_position_inc).cast<double>();
+            Eigen::VectorXd near = (q_diff.array().abs()<max_joint_position_inc).cast<double>();
+            //Compose the instantaneous increment commanded
+            Eigen::VectorXd q_inc = max_joint_position_inc*far.cwiseProduct(sign_diff) + q_diff.cwiseProduct(near);
+            //Get the next joint position
+            Eigen::VectorXd q_next = q_curr + q_inc;
+            //Prepare variables to command
             trajectory_msgs::JointTrajectoryPoint point_command;
-            point_command.positions = goal_points[i].positions;
-            point_command.velocities = goal_points[i].velocities;
-            point_command.accelerations = goal_points[i].accelerations;
-            point_command.effort = tau_total_vec;
-            point_command.time_from_start = ros::Duration(time_from_start);
+            for (int i=0; i<q_next.size(); i++)
+            {
+                point_command.positions.push_back(q_next[i]);
+            }
+            ros::Duration time_from_start = ros::Time::now()-tStartTraj;
+            point_command.time_from_start = time_from_start;
+
             //Save point_commanded and joint_state into vectors
             trajectory_commanded.points.push_back(point_command);
-            trajectory_joint_state.push_back(joint_state);
-            //Command gazebo robot
-            iiwa_gazebo_command_pub.publish(point_command);
-            //Sleep for a fixed amount of time, in this case we use the control_step_size but it doesn't matter if you raise it a bit more/less, as the next chosen index will depend on the amount of time passed since the beginning and the command sent will adjust to it, not depending on the control time
-            as_feedback.joint_state = joint_state;
+            trajectory_joint_state.push_back(freezed_joint_state);
+            as_feedback.joint_state = freezed_joint_state;
             as_feedback.point_commanded = point_command;
-            as_feedback.time_from_start=time_from_start;
+            as_feedback.time_from_start=time_from_start.toSec();
             as.publishFeedback(as_feedback);
+            //Command it
+            iiwa_command_pub.publish(point_command);
+            cont = q_diff.array().abs().maxCoeff() > error_joint_position_stop;
             ros::Duration(control_step_size).sleep();
         }
         as_result.trajectory_joint_state=trajectory_joint_state;
         as_result.trajectory_commanded=trajectory_commanded;
         as.setSucceeded(as_result);
-        ROS_INFO("IiwaCommand action server result sent");*/
+        ROS_INFO("MoveJ action server result sent");
     }
 };
 

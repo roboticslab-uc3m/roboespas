@@ -32,7 +32,7 @@ namespace gazebo
         std::vector<float> joint_torque_limit;
         int nFrame=1;
         std::string control_type = "joint_position"; //It is read from parameters server initially and it can be "joint_position" or "joint_torque"
-        float max_joint_position_inc = 0.003;
+        float max_joint_position_inc;
 
         public: void JointStateCallback(const trajectory_msgs::JointTrajectoryPoint::ConstPtr& msg)
         {
@@ -49,17 +49,17 @@ namespace gazebo
             }
             //Check the commanded position is in the range of feasible joint positions
             bool in_range = true;
-            ROS_INFO("diff: ");
+            //ROS_INFO("diff: ");
             for (int i=0; i < msg->positions.size(); i++)
             {
                 float diff=std::abs(msg->positions[i]-pastCommandJointPosition[i+1]);
-                ROS_INFO("%f", diff);
+                //ROS_INFO("past: %f, diff: %f", pastCommandJointPosition[i+1], diff);
                 if (diff > max_joint_position_inc)//
                 {
                     in_range=false;
                 }
             }
-            ROS_INFO("in range: %d", in_range);
+            //ROS_INFO("in range: %d", in_range);
             if (in_range)
             {
                 for (int i=0; i < msg->positions.size(); i++)
@@ -147,8 +147,6 @@ namespace gazebo
                 {
                     for (int i = 0; i < joints.size() && i < this->pastCommandJointPosition.size(); i++)
                     {
-                        // Force is additive (multiple calls to SetForce to the same joint in the same time step 
-                        // will accumulate forces on that Joint)?
                         joints[i]->SetPosition(0, this->pastCommandJointPosition[i]);
                     }
                     this->pastCommandCounter += 1;
