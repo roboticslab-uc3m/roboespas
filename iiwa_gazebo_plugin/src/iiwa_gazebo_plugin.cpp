@@ -29,6 +29,7 @@ namespace gazebo
         int pastReadCounter;
         std::vector<float> pastCommandJointTorque;
         std::vector<float> pastCommandJointPosition= {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        std::vector<float> joint_torque_limit;
         int nFrame=1;
         std::string control_type = "joint_position"; //It is read from parameters server initially and it can be "joint_position" or "joint_torque"
         float max_joint_position_inc = 0.003;
@@ -99,8 +100,18 @@ namespace gazebo
             this->joint_torque_sub = nh->subscribe("joint_command", 1, &ModelPush::JointStateCallback, this);
             this->pastCommandCounter = 0;
             this->applyPastCommand = false;
-            nh->getParam("/iiwa_gazebo_plugin/control_type", control_type);
-            nh->getParam("/iiwa_gazebo_plugin/max_joint_position_inc", max_joint_position_inc); 
+            if (!nh->getParam("/iiwa_command/control_type", control_type))
+            {
+                ROS_ERROR("Failed to read '/iiwa_command/control_type' on param server.");
+            }
+            if (!nh->getParam("/iiwa_limits/joint_position_inc", max_joint_position_inc))
+            {
+                ROS_ERROR("Failed to read '/iiwa_limits/joint_position_inc' on param server");
+            }
+            if (!nh->getParam("/iiwa_limits/joint_torque", joint_torque_limit))
+            {
+                ROS_ERROR("Failed to read '/iiwa_limits/joint_torque' on param server.");
+            }
             ROS_INFO("Finished loading IIWA Gazebo Command Plugin.");
         }
 

@@ -1,8 +1,15 @@
+#Configurable parameters during execution
+/iiwa_command/sample_step_size: 0.005
 /iiwa_command/control_step_size: 0.001
-/iiwa_gazebo_plugin/control_type: joint_position #joint_position*/joint_torque
-/iiwa_gazebo_plugin/max_joint_position_inc: 0.003
+/iiwa_command/velocity: 0.5 #from 0 to 1, where 1 is the maximum limit
+
+
+#Fixed parameters - Don't change during execution
+/iiwa_command/robot_mode: gazebo #fri/iiwa_stack
+/iiwa_command/control_type: joint_position #joint_position*/joint_torque
+/iiwa_limits/joint_position_inc: 0.003
 /iiwa_limits/cartesian_velocity: 250 #mm/s
-/iiwa_limits/joint_position: [170.0, 120.0, 170.0, 120.0, 170.0, 120.0, 175.0]
-/iiwa_limits/joint_velocity: [75.0, 75.0, 90.0, 90.0, 144.0, 135.0, 135.0]
-/iiwa_limits/joint_torque: [176.0, 176.0, 110.0, 110.0, 110.0, 40.0, 40.0]
+/iiwa_limits/joint_position: [170.0, 120.0, 170.0, 120.0, 170.0, 120.0, 175.0] #deg
+/iiwa_limits/joint_velocity: [75.0, 75.0, 90.0, 90.0, 144.0, 135.0, 135.0] #deg/s
+/iiwa_limits/joint_torque: [176.0, 176.0, 110.0, 110.0, 110.0, 40.0, 40.0] #Nm
 

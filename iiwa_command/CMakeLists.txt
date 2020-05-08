@@ -72,6 +72,7 @@ add_service_files(
 add_action_files(
     FILES
     IiwaCommand.action
+    MoveJ.action
 )
 
 ## Generate added messages and services with any dependencies listed here
