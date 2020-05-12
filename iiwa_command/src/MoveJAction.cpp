@@ -33,7 +33,7 @@ class MoveJAction
     double control_step_size;
     std::string robot_mode;
     Eigen::VectorXd max_vel;
-    Eigen::VectorXd max_pos;
+    Eigen::VectorXd q_max;
     double error_joint_position_stop=0.0001;
 
     public:
@@ -52,13 +52,13 @@ class MoveJAction
         {
             ROS_ERROR("Failed to read '/iiwa_command/control_step_size' on param server");
         }
-        std::vector<double> max_pos_vec;
-        if (!nh.getParam("/iiwa_limits/joint_position", max_pos_vec))
+        std::vector<double> q_max_vec;
+        if (!nh.getParam("/iiwa_limits/joint_position", q_max_vec))
         {
             ROS_ERROR("Failed to read '/iiwa_limits/joint_position' on param server");
         }
-        max_pos = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(max_pos_vec.data(), max_pos_vec.size());
-
+        q_max = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(q_max_vec.data(), q_max_vec.size());
+        q_max = q_max*M_PI/180.0;
         std::vector<double> max_vel_vec;
         if (!nh.getParam("/iiwa_limits/joint_velocity", max_vel_vec))
         {
@@ -87,18 +87,30 @@ class MoveJAction
         //Variables returned
         trajectory_msgs::JointTrajectory trajectory_commanded;
         std::vector<sensor_msgs::JointState> trajectory_joint_state;
-
+        //First save in an std::vector
+        std::vector<double> q_goal_vec=goal->joint_position;
         //Check position is not empty
-        if (goal->joint_position.empty())
+        if (q_goal_vec.empty())
         {
             ROS_ERROR("Empty joint position");
             as.setSucceeded(as_result);
             return;
         }
-
-        //TODO: Check position is inside the workspace
+        //Transform into Eigen::VectorXd
+        Eigen::VectorXd q_goal = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned> (q_goal_vec.data(), q_goal_vec.size());
+        //Check position is inside the workspace
+        for (int j=0; j<q_goal.size(); j++)
+        {
+            if (std::abs(q_goal[j]) >= q_max[j])
+            {
+                ROS_ERROR("Goal joint position outside workspace");
+                as_result.trajectory_joint_state=trajectory_joint_state;
+                as_result.trajectory_commanded=trajectory_commanded;
+                as.setSucceeded(as_result);
+                return;
+            }
+        }
         //TODO: Limit velocity
-        //TODO: Move more/less depending on the distance to the goal
         /*
         //Build trajectory to send
         //Read percentage velocity from parameter server
@@ -111,16 +123,12 @@ class MoveJAction
         std::cout << velocity << std::endl;
         Eigen::VectorXd qdot = velocity*max_vel;*/
 
-
-        //First save in an Eigen vector q_goal and q_curr
-        std::vector<double> q_goal_vec=goal->joint_position;
-        Eigen::VectorXd q_goal = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned> (q_goal_vec.data(), q_goal_vec.size());
         //Check maximum increment in radians for joint_position
         if (!nh.getParam("/iiwa_limits/joint_position_inc", max_joint_position_inc))
         {
             ROS_ERROR("Failed to read '/iiwa_limits/joint_position_inc' on param server");
         }
-        max_joint_position_inc=max_joint_position_inc*0.9; //To ensure its inside the limits
+        max_joint_position_inc = max_joint_position_inc*0.9; //To ensure its inside the limits
         ros::Time tStartTraj = ros::Time::now();
         bool cont=true;
         while (cont)
@@ -130,15 +138,28 @@ class MoveJAction
             Eigen::VectorXd q_curr = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(freezed_joint_state.position.data(), freezed_joint_state.position.size());
             //Calculate the difference in radians        
             Eigen::VectorXd q_diff = q_goal-q_curr;
-            //Calculate the sign (direction) of the movement to be done
-            Eigen::VectorXd sign_diff = q_diff.array().sign();
-            //Check which of the joints are not yet near their goal position
-            Eigen::VectorXd far = (q_diff.array().abs()>=max_joint_position_inc).cast<double>();
-            Eigen::VectorXd near = (q_diff.array().abs()<max_joint_position_inc).cast<double>();
-            //Compose the instantaneous increment commanded
-            Eigen::VectorXd q_inc = max_joint_position_inc*far.cwiseProduct(sign_diff) + q_diff.cwiseProduct(near);
+            //Check if it is still far from the goal position
+            Eigen::MatrixXd::Index max_diff_id;
+            double max_diff = q_diff.array().abs().maxCoeff(&max_diff_id);
+            if (max_diff>max_joint_position_inc)
+            {
+                //Scale the difference so all the joints reach its goal position at the same time
+                q_diff = q_diff * max_joint_position_inc/max_diff;
+            }
             //Get the next joint position
-            Eigen::VectorXd q_next = q_curr + q_inc;
+            Eigen::VectorXd q_next = q_curr + q_diff;
+            //Check its inside the workspace
+            for (int j=0; j<q_next.size(); j++)
+            {
+                if (std::abs(q_next[j]) >= q_max[j])
+                {
+                    ROS_ERROR("Intermediate joint position outside workspace");
+                    as_result.trajectory_joint_state=trajectory_joint_state;
+                    as_result.trajectory_commanded=trajectory_commanded;
+                    as.setSucceeded(as_result);
+                    return;
+                }
+            }
             //Prepare variables to command
             trajectory_msgs::JointTrajectoryPoint point_command;
             for (int i=0; i<q_next.size(); i++)
@@ -156,6 +177,7 @@ class MoveJAction
             as_feedback.time_from_start=time_from_start.toSec();
             as.publishFeedback(as_feedback);
             //Command it
+            std::cout << q_next.transpose() << std::endl;
             iiwa_command_pub.publish(point_command);
             cont = q_diff.array().abs().maxCoeff() > error_joint_position_stop;
             ros::Duration(control_step_size).sleep();
