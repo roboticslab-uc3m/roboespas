@@ -27,12 +27,14 @@ namespace gazebo
         bool applyPastRead;
         int pastCommandCounter;
         int pastReadCounter;
-        std::vector<float> pastCommandJointTorque;
-        std::vector<float> pastCommandJointPosition= {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-        std::vector<float> joint_torque_limit;
+        std::vector<double> pastCommandJointTorque;
+        std::vector<double> pastCommandJointPosition= {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        std::vector<double> qtorque_limit;
+        std::vector<double> qinc_max = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        std::vector<double> q_max;
+        double control_step_size;
         int nFrame=1;
         std::string control_type = "joint_position"; //It is read from parameters server initially and it can be "joint_position" or "joint_torque"
-        float max_joint_position_inc;
 
         public: void JointStateCallback(const trajectory_msgs::JointTrajectoryPoint::ConstPtr& msg)
         {
@@ -49,12 +51,11 @@ namespace gazebo
             }
             //Check the commanded position is in the range of feasible joint positions
             bool in_range = true;
-            //ROS_INFO("diff: ");
-            for (int i=0; i < msg->positions.size(); i++)
+            std::vector<double> diff;
+            for (int j=0; j < msg->positions.size(); j++)
             {
-                float diff=std::abs(msg->positions[i]-pastCommandJointPosition[i+1]);
-                //ROS_INFO("past: %f, diff: %f", pastCommandJointPosition[i+1], diff);
-                if (diff > max_joint_position_inc)//
+                diff.push_back(std::abs(msg->positions[j]-pastCommandJointPosition[j+1]));
+                if (std::abs(diff[j]) > qinc_max[j] + 0.001)
                 {
                     in_range=false;
                 }
@@ -71,18 +72,6 @@ namespace gazebo
             {
                 ROS_ERROR("Joint position commanded not in range.");
             }
-            /*
-            ROS_INFO("joint_torque");
-            for (int i=0; i<pastCommandJointTorque.size(); i++)
-            {
-                ROS_INFO("%f", pastCommandJointTorque[i]);
-            }
-            ROS_INFO("joint_position command");
-            for (int i=0; i<pastCommandJointPosition.size(); i++)
-            {
-                ROS_INFO("%f", pastCommandJointPosition[i]);
-            }
-            ROS_INFO("--");*/
         }
 
         public: 
@@ -100,17 +89,41 @@ namespace gazebo
             this->joint_torque_sub = nh->subscribe("joint_command", 1, &ModelPush::JointStateCallback, this);
             this->pastCommandCounter = 0;
             this->applyPastCommand = false;
+            //Read control_type from parameter server
             if (!nh->getParam("/iiwa_command/control_type", control_type))
             {
                 ROS_ERROR("Failed to read '/iiwa_command/control_type' on param server.");
             }
-            if (!nh->getParam("/iiwa_limits/joint_position_inc", max_joint_position_inc))
+            //Read control_step_size from parameter server
+            if (!nh->getParam("/iiwa_command/control_step_size", control_step_size))
             {
-                ROS_ERROR("Failed to read '/iiwa_limits/joint_position_inc' on param server");
+                ROS_ERROR("Failed to read '/iiwa_command/control_step_size' on param server");
             }
-            if (!nh->getParam("/iiwa_limits/joint_torque", joint_torque_limit))
+            //Read limits from parameter server: position, velocity and torque
+            if (!nh->getParam("/iiwa_limits/joint_position", q_max))
+            {
+                ROS_ERROR("Failed to read '/iiwa_limits/joint_position' on param server");
+            }
+            std::vector<double> qdot_max;
+            if (!nh->getParam("/iiwa_limits/joint_velocity", qdot_max))
+            {
+                ROS_ERROR("Failed to read '/iiwa_limits/joint_velocity' on param server");
+            }
+            if (!nh->getParam("/iiwa_limits/joint_torque", qtorque_limit))
             {
                 ROS_ERROR("Failed to read '/iiwa_limits/joint_torque' on param server.");
+            }
+            //Transform position into radians
+            for (int j=0; j<qdot_max.size(); j++)
+            {
+                q_max[j] = q_max[j]*M_PI/180.0;
+            }
+            //Transform velocity into radians per sec and obtain the maximum increment for each joint taking into account the control_step_size
+            for (int j=0; j<qdot_max.size(); j++)
+            {
+                qdot_max[j] = qdot_max[j]*M_PI/180.0;
+                double qinc = qdot_max[j]*control_step_size;
+                qinc_max[j] = qinc;
             }
             ROS_INFO("Finished loading IIWA Gazebo Command Plugin.");
         }
@@ -131,6 +144,7 @@ namespace gazebo
                     {
                         // Force is additive (multiple calls to SetForce to the same joint in the same time step 
                         // will accumulate forces on that Joint)?
+                        //TODO: Limit qtorque
                         joints[i]->SetForce(0, this->pastCommandJointTorque[i]);
                     }
                     this->pastCommandCounter += 1;

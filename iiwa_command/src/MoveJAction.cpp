@@ -134,9 +134,6 @@ class MoveJAction
             Eigen::VectorXd q_diff = q_goal-q_curr;
             //Check if it is far from the goal position
             Eigen::VectorXd ratio_far = q_diff.array()/qinc_max.array();
-            std::cout << "q_diff: " << q_diff.transpose() << std::endl;
-            std::cout << "qinc_max: " << qinc_max.transpose() << std::endl;
-            std::cout << "ratio_far: " << ratio_far.transpose() << std::endl;
             double ratio_farest = ratio_far.array().abs().maxCoeff();
             if (ratio_farest>=1)
             {
@@ -174,6 +171,9 @@ class MoveJAction
             as_feedback.time_from_start=time_from_start.toSec();
             as.publishFeedback(as_feedback);
             //Command it
+            std::cout << "qinc_max: " << qinc_max.transpose() << std::endl;
+            std::cout << "q_inc: " << q_diff.transpose() << std::endl;
+            std::cout << "q_next: " << q_next.transpose() << std::endl;
             iiwa_command_pub.publish(point_command);
             cont = q_diff.array().abs().maxCoeff() > error_joint_position_stop;
             ros::Duration(control_step_size).sleep();
