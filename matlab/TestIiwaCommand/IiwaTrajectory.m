@@ -8,6 +8,7 @@ classdef IiwaTrajectory < handle
         qdot
         qdotdot
         effort
+        x
         name
         lbr
         qWaypoints
@@ -30,6 +31,9 @@ classdef IiwaTrajectory < handle
                 obj.lbr=varargin{1}.lbr;
                 obj.qWaypoints=varargin{1}.qWaypoints;
                 obj.tWaypoints=varargin{1}.tWaypoints;
+            end
+            for i=1:size(obj.q,1)
+                obj.x(i,:)=ScrewTheory.ForwardKinematics(obj.q(i,:));
             end
         end
         function obj = wayPointsConstructor(obj, lbr, name, tWaypoints, qWaypoints, t)

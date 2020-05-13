@@ -77,6 +77,36 @@ classdef IiwaPlotter < handle
                 end
             end
         end
+        function cartesian_position(cartesian_position, t)
+            time_plot=0.05;
+            coords={'x', 'y', 'z', 'rx', 'ry', 'rz'};
+            if (mod(t, time_plot)==0)
+                for coord=1:6
+                    subplot(6,1,coord);
+                    hold on;
+                    plot(t, cartesian_position(:,coord), [IiwaPlotter.ColorCommanded, '.']);
+                    if (coord==6)
+                        xlabel('time(s)');
+                    end
+                    ylabel(coords{coord});
+                    grid on;
+                end
+            end
+        end
+        function cartesian_positions (traj)
+            figure;
+            coords={'x', 'y', 'z', 'rx', 'ry', 'rz'};
+            for coord=1:6
+                subplot(6,1,coord);
+                hold on;
+                plot(traj.t, traj.x(:,coord), IiwaPlotter.ColorCommanded);
+                if (coord==6)
+                    xlabel('time(s)');
+                end
+                ylabel(coords{coord});
+                grid on;
+            end
+        end
         function joint_positions(traj)
             figure;
             for j = 1:7
@@ -94,6 +124,27 @@ classdef IiwaPlotter < handle
                 ylabel(s);
                 grid on;
             end
+        end
+        function cartesian_positions_compare(traj_comm, traj_output)
+            figure;
+            coords={'x', 'y', 'z', 'rx', 'ry', 'rz'};
+            for coord=1:6
+                subplot(6,1,coord);
+                hold on;
+                plot(traj_comm.t, traj_comm.x(:,coord), IiwaPlotter.ColorCommanded);
+                hold on;
+                plot(traj_output.t, traj_output.x(:,coord), IiwaPlotter.ColorOutput);
+                if coord == 1
+                    legend('Commanded cartesian position (rad)','Output cartesian position');
+                    title('Commanded and output joint positions')
+                end
+                if (coord==6)
+                    xlabel('time(s)');
+                end
+                ylabel(coords{coord});
+                grid on;
+            end
+            
         end
         function joint_positions_compare(traj_comm, traj_output)
             figure;
