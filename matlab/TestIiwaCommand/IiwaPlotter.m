@@ -100,6 +100,9 @@ classdef IiwaPlotter < handle
                 subplot(6,1,coord);
                 hold on;
                 plot(traj.t, traj.x(:,coord), IiwaPlotter.ColorCommanded);
+                if coord == 1
+                    title('Cartesian positions')
+                end
                 if (coord==6)
                     xlabel('time(s)');
                 end
@@ -114,7 +117,6 @@ classdef IiwaPlotter < handle
                 hold on
                 plot(traj.t, traj.q(:,j), IiwaPlotter.ColorCommanded); 
                 if j == 1
-                    legend('Joint position (rad)','Output joint position');
                     title('Joint positions')
                 end
                 if j == 7

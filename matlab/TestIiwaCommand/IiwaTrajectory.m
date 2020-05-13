@@ -32,6 +32,9 @@ classdef IiwaTrajectory < handle
                 obj.qWaypoints=varargin{1}.qWaypoints;
                 obj.tWaypoints=varargin{1}.tWaypoints;
             end
+            obj=obj.CompleteCartesian();
+        end
+        function obj = CompleteCartesian(obj)
             for i=1:size(obj.q,1)
                 obj.x(i,:)=ScrewTheory.ForwardKinematics(obj.q(i,:));
             end
