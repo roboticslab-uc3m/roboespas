@@ -29,10 +29,9 @@ class MoveJAction
     //Iiwa gazebo command publisher
     ros::Publisher iiwa_command_pub;
     //Parameters
-    double max_joint_position_inc;
     double control_step_size;
     std::string robot_mode;
-    Eigen::VectorXd max_vel;
+    Eigen::VectorXd qdot_max;
     Eigen::VectorXd q_max;
     double error_joint_position_stop=0.0001;
 
@@ -59,13 +58,13 @@ class MoveJAction
         }
         q_max = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(q_max_vec.data(), q_max_vec.size());
         q_max = q_max*M_PI/180.0;
-        std::vector<double> max_vel_vec;
-        if (!nh.getParam("/iiwa_limits/joint_velocity", max_vel_vec))
+        std::vector<double> qdot_max_vec;
+        if (!nh.getParam("/iiwa_limits/joint_velocity", qdot_max_vec))
         {
             ROS_ERROR("Failed to read '/iiwa_limits/joint_velocity' on param server");
         }
-        max_vel = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(max_vel_vec.data(), max_vel_vec.size());
-        max_vel = max_vel*M_PI/180.0;
+        qdot_max = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(qdot_max_vec.data(), qdot_max_vec.size());
+        qdot_max = qdot_max*M_PI/180.0;
         //Initializate topics depending on robot_mode
         if (strcmp(robot_mode.c_str(), "gazebo")==0)
         {
@@ -110,25 +109,20 @@ class MoveJAction
                 return;
             }
         }
-        //TODO: Limit velocity
-        /*
-        //Build trajectory to send
-        //Read percentage velocity from parameter server
+        //Limit velocity
+        //Read velocity percentage
         double velocity=0.5; //from 0 to 1
         if (!nh.getParam("/iiwa_command/velocity", velocity))
         {
             ROS_ERROR("Failed to read '/iiwa_command/velocity' on param server, using 0.5");
         }
-        //Calculate joint_velocity for each joint using the velocity percentage and the maximum velocity
-        std::cout << velocity << std::endl;
-        Eigen::VectorXd qdot = velocity*max_vel;*/
-
-        //Check maximum increment in radians for joint_position
-        if (!nh.getParam("/iiwa_limits/joint_position_inc", max_joint_position_inc))
-        {
-            ROS_ERROR("Failed to read '/iiwa_limits/joint_position_inc' on param server");
-        }
-        max_joint_position_inc = max_joint_position_inc*0.9; //To ensure its inside the limits
+        //Calculate qdot_max with that percentage
+        Eigen::VectorXd qdot = qdot_max * velocity;
+        //Calculate maximum joint position increment for each joint, taking into account the control step size and the current maximum velocity
+        // qdot = incq/t -> incq= qdot*t 
+        Eigen::VectorXd qinc_max = qdot*control_step_size;
+        std::cout << "qinc_max: " << qinc_max.transpose() << std::endl;
+        
         ros::Time tStartTraj = ros::Time::now();
         bool cont=true;
         while (cont)
@@ -138,14 +132,17 @@ class MoveJAction
             Eigen::VectorXd q_curr = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(freezed_joint_state.position.data(), freezed_joint_state.position.size());
             //Calculate the difference in radians        
             Eigen::VectorXd q_diff = q_goal-q_curr;
-            //Check if it is still far from the goal position
-            Eigen::MatrixXd::Index max_diff_id;
-            double max_diff = q_diff.array().abs().maxCoeff(&max_diff_id);
-            if (max_diff>max_joint_position_inc)
+            //Check if it is far from the goal position
+            Eigen::VectorXd ratio_far = q_diff.array()/qinc_max.array();
+            std::cout << "q_diff: " << q_diff.transpose() << std::endl;
+            std::cout << "qinc_max: " << qinc_max.transpose() << std::endl;
+            std::cout << "ratio_far: " << ratio_far.transpose() << std::endl;
+            double ratio_farest = ratio_far.array().abs().maxCoeff();
+            if (ratio_farest>=1)
             {
-                //Scale the difference so all the joints reach its goal position at the same time
-                q_diff = q_diff * max_joint_position_inc/max_diff;
-            }
+                q_diff = q_diff.array()/ratio_farest;
+            } //else stay as it is
+
             //Get the next joint position
             Eigen::VectorXd q_next = q_curr + q_diff;
             //Check its inside the workspace
@@ -177,7 +174,6 @@ class MoveJAction
             as_feedback.time_from_start=time_from_start.toSec();
             as.publishFeedback(as_feedback);
             //Command it
-            std::cout << q_next.transpose() << std::endl;
             iiwa_command_pub.publish(point_command);
             cont = q_diff.array().abs().maxCoeff() > error_joint_position_stop;
             ros::Duration(control_step_size).sleep();
