@@ -5,6 +5,7 @@ classdef IiwaPlotter < handle
         ColorOutput='r'
         ColorOthers='m'
         ColorErrors='r'
+        TimePlot=0.05;
     end
     
     methods
@@ -58,6 +59,22 @@ classdef IiwaPlotter < handle
                 title('Commanded and output efforts with PD efforts')
                 xlabel('time (s)');
                 ylabel(s);
+            end
+        end
+        function joint_position(joint_position, t)
+            time_plot=0.05; %seconds
+            if (mod(t, time_plot)==0)
+                for j = 1:7
+                    subplot(7,1,j);
+                    hold on
+                    plot(t, joint_position(:,j), [IiwaPlotter.ColorCommanded, '.']); 
+                    if j == 7
+                        xlabel('time (s)');
+                    end
+                    s = sprintf('j%d',j);
+                    ylabel(s);
+                    grid on;
+                end
             end
         end
         function joint_positions(traj)
