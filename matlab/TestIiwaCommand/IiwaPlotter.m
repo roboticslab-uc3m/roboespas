@@ -1,5 +1,6 @@
 classdef IiwaPlotter < handle
     properties (Constant)
+        Colors = {'g', 'b', 'r', 'm'}
         ColorDesired='g'
         ColorCommanded='b'
         ColorOutput='r'
@@ -93,53 +94,25 @@ classdef IiwaPlotter < handle
                 end
             end
         end
-        function cartesian_positions (traj)
-            figure;
-            coords={'x', 'y', 'z', 'rx', 'ry', 'rz'};
-            for coord=1:6
-                subplot(6,1,coord);
-                hold on;
-                plot(traj.t, traj.x(:,coord), IiwaPlotter.ColorCommanded);
-                if coord == 1
-                    title('Cartesian positions')
-                end
-                if (coord==6)
-                    xlabel('time(s)');
-                end
-                ylabel(coords{coord});
-                grid on;
+        function cartesian_positions(trajectories, colors)%_comm, traj_output)
+            if (~iscell(trajectories))
+                trajectories={trajectories};
             end
-        end
-        function joint_positions(traj)
-            figure;
-            for j = 1:7
-                subplot(7,1,j);
-                hold on
-                plot(traj.t, traj.q(:,j), IiwaPlotter.ColorCommanded); 
-                if j == 1
-                    title('Joint positions')
-                end
-                if j == 7
-                    xlabel('time (s)');
-                end
-                s = sprintf('j%d',j);
-                ylabel(s);
-                grid on;
-            end
-        end
-        function cartesian_positions_compare(traj_comm, traj_output)
-            if (~isempty(traj_comm.x) || ~isempty(traj_comm.x))
+            if (~isempty(trajectories{1}.q))
                 figure;
                 coords={'x', 'y', 'z', 'rx', 'ry', 'rz'};
-                for coord=1:size(traj_comm.x,2)
+                leg=cell(1, size(trajectories,2));
+                for coord=1:size(trajectories{1}.x,2)
                     subplot(6,1,coord);
                     hold on;
-                    plot(traj_comm.t, traj_comm.x(:,coord), IiwaPlotter.ColorCommanded);
-                    hold on;
-                    plot(traj_output.t, traj_output.x(:,coord), IiwaPlotter.ColorOutput);
+                    for ntraj=1:size(trajectories,2)
+                        plot(trajectories{ntraj}.t, trajectories{ntraj}.x(:,coord), colors(ntraj));
+                        hold on;
+                        leg{ntraj}=trajectories{ntraj}.name;
+                    end
                     if coord == 1
-                        legend('Commanded cartesian position (rad)','Output cartesian position');
-                        title('Commanded and output cartesian positions')
+                        legend(leg);
+                        title('Cartesian position (m)')
                     end
                     if (coord==6)
                         xlabel('time(s)');
@@ -149,17 +122,23 @@ classdef IiwaPlotter < handle
                 end
             end
         end
-        function joint_positions_compare(traj_comm, traj_output)
-            if (~isempty(traj_comm.q) || ~isempty(traj_comm.q))
+        function joint_positions(trajectories, colors)
+            if (~iscell(trajectories))
+                trajectories={trajectories};
+            end
+            if (~isempty(trajectories{1}.q))
                 figure;
-                for j = 1:size(traj_comm.q,2)
+                leg=cell(1, size(trajectories,2));
+                for j = 1:size(trajectories{1}.q,2)
                     subplot(7,1,j);
-                    plot(traj_comm.t, traj_comm.q(:,j), IiwaPlotter.ColorCommanded); 
-                    hold on
-                    plot(traj_output.t, traj_output.q(:,j), IiwaPlotter.ColorOutput); 
+                    for ntraj=1:size(trajectories,2)
+                        plot(trajectories{ntraj}.t, trajectories{ntraj}.q(:,j), colors(ntraj));
+                        hold on;
+                        leg{ntraj}=trajectories{ntraj}.name;
+                    end
                     if j == 1
-                        legend('Commanded joint position (rad)','Output joint position');
-                        title('Commanded and output joint positions')
+                        legend(leg);
+                        title('Joint position (rad)')
                     end
                     if j == 7
                         xlabel('time (s)');
@@ -183,7 +162,6 @@ classdef IiwaPlotter < handle
                 ylabel(s);
                 grid on;
             end
-           
         end
         function joint_efforts_compare(traj_comm, traj_output)
             figure;

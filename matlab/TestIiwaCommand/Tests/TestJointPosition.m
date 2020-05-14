@@ -1,5 +1,4 @@
 clear all;
-close all;
 init_ros;
 
 [MoveJASrv_cli, MoveJASrv_msg] = rosactionclient('MoveJ');
@@ -14,8 +13,11 @@ MoveJASrv_msg.JointPosition=[-0.7 1.2 -0.7 1 -0.3 0.5 -0.5];
 resultMsg = sendGoalAndWait(MoveJASrv_cli, MoveJASrv_msg);
 
 %%
+close all;
 traj_comm = IiwaTrajectory('commanded', resultMsg.TrajectoryCommanded);
-traj_output = IiwaTrajectory('desired', resultMsg.TrajectoryJointState);
+traj_output = IiwaTrajectory('output', resultMsg.TrajectoryJointState);
 
-IiwaPlotter.joint_positions_compare(traj_comm, traj_output);
-IiwaPlotter.cartesian_positions_compare(traj_comm, traj_output);
+IiwaPlotter.joint_positions(traj_comm, 'b')
+IiwaPlotter.cartesian_positions(traj_comm, 'b');
+IiwaPlotter.joint_positions({traj_comm, traj_output}, ['b', 'r']);
+IiwaPlotter.cartesian_positions({traj_comm, traj_output}, ['b', 'r']);
