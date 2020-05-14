@@ -139,7 +139,7 @@ classdef IiwaPlotter < handle
                     plot(traj_output.t, traj_output.x(:,coord), IiwaPlotter.ColorOutput);
                     if coord == 1
                         legend('Commanded cartesian position (rad)','Output cartesian position');
-                        title('Commanded and output joint positions')
+                        title('Commanded and output cartesian positions')
                     end
                     if (coord==6)
                         xlabel('time(s)');

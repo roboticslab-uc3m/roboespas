@@ -129,7 +129,6 @@ class MoveJAction
         //If mode is gazebo or fri, the joint_position should be divided in several near joint_positions
         if (strcmp(robot_mode.c_str(), "gazebo")==0 || strcmp(robot_mode.c_str(), "fri")==0)
         {
-    
             //Calculate qdot_max with that percentage
             Eigen::VectorXd qdot = qdot_max * velocity;
             //Calculate maximum joint position increment for each joint, taking into account the control step size and the current maximum velocity
@@ -183,9 +182,6 @@ class MoveJAction
                 as_feedback.time_from_start=time_from_start.toSec();
                 as.publishFeedback(as_feedback);
                 //Command it
-                std::cout << "qinc_max: " << qinc_max.transpose() << std::endl;
-                std::cout << "q_inc: " << q_diff.transpose() << std::endl;
-                std::cout << "q_next: " << q_next.transpose() << std::endl;
                 iiwa_command_pub.publish(point_command);
                 cont = q_diff.array().abs().maxCoeff() > error_joint_position_stop;
                 ros::Duration(control_step_size).sleep();
