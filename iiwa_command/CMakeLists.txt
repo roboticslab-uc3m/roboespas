@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib_msgs
   actionlib
   message_generation
+  iiwa_msgs
 )
 
 ## System dependencies are found with CMake's conventions

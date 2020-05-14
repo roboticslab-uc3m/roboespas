@@ -5,7 +5,7 @@
 
 
 #Fixed parameters - Don't change during execution
-/iiwa_command/robot_mode: gazebo #fri/iiwa_stack
+/iiwa_command/robot_mode: iiwa_stack #gazebo #fri/iiwa_stack
 /iiwa_command/control_type: joint_position #joint_position*/joint_torque
 /iiwa_limits/cartesian_velocity: 250 #mm/s
 /iiwa_limits/joint_position: [170.0, 120.0, 170.0, 120.0, 170.0, 120.0, 175.0] #deg
