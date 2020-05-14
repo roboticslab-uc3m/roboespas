@@ -128,45 +128,47 @@ classdef IiwaPlotter < handle
             end
         end
         function cartesian_positions_compare(traj_comm, traj_output)
-            figure;
-            coords={'x', 'y', 'z', 'rx', 'ry', 'rz'};
-            for coord=1:6
-                subplot(6,1,coord);
-                hold on;
-                plot(traj_comm.t, traj_comm.x(:,coord), IiwaPlotter.ColorCommanded);
-                hold on;
-                plot(traj_output.t, traj_output.x(:,coord), IiwaPlotter.ColorOutput);
-                if coord == 1
-                    legend('Commanded cartesian position (rad)','Output cartesian position');
-                    title('Commanded and output joint positions')
+            if (~isempty(traj_comm.x) || ~isempty(traj_comm.x))
+                figure;
+                coords={'x', 'y', 'z', 'rx', 'ry', 'rz'};
+                for coord=1:size(traj_comm.x,2)
+                    subplot(6,1,coord);
+                    hold on;
+                    plot(traj_comm.t, traj_comm.x(:,coord), IiwaPlotter.ColorCommanded);
+                    hold on;
+                    plot(traj_output.t, traj_output.x(:,coord), IiwaPlotter.ColorOutput);
+                    if coord == 1
+                        legend('Commanded cartesian position (rad)','Output cartesian position');
+                        title('Commanded and output joint positions')
+                    end
+                    if (coord==6)
+                        xlabel('time(s)');
+                    end
+                    ylabel(coords{coord});
+                    grid on;
                 end
-                if (coord==6)
-                    xlabel('time(s)');
-                end
-                ylabel(coords{coord});
-                grid on;
             end
-            
         end
         function joint_positions_compare(traj_comm, traj_output)
-            figure;
-            for j = 1:7
-                subplot(7,1,j);
-                plot(traj_comm.t, traj_comm.q(:,j), IiwaPlotter.ColorCommanded); 
-                hold on
-                plot(traj_output.t, traj_output.q(:,j), IiwaPlotter.ColorOutput); 
-                if j == 1
-                    legend('Commanded joint position (rad)','Output joint position');
-                    title('Commanded and output joint positions')
+            if (~isempty(traj_comm.q) || ~isempty(traj_comm.q))
+                figure;
+                for j = 1:size(traj_comm.q,2)
+                    subplot(7,1,j);
+                    plot(traj_comm.t, traj_comm.q(:,j), IiwaPlotter.ColorCommanded); 
+                    hold on
+                    plot(traj_output.t, traj_output.q(:,j), IiwaPlotter.ColorOutput); 
+                    if j == 1
+                        legend('Commanded joint position (rad)','Output joint position');
+                        title('Commanded and output joint positions')
+                    end
+                    if j == 7
+                        xlabel('time (s)');
+                    end
+                    s = sprintf('j%d',j);
+                    ylabel(s);
+                    grid on;
                 end
-                if j == 7
-                    xlabel('time (s)');
-                end
-                s = sprintf('j%d',j);
-                ylabel(s);
-                grid on;
-            end
-           
+            end          
         end
         function joint_positions_compare_big(traj_comm, traj_output)
             for j = 1:7

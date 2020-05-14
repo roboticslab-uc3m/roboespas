@@ -1,6 +1,7 @@
 clear all;
 close all;
 init_ros;
+
 [MoveJASrv_cli, MoveJASrv_msg] = rosactionclient('MoveJ');
 MoveJASrv_cli.ActivationFcn = @(~) disp('MoveJ action server active');
 %figure; hold on;

@@ -111,22 +111,27 @@ class MsgTransformHelperNode
     }
     bool callback_from_joint_state_vec_server(iiwa_command::FromJointStateVec::Request &req, iiwa_command::FromJointStateVec::Response &res)
     {
-        double first_stamp=req.joint_state_vec[0].header.stamp.toSec();
-        res.joint_names=req.joint_state_vec[0].name;
-        for (int i=0; i<req.joint_state_vec.size(); i++)
+        if (req.joint_state_vec.size()>0)
         {
-            res.stamps.push_back(req.joint_state_vec[i].header.stamp.toSec()-first_stamp);
-            for (int j=0; j<req.joint_state_vec[i].position.size(); j++)
-                res.positions.push_back(req.joint_state_vec[i].position[j]);
-            for (int j=0; j<req.joint_state_vec[i].velocity.size(); j++)
-                res.velocities.push_back(req.joint_state_vec[i].velocity[j]);
-            for (int j=0; j<req.joint_state_vec[i].effort.size(); j++)
-                res.efforts.push_back(req.joint_state_vec[i].effort[j]);
+            double first_stamp=req.joint_state_vec[0].header.stamp.toSec();
+            res.joint_names=req.joint_state_vec[0].name;
+            for (int i=0; i<req.joint_state_vec.size(); i++)
+            {
+                res.stamps.push_back(req.joint_state_vec[i].header.stamp.toSec()-first_stamp);
+                for (int j=0; j<req.joint_state_vec[i].position.size(); j++)
+                    res.positions.push_back(req.joint_state_vec[i].position[j]);
+                for (int j=0; j<req.joint_state_vec[i].velocity.size(); j++)
+                    res.velocities.push_back(req.joint_state_vec[i].velocity[j]);
+                for (int j=0; j<req.joint_state_vec[i].effort.size(); j++)
+                    res.efforts.push_back(req.joint_state_vec[i].effort[j]);
+            }
         }
         return true;
     }
     bool callback_to_joint_state_vec_server(iiwa_command::ToJointStateVec::Request &req, iiwa_command::ToJointStateVec::Response &res)
     {
+        ROS_ERROR("Not implemented yet");
+        //TODO: Implement
         /*
         res.joint_names=req.joint_trajectory.joint_names;
         for (int i=0; i<req.joint_trajectory.points.size(); i++)
