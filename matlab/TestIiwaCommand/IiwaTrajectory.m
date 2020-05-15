@@ -23,14 +23,18 @@ classdef IiwaTrajectory < handle
             elseif (length(varargin)==2)
                 obj=IiwaMsgTransformer.toIiwaTrajectory(varargin{1}, varargin{2});
             elseif (length(varargin)==1)
-                obj.t=varargin{1}.t;
-                obj.q=varargin{1}.q;
-                obj.qdot=varargin{1}.qdot;
-                obj.qdotdot=varargin{1}.qdotdot;
-                obj.effort=varargin{1}.effort;
-                obj.lbr=varargin{1}.lbr;
-                obj.qWaypoints=varargin{1}.qWaypoints;
-                obj.tWaypoints=varargin{1}.tWaypoints;
+                if (ischar(varargin{1}))
+                    obj.name=varargin{1};
+                elseif (isa(varargin{1}, 'IiwaTrajectory'))
+                    obj.t=varargin{1}.t;
+                    obj.q=varargin{1}.q;
+                    obj.qdot=varargin{1}.qdot;
+                    obj.qdotdot=varargin{1}.qdotdot;
+                    obj.effort=varargin{1}.effort;
+                    obj.lbr=varargin{1}.lbr;
+                    obj.qWaypoints=varargin{1}.qWaypoints;
+                    obj.tWaypoints=varargin{1}.tWaypoints;
+                end
             end
             obj=obj.CompleteCartesian();
         end

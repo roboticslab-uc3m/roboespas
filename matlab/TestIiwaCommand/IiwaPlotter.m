@@ -98,7 +98,7 @@ classdef IiwaPlotter < handle
             if (~iscell(trajectories))
                 trajectories={trajectories};
             end
-            if (~isempty(trajectories{1}.q))
+            if (~isempty(trajectories{1}.x))
                 figure;
                 coords={'x', 'y', 'z', 'rx', 'ry', 'rz'};
                 leg=cell(1, size(trajectories,2));
@@ -148,6 +148,33 @@ classdef IiwaPlotter < handle
                     grid on;
                 end
             end          
+        end
+        function cartesian_frames(trajectories, colors, varargin)
+            if (~iscell(trajectories))
+                trajectories={trajectories};
+            end
+            if (~isempty(trajectories{1}.x))
+                if (~isempty(varargin))
+                    subsample=varargin{1};
+                else
+                    subsample=size(trajectories{1}.x,1)/10;
+                end
+                figure;
+                leg=cell(1, size(trajectories,2));
+                for ntraj = 1:size(trajectories,2)
+                    for i =1:subsample:size(trajectories{ntraj}.x,1)
+                        IiwaPlotter.frame(trajectories{ntraj}.x(i,:), colors(ntraj));
+                        hold on;
+                        leg{ntraj} = trajectories{ntraj}.name;
+                    end
+                end
+                legend(leg);
+                title('3D cartesian position');
+                xlabel('x');
+                ylabel('y');
+                zlabel('z');
+                grid on;
+            end  
         end
         function joint_positions_compare_big(traj_comm, traj_output)
             for j = 1:7
@@ -229,6 +256,22 @@ classdef IiwaPlotter < handle
                 ylabel(s);
                 grid on;
             end
+        end
+        function frame(frame_given, color)
+            if (size(frame_given)==[6, 1])
+                frame_given=frame_given';
+            end
+            origin=frame_given(1:3);
+            rotation=frame_given(4:6);
+            R=eul2rotm(rotation, 'XYZ');
+            quiver3(origin(1), origin(2), origin(3), R(1,1), R(2,1), R(3,1), 0.1, [color, '-']);
+            hold on;
+            quiver3(origin(1), origin(2), origin(3), R(1,2), R(2,2), R(3,2), 0.1, [color, '--']);
+            quiver3(origin(1), origin(2), origin(3), R(1,3), R(2,3), R(3,3), 0.1, [color, '-.']);
+
+            xlabel('x')
+            ylabel('y')
+            zlabel('z')
         end
     end
 end

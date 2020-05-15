@@ -15,7 +15,7 @@ qdot_rad=qdotmax_rad*velocity;
 qinc_max = qdot_rad*control_step_size;
 q_curr=q_ini;
 cont=1;
-traj=IiwaTrajectory();
+traj=IiwaTrajectory('commanded');
 n=1;
 traj.q(n,:)=q_curr;
 traj.t(n,:)=0;
@@ -37,7 +37,7 @@ while(cont)
 end
 traj.CompleteCartesian();
 
-IiwaPlotter.joint_positions(traj);
-IiwaPlotter.cartesian_positions(traj);
+IiwaPlotter.joint_positions(traj, 'b');
+IiwaPlotter.cartesian_positions(traj, 'b');
 
 
