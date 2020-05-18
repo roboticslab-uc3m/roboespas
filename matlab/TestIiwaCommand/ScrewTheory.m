@@ -99,6 +99,17 @@ classdef ScrewTheory < handle
             % Limit position to limits
             q_next=min(abs(q_next), abs(IiwaRobot.Thmax)).*sign(q_next);
         end
+        function qdot = IDK_point(q_curr, xdot)
+            %TODO: Check sizes
+            Jst = ScrewTheory.GeoJacobianS(IiwaRobot.Twist, q_curr);
+            Jst_i = pinv(Jst);
+            qdot = (Jst_i*xdot')';
+            far_ratio = abs(qdot)./abs(IiwaRobot.ThDotmax);
+            farest = max(far_ratio);
+            if (farest>1)
+                qdot = qdot./(farest/0.9);
+            end
+        end
         function axang_S = axangframeA2B(oriA, oriB)
             % Gets the axis (in the space frame) and angle
             % needed to rotate a frame with orientation oriA into a frame 
@@ -123,9 +134,11 @@ classdef ScrewTheory < handle
             R_SB = R_SA*R_AB;
             frameB = rotm2eul(R_SB, 'XYZ');
         end
-        function screw_tf = frameA2B (frameA, frameB)
-            screw_tf(1:3) = frameB(1:3) - frameA(1:3);
-            screw_tf(4:6) = ScrewTheory.axangframeA2B(frameA(4:6), frameB(4:6));
+        function screwA2B = frameA2B (frameA, frameB)
+            v_A = frameB(1:3) - frameA(1:3);
+            w_S = ScrewTheory.axangframeA2B(frameA(4:6), frameB(4:6));
+            v_S = v_A - cross(w_S, frameA(1:3));
+            screwA2B = [v_S w_S];
         end
         function frameB = transformframe (frameA, screwA2B)
             frameB(1:3) = frameA(1:3) + screwA2B(1:3);
