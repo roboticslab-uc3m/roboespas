@@ -9,6 +9,7 @@ classdef IiwaTrajectory < handle
         qdotdot
         effort
         x
+        xdot
         name
         lbr
         qWaypoints

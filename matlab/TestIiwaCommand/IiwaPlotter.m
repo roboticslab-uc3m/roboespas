@@ -14,53 +14,184 @@ classdef IiwaPlotter < handle
         end
     end
     methods(Static)
-        function effortPoint(as_feedback_msg)
-           % Time between points plotted. You may need to change this depending on 
-           % your computer's resources
-           time_plot=0.05; %seconds
-           if (mod(as_feedback_msg.TimeFromStart, time_plot)==0)
-                for j=1:7
+        function joint_positions(trajectories, colors)
+            if (~iscell(trajectories))
+                trajectories={trajectories};
+            end
+            if (~isempty(trajectories{1}.q))
+                figure;
+                leg=cell(1, size(trajectories,2));
+                for j = 1:size(trajectories{1}.q,2)
                     subplot(7,1,j);
-                    plot(as_feedback_msg.TimeFromStart, as_feedback_msg.PointCommanded.Effort(j), ['.', IiwaPlotter.ColorCommanded]);
-                    hold on;
-                    plot(as_feedback_msg.TimeFromStart, as_feedback_msg.JointState.Effort(j), ['.', IiwaPlotter.ColorRead]);
+                    for ntraj=1:size(trajectories,2)
+                        plot(trajectories{ntraj}.t, trajectories{ntraj}.q(:,j), colors(ntraj));
+                        hold on;
+                        leg{ntraj}=trajectories{ntraj}.name;
+                    end
+                    if j == 1
+                        legend(leg);
+                        title('Joint position (rad)')
+                    end
+                    if j == 7
+                        xlabel('time (s)');
+                    end
+                    s = sprintf('j%d',j);
+                    ylabel(s);
+                    grid on;
                 end
-           end
+            end          
         end
-        function effortWithPD_compare(traj_des, traj_comm)
-            figure;
-            ts_des=timeseries(traj_comm.effort, traj_comm.t);
-            ts_comm=timeseries(traj_des.effort, traj_des.t);
-            [ts_des, ts_comm] = synchronize(ts_des, ts_comm, 'Intersection');
-            ts_pdTorque=ts_comm-ts_des;
-            for j = 1:7
-                subplot(7,1,j);
-                plot(traj_des.t, traj_des.effort(:,j), IiwaPlotter.ColorDesired); hold on
-                plot(ts_pdTorque.Time, ts_pdTorque.Data(:,j), IiwaPlotter.ColorOthers);
-                plot(traj_comm.t, traj_comm.effort(:,j), IiwaPlotter.ColorCommanded);
-                if j == 1
-                    legend('Torque desired (N)','PD torque','Total torque');
-                    title('Commanded and output efforts with PD efforts')
+        function joint_velocities(trajectories, colors)
+            if (~iscell(trajectories))
+                trajectories={trajectories};
+            end
+            if (~isempty(trajectories{1}.qdot))
+                figure;
+                leg=cell(1, size(trajectories,2));
+                for j = 1:size(trajectories{1}.qdot,2)
+                    subplot(7,1,j);
+                    for ntraj=1:size(trajectories,2)
+                        plot(trajectories{ntraj}.t, trajectories{ntraj}.qdot(:,j), [colors(ntraj)]);
+                        hold on;
+                        leg{ntraj}=trajectories{ntraj}.name;
+                    end
+                    if j == 1
+                        legend(leg);
+                        title('Joint velocity (rad/s)')
+                    end
+                    if j == 7
+                        xlabel('time (s)');
+                    end
+                    s = sprintf('j%d',j);
+                    ylabel(s);
+                    grid on;
                 end
-                if j == 7
-                    xlabel('time (s)');
+            end          
+        end
+        function cartesian_positions(trajectories, colors)
+            if (~iscell(trajectories))
+                trajectories={trajectories};
+            end
+            if (~isempty(trajectories{1}.x))
+                figure;
+                coords={'x', 'y', 'z', 'rx', 'ry', 'rz'};
+                leg=cell(1, size(trajectories,2));
+                for coord=1:size(trajectories{1}.x,2)
+                    subplot(6,1,coord);
+                    hold on;
+                    for ntraj=1:size(trajectories,2)
+                        plot(trajectories{ntraj}.t, trajectories{ntraj}.x(:,coord), colors(ntraj));
+                        hold on;
+                        leg{ntraj}=trajectories{ntraj}.name;
+                    end
+                    if coord == 1
+                        legend(leg);
+                        title('Cartesian position (m)')
+                    end
+                    if (coord==6)
+                        xlabel('time(s)');
+                    end
+                    ylabel(coords{coord});
+                    grid on;
                 end
-                s = sprintf('j%d',j);
-                ylabel(s);
+            end
+        end
+        function cartesian_frames(trajectories, colors, n_frames)
+            if (~iscell(trajectories))
+                trajectories={trajectories};
+            end
+            if (~isempty(trajectories{1}.x))
+                figure;
+                leg=cell(1, size(trajectories,2));
+                for ntraj = 1:size(trajectories,2)
+                    subsample = round(size(trajectories{ntraj}.x,1)/n_frames);
+                    for i =1:subsample:size(trajectories{ntraj}.x,1)
+                        IiwaPlotter.frame(trajectories{ntraj}.x(i,:), colors(ntraj));
+                        hold on;
+                        leg{ntraj} = trajectories{ntraj}.name;
+                    end
+                end
+                legend(leg);
+                title('3D cartesian position');
+                xlabel('x');
+                ylabel('y');
+                zlabel('z');
+                grid on;
+            end  
+        end
+        %% PLOT ERRORS
+        function joint_position_error(traj_baseline, trajectories, colors)
+            if (~iscell(trajectories))
+                trajectories={trajectories};
+            end
+            if (~isempty(traj_baseline.q))
+                figure;
+                leg=cell(1, size(trajectories,2));
+                ts_baseline = timeseries(traj_baseline.q, traj_baseline.t);
+                for ntraj = 1:size(trajectories,2)
+                    ts_trajectory = timeseries(trajectories{ntraj}.q, trajectories{ntraj}.t);
+                    [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Union');
+                    ts_error = ts_trajectory_used - ts_baseline_used;
+                    for j = 1:7
+                        subplot(7,1,j);
+                        plot(ts_error.Time, ts_error.Data(:,j), colors(ntraj));
+                        hold on;
+                        leg{ntraj} = trajectories{ntraj}.name;
+                        if j == 1
+                            title('Joint position error (rad)')
+                        end
+                        if j == 7
+                            xlabel('time (s)');
+                        end
+                        s = sprintf('j%d',j);
+                        ylabel(s);
+                        grid on;
+                    end
+                end
+                legend(leg);
                 grid on;
             end
         end
-        function effortWithPD_compare_big(traj_comm, traj_output, traj_withoutPD)
-            for i=1:7
-                figure;hold on;
-                plot(traj_comm.t,traj_comm.effort(:,i), IiwaPlotter.ColorCommanded);
-                plot(traj_withoutPD.t,traj_withoutPD.effort(:,i), IiwaPlotter.ColorOthers);
-                plot(traj_output.t,traj_output.effort(:,i), IiwaPlotter.ColorOutput);
-                legend('commanded', 'ideal','output');
-                title('Commanded and output efforts with PD efforts')
-                xlabel('time (s)');
-                ylabel(s);
+%         function joint_position_error(traj_comm, traj_output)
+%             figure;
+%             ts_output = timeseries(traj_comm.q, traj_comm.t);
+%             ts_comm = timeseries(traj_output.q, traj_output.t);
+%             [ts_output, ts_comm] = synchronize(ts_output, ts_comm, 'Union');
+% 
+%             ts_error = ts_comm-ts_output;
+%                 
+%             for j=1:7
+% 
+%                 subplot(7,1,j);
+%                 plot(ts_error.Time, ts_error.Data(:,j), IiwaPlotter.ColorErrors);
+%                 if j == 1
+%                     legend('Error joint position(rad)');
+%                     title('Error between commanded and output position')
+%                 end
+%                 if j == 7
+%                     xlabel('time (s)');
+%                 end
+%                 s = sprintf('j%d',j);
+%                 ylabel(s);
+%                 grid on;
+%             end
+%         end
+        %% INDIVIDUAL PLOTS
+        function frame(frame_given, color)
+            if (size(frame_given)==[6, 1])
+                frame_given=frame_given';
             end
+            origin=frame_given(1:3);
+            rotation=frame_given(4:6);
+            R=eul2rotm(rotation, 'XYZ');
+            quiver3(origin(1), origin(2), origin(3), R(1,1), R(2,1), R(3,1), 0.1, [color, '-']);
+            hold on;
+            quiver3(origin(1), origin(2), origin(3), R(1,2), R(2,2), R(3,2), 0.1, [color, '--']);
+            quiver3(origin(1), origin(2), origin(3), R(1,3), R(2,3), R(3,3), 0.1, [color, '-.']);
+
+            xlabel('x')
+            ylabel('y')
+            zlabel('z')
         end
         function joint_position(joint_position, t)
             time_plot=0.05; %seconds
@@ -94,100 +225,53 @@ classdef IiwaPlotter < handle
                 end
             end
         end
-        function cartesian_positions(trajectories, colors)%_comm, traj_output)
-            if (~iscell(trajectories))
-                trajectories={trajectories};
-            end
-            if (~isempty(trajectories{1}.x))
-                figure;
-                coords={'x', 'y', 'z', 'rx', 'ry', 'rz'};
-                leg=cell(1, size(trajectories,2));
-                for coord=1:size(trajectories{1}.x,2)
-                    subplot(6,1,coord);
-                    hold on;
-                    for ntraj=1:size(trajectories,2)
-                        plot(trajectories{ntraj}.t, trajectories{ntraj}.x(:,coord), colors(ntraj));
-                        hold on;
-                        leg{ntraj}=trajectories{ntraj}.name;
-                    end
-                    if coord == 1
-                        legend(leg);
-                        title('Cartesian position (m)')
-                    end
-                    if (coord==6)
-                        xlabel('time(s)');
-                    end
-                    ylabel(coords{coord});
-                    grid on;
-                end
-            end
-        end
-        function joint_positions(trajectories, colors)
-            if (~iscell(trajectories))
-                trajectories={trajectories};
-            end
-            if (~isempty(trajectories{1}.q))
-                figure;
-                leg=cell(1, size(trajectories,2));
-                for j = 1:size(trajectories{1}.q,2)
+        function effortPoint(as_feedback_msg)
+           % Time between points plotted. You may need to change this depending on 
+           % your computer's resources
+           time_plot=0.05; %seconds
+           if (mod(as_feedback_msg.TimeFromStart, time_plot)==0)
+                for j=1:7
                     subplot(7,1,j);
-                    for ntraj=1:size(trajectories,2)
-                        plot(trajectories{ntraj}.t, trajectories{ntraj}.q(:,j), colors(ntraj));
-                        hold on;
-                        leg{ntraj}=trajectories{ntraj}.name;
-                    end
-                    if j == 1
-                        legend(leg);
-                        title('Joint position (rad)')
-                    end
-                    if j == 7
-                        xlabel('time (s)');
-                    end
-                    s = sprintf('j%d',j);
-                    ylabel(s);
-                    grid on;
+                    plot(as_feedback_msg.TimeFromStart, as_feedback_msg.PointCommanded.Effort(j), ['.', IiwaPlotter.ColorCommanded]);
+                    hold on;
+                    plot(as_feedback_msg.TimeFromStart, as_feedback_msg.JointState.Effort(j), ['.', IiwaPlotter.ColorRead]);
                 end
-            end          
+           end
         end
-        function cartesian_frames(trajectories, colors, varargin)
-            if (~iscell(trajectories))
-                trajectories={trajectories};
-            end
-            if (~isempty(trajectories{1}.x))
-                if (~isempty(varargin))
-                    subsample=varargin{1};
-                else
-                    subsample=size(trajectories{1}.x,1)/10;
-                end
-                figure;
-                leg=cell(1, size(trajectories,2));
-                for ntraj = 1:size(trajectories,2)
-                    for i =1:subsample:size(trajectories{ntraj}.x,1)
-                        IiwaPlotter.frame(trajectories{ntraj}.x(i,:), colors(ntraj));
-                        hold on;
-                        leg{ntraj} = trajectories{ntraj}.name;
-                    end
-                end
-                legend(leg);
-                title('3D cartesian position');
-                xlabel('x');
-                ylabel('y');
-                zlabel('z');
-                grid on;
-            end  
-        end
-        function joint_positions_compare_big(traj_comm, traj_output)
+        %% TODO: Change to trajectories cell
+        function effortWithPD_compare(traj_des, traj_comm)
+            figure;
+            ts_des=timeseries(traj_comm.effort, traj_comm.t);
+            ts_comm=timeseries(traj_des.effort, traj_des.t);
+            [ts_des, ts_comm] = synchronize(ts_des, ts_comm, 'Intersection');
+            ts_pdTorque=ts_comm-ts_des;
             for j = 1:7
-                figure;
-                plot(traj_comm.t, traj_comm.q(:,j), IiwaPlotter.ColorCommanded); 
-                hold on
-                plot(traj_output.t, traj_output.q(:,j), IiwaPlotter.ColorOutput); 
-                legend('Commanded joint position (rad)','Output joint position');
-                title('Commanded and output joint positions')
-                xlabel('time (s)');
+                subplot(7,1,j);
+                plot(traj_des.t, traj_des.effort(:,j), IiwaPlotter.ColorDesired); hold on
+                plot(ts_pdTorque.Time, ts_pdTorque.Data(:,j), IiwaPlotter.ColorOthers);
+                plot(traj_comm.t, traj_comm.effort(:,j), IiwaPlotter.ColorCommanded);
+                if j == 1
+                    legend('Torque desired (N)','PD torque','Total torque');
+                    title('Commanded and output efforts with PD efforts')
+                end
+                if j == 7
+                    xlabel('time (s)');
+                end
                 s = sprintf('j%d',j);
                 ylabel(s);
                 grid on;
+            end
+        end
+        function effortWithPD_compare_big(traj_comm, traj_output, traj_withoutPD)
+            for i=1:7
+                figure;hold on;
+                plot(traj_comm.t,traj_comm.effort(:,i), IiwaPlotter.ColorCommanded);
+                plot(traj_withoutPD.t,traj_withoutPD.effort(:,i), IiwaPlotter.ColorOthers);
+                plot(traj_output.t,traj_output.effort(:,i), IiwaPlotter.ColorOutput);
+                legend('commanded', 'ideal','output');
+                title('Commanded and output efforts with PD efforts')
+                xlabel('time (s)');
+                ylabel(s);
             end
         end
         function joint_efforts_compare(traj_comm, traj_output)
@@ -233,45 +317,19 @@ classdef IiwaPlotter < handle
                 grid on;
             end
         end
-        function joint_position_error(traj_comm, traj_output)
-            figure;
-            ts_output = timeseries(traj_comm.q, traj_comm.t);
-            ts_comm = timeseries(traj_output.q, traj_output.t);
-            [ts_output, ts_comm] = synchronize(ts_output, ts_comm, 'Union');
-
-            ts_error = ts_comm-ts_output;
-                
-            for j=1:7
-
-                subplot(7,1,j);
-                plot(ts_error.Time, ts_error.Data(:,j), IiwaPlotter.ColorErrors);
-                if j == 1
-                    legend('Error joint position(rad)');
-                    title('Error between commanded and output position')
-                end
-                if j == 7
-                    xlabel('time (s)');
-                end
+        function joint_positions_compare_big(traj_comm, traj_output)
+            for j = 1:7
+                figure;
+                plot(traj_comm.t, traj_comm.q(:,j), IiwaPlotter.ColorCommanded); 
+                hold on
+                plot(traj_output.t, traj_output.q(:,j), IiwaPlotter.ColorOutput); 
+                legend('Commanded joint position (rad)','Output joint position');
+                title('Commanded and output joint positions')
+                xlabel('time (s)');
                 s = sprintf('j%d',j);
                 ylabel(s);
                 grid on;
             end
-        end
-        function frame(frame_given, color)
-            if (size(frame_given)==[6, 1])
-                frame_given=frame_given';
-            end
-            origin=frame_given(1:3);
-            rotation=frame_given(4:6);
-            R=eul2rotm(rotation, 'XYZ');
-            quiver3(origin(1), origin(2), origin(3), R(1,1), R(2,1), R(3,1), 0.1, [color, '-']);
-            hold on;
-            quiver3(origin(1), origin(2), origin(3), R(1,2), R(2,2), R(3,2), 0.1, [color, '--']);
-            quiver3(origin(1), origin(2), origin(3), R(1,3), R(2,3), R(3,3), 0.1, [color, '-.']);
-
-            xlabel('x')
-            ylabel('y')
-            zlabel('z')
         end
     end
 end

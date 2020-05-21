@@ -76,7 +76,7 @@ classdef ScrewTheory < handle
             H = [r, p; [0 0 0 1]];
         end
         
-        function axang3A2B_A = axangframeA2B_A(oriA, oriB)
+        function axang3A2B_A = axangA2B_A(oriA, oriB)
             %Get rotation matrices that express orientations A and B, which
             %are the rotations from space frame S to frames A or B
             R_SA = eul2rotm(oriA, 'XYZ');
@@ -96,15 +96,9 @@ classdef ScrewTheory < handle
             %frame.
             axang3A2B_A = axang4A2B_A(1:3)*axang4A2B_A(4);
         end
-        function screw = screwframeA2B_S(frameA, frameB, time)
-            axang3A2B_A = ScrewTheory.axangframeA2B_A(frameA(1:3), frameB(1:3));
-            axang3A2B_S = eul2rotm(frameA(4:6), 'XYZ') * axang3A2B_A';
-            %Divide by the time
-            screw=axang3A2B_S'/time;
-        end
-        function screw_A = frameA2B_A (frameA, frameB)
+        function screw_A = screwA2B_A (frameA, frameB)
             screw_A(1:3) = frameB(1:3)-frameA(1:3);
-            screw_A(4:6) = ScrewTheory.axangframeA2B_A(frameA(4:6), frameB(4:6));
+            screw_A(4:6) = ScrewTheory.axangA2B_A(frameA(4:6), frameB(4:6));
         end
         function oriB = rotframe_A(oriA, axang_A)
             angle = norm(axang_A);
@@ -114,104 +108,44 @@ classdef ScrewTheory < handle
             R_SB = R_SA*R_AB;
             oriB = rotm2eul(R_SB, 'XYZ');
         end
-        function frameB = transformframe_A(frameA, screw_A)
+        function frameB = tfframe_A(frameA, screw_A)
             frameB(1:3) = frameA(1:3) + screw_A(1:3);
             frameB(4:6) = ScrewTheory.rotframe_A(frameA(4:6), screw_A(4:6));
         end
-        function screw_S = transformscrewA2S (screw_A, frame_A)
+        function screw_S = tfscrew_A2S (screw_A, frame_SA)
             %frame_A = screw representing the position and orientation of
             %frame A wrt to frame S
             %screw_A = a screw expressed in the frame A that you want it to
             %be represented in the space frame
-            screw_S(4:6) = eul2rotm(frame_A(4:6), 'XYZ')*screw_A(4:6)';
-            screw_S(1:3) = screw_A(1:3) - cross(screw_S(4:6), frame_A(1:3));
+            screw_S(4:6) = eul2rotm(frame_SA(4:6), 'XYZ')*screw_A(4:6)';
+            screw_S(1:3) = screw_A(1:3) - cross(screw_S(4:6), frame_SA(1:3));
         end
-        function qdot = IDK_point(q_curr, xdot)
-            %TODO: Check sizes
-            if (size(xdot)==[6 1])
-                xdot=xdot';
+        function screw_A = tfscrew_S2A (screw_S, frame_SA)
+            screw_A(1:3) = screw_S(1:3) + cross(screw_S(4:6), frame_SA(1:3));
+            screw_A(4:6) = eul2rotm(frame_SA(4:6), 'XYZ')'*screw_S(4:6)';
+        end
+        function qdot = IDK_point(q_curr, xdot_S)
+            %Check sizes
+            if (size(xdot_S)==[6 1])
+                xdot_S=xdot_S';
             end
             Jst = ScrewTheory.GeoJacobianS(IiwaRobot.Twist, q_curr);
             Jst_i = pinv(Jst);
-            qdot = (Jst_i*xdot')';
+            qdot = (Jst_i*xdot_S')';
             far_ratio = abs(qdot)./abs(IiwaRobot.ThDotmax);
             farest = max(far_ratio);
             if (farest>1)
                 qdot = qdot./(farest);
             end
-       end
-        %%
-        
-        function qdot = InverseDifferentialKinematics_point(q_curr, x_next, time)
-            % Calculate current cartesian position using forward kinematics
-            x_curr=ScrewTheory.ForwardKinematics(q_curr);
-            % Calculate cartesian velocity - Position
-            v_xyz=(x_next(1:3)-x_curr(1:3))/time;
-            % Calculate cartesian velocity - Orientation
-            w_xyz=ScrewTheory.substract_ori(x_curr(4:6), x_next(4:6), time);
-            % Transform velocity in screw form
-            v_screw=v_xyz-cross(w_xyz,x_curr(1:3));
-            w_screw=w_xyz;
-            cart_vel_screw=[v_screw, w_screw]';
-            qdot = ScrewTheory.IDK_point(q_curr, cart_vel_screw);
-%             % Calculate space jacobian
-%             Jst=ScrewTheory.GeoJacobianS(IiwaRobot.Twist, q_curr);
-%             % Calculate joint velocity with Moore-Penrose pseudojacobian
-%             Jst_i=pinv(Jst);%Jst'*inv(Jst*Jst');%pinv(Jst);
-%             qdot=(Jst_i*cart_vel_screw)';
-%             % Limit velocity to joint_vel_limits
-%             far_ratio = abs(qdot)./abs(IiwaRobot.ThDotmax);
-%             farest = max(far_ratio);
-%             if (farest>1)
-%                 qdot = qdot./(farest);
-%             end
-            %qdot=min(abs(qdot), abs(IiwaRobot.ThDotmax)).*sign(qdot);
-            % Calculate joint_position that the robot should achieve moving at that
-            % velocity during the given time
-           % q_next=q_curr(1:size(qdot,2))+qdot*time;
-            % Limit position to limits
-            %q_next=min(abs(q_next), abs(IiwaRobot.Thmax)).*sign(q_next);
         end
-
-%         function axang_S = axangframeA2B(oriA, oriB)
-%             % Gets the axis (in the space frame) and angle
-%             % needed to rotate a frame with orientation oriA into a frame 
-%             % with orientation oriB following the smaller path
-%             R_SA = eul2rotm(oriA, 'XYZ');
-%             R_SB = eul2rotm(oriB, 'XYZ');
-%             R_AS = R_SA';
-%             R_AB = R_AS * R_SB;
-%             axang_AB_A = rotm2axang(R_AB);
-%             axis = R_SA * axang_AB_A(1:3)';
-%             angle = axang_AB_A(4);
-%             axang_S = (axis*angle)';
-%         end
-% 
-%         function frameB = rotateframe(oriA, axang_S)
-%             %Axis expressed in the space frame, frame A expressed in the
-%             %space frame, frameB expressed in the space frame
-%             angle = norm(axang_S);
-%             axis_S = axang_S/angle;
-%             axis_A = eul2rotm(oriA,'XYZ')' * axis_S';
-%             R_AB = axang2rotm([axis_A', angle]);
-%             R_SA = eul2rotm(oriA, 'XYZ');
-%             R_SB = R_SA*R_AB;
-%             frameB = rotm2eul(R_SB, 'XYZ');
-%         end
-%         function screwA2B = frameA2B (frameA, frameB)
-%             v_A = frameB(1:3) - frameA(1:3);
-%             w_S = ScrewTheory.axangframeA2B(frameA(4:6), frameB(4:6));
-%             v_S = v_A - cross(w_S, frameA(1:3));
-%             screwA2B = [v_A w_S];
-%         end
-%         function frameB = transformframe (frameA, screwA2B)
-%             frameB(1:3) = frameA(1:3) + screwA2B(1:3);
-%             frameB(4:6) = ScrewTheory.rotateframe(frameA(4:6), screwA2B(4:6));
-%         end
-%         function x = substract_cartesian(x_ini, x_end)
-%             x(1:3)=x_end(1:3)-x_ini(1:3);
-%             x(4:6)=substract_ori(x_ini(4:6), x_end(4:6), 1);
-%         end
+        function xdot_S = DK_point (q_curr, qdot)
+            if (size(qdot)==[7 1])
+                qdot=qdot';
+            end
+            Jst = ScrewTheory.GeoJacobianS(IiwaRobot.Twist, q_curr);
+            xdot_S = Jst*qdot';
+            x_curr = ScrewTheory.ForwardKinematics(q_curr);
+        end
     end
 end
 
