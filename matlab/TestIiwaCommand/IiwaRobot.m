@@ -4,6 +4,7 @@ classdef IiwaRobot
     
     properties (Constant)
         l_tool = 0.152; %ManetaFT
+        n_joints = 6;
         pk=[0;0;0.36]; 
         pf=[0;0;1.18]; 
         pp=[0;0; 1.306 + IiwaRobot.l_tool];
@@ -17,6 +18,8 @@ classdef IiwaRobot
         % Maximum Magnitude for the robot joints POSITION rad, (by catalog).
         Thmax = deg2rad([170 120 170 120 170 120 175]);
         ThDotmax = deg2rad([67 67 81 81 130 120 120]);
+        Torquemax = [176 176 110 110 110 40 40]; %Nm
+        CartAccMax = 0.5 %m/s2
     end
     
     methods

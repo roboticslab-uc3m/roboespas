@@ -1,4 +1,4 @@
-classdef IiwaTrajectory < handle
+classdef IiwaTrajectory
     %IIWAINTERPOLATOR Summary of this class goes here
     %   Detailed explanation goes here
     
@@ -10,6 +10,7 @@ classdef IiwaTrajectory < handle
         effort
         x
         xdot
+        xdotdot
         name
         lbr
         qWaypoints

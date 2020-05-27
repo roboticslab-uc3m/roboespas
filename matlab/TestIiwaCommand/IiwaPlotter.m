@@ -18,82 +18,83 @@ classdef IiwaPlotter < handle
             if (~iscell(trajectories))
                 trajectories={trajectories};
             end
-            if (~isempty(trajectories{1}.q))
-                figure;
-                leg=cell(1, size(trajectories,2));
-                for j = 1:size(trajectories{1}.q,2)
-                    subplot(7,1,j);
-                    for ntraj=1:size(trajectories,2)
+            figure;
+            leg={};
+            for j = 1:IiwaRobot.n_joints
+                subplot(IiwaRobot.n_joints,1,j);
+                for ntraj=1:size(trajectories,2)
+                    if (~isempty(trajectories{ntraj}.q))
                         plot(trajectories{ntraj}.t, trajectories{ntraj}.q(:,j), colors(ntraj));
                         hold on;
-                        leg{ntraj}=trajectories{ntraj}.name;
+                        leg=[leg trajectories{ntraj}.name];
                     end
-                    if j == 1
-                        legend(leg);
-                        title('Joint position (rad)')
-                    end
-                    if j == 7
-                        xlabel('time (s)');
-                    end
-                    s = sprintf('j%d',j);
-                    ylabel(s);
-                    grid on;
                 end
-            end          
+                if j == 1
+                    legend(leg);
+                    title('Joint position (rad)')
+                end
+                if j == IiwaRobot.n_joints
+                    xlabel('time (s)');
+                end
+                s = sprintf('j%d',j);
+                ylabel(s);
+                grid on;
+            end
         end
         function joint_velocities(trajectories, colors)
             if (~iscell(trajectories))
                 trajectories={trajectories};
             end
-            if (~isempty(trajectories{1}.qdot))
-                figure;
-                leg=cell(1, size(trajectories,2));
-                for j = 1:size(trajectories{1}.qdot,2)
-                    subplot(7,1,j);
-                    for ntraj=1:size(trajectories,2)
+            figure;
+            leg={};
+            for j = 1:IiwaRobot.n_joints
+                subplot(IiwaRobot.n_joints,1,j);
+                for ntraj=1:size(trajectories,2)
+                    if (~isempty(trajectories{ntraj}.qdot))
                         plot(trajectories{ntraj}.t, trajectories{ntraj}.qdot(:,j), [colors(ntraj)]);
                         hold on;
-                        leg{ntraj}=trajectories{ntraj}.name;
+                        leg=[leg trajectories{ntraj}.name];
                     end
-                    if j == 1
-                        legend(leg);
-                        title('Joint velocity (rad/s)')
-                    end
-                    if j == 7
-                        xlabel('time (s)');
-                    end
-                    s = sprintf('j%d',j);
-                    ylabel(s);
-                    grid on;
                 end
-            end          
+                if j == 1
+                    legend(leg);
+                    title('Joint velocity (rad/s)')
+                end
+                if j == IiwaRobot.n_joints
+                    xlabel('time (s)');
+                end
+                s = sprintf('j%d',j);
+                ylabel(s);
+                grid on;
+            end
         end
         function cartesian_positions(trajectories, colors)
             if (~iscell(trajectories))
                 trajectories={trajectories};
             end
-            if (~isempty(trajectories{1}.x))
-                figure;
-                coords={'x', 'y', 'z', 'rx', 'ry', 'rz'};
-                leg=cell(1, size(trajectories,2));
-                for coord=1:size(trajectories{1}.x,2)
-                    subplot(6,1,coord);
-                    hold on;
-                    for ntraj=1:size(trajectories,2)
+            
+            figure;
+            coords={'x', 'y', 'z', 'rx', 'ry', 'rz'};
+            leg={};
+            for coord=1:6
+                subplot(6,1,coord);
+                hold on;
+                for ntraj=1:size(trajectories,2)
+                    if (~isempty(trajectories{ntraj}.x))
                         plot(trajectories{ntraj}.t, trajectories{ntraj}.x(:,coord), colors(ntraj));
                         hold on;
-                        leg{ntraj}=trajectories{ntraj}.name;
+                        leg=[leg trajectories{ntraj}.name];
                     end
-                    if coord == 1
-                        legend(leg);
-                        title('Cartesian position (m)')
-                    end
-                    if (coord==6)
-                        xlabel('time(s)');
-                    end
-                    ylabel(coords{coord});
-                    grid on;
                 end
+                if coord == 1
+                    legend(leg);
+                    title('Cartesian position (m)')
+                end
+                if (coord==6)
+                    xlabel('time(s)');
+                end
+                ylabel(coords{coord});
+                grid on;
             end
         end
         function cartesian_frames(trajectories, colors, n_frames)
@@ -132,15 +133,15 @@ classdef IiwaPlotter < handle
                     ts_trajectory = timeseries(trajectories{ntraj}.q, trajectories{ntraj}.t);
                     [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Union');
                     ts_error = ts_trajectory_used - ts_baseline_used;
-                    for j = 1:7
-                        subplot(7,1,j);
+                    for j = 1:IiwaRobot.n_joints
+                        subplot(IiwaRobot.n_joints,1,j);
                         plot(ts_error.Time, ts_error.Data(:,j), colors(ntraj));
                         hold on;
                         leg{ntraj} = trajectories{ntraj}.name;
                         if j == 1
                             title('Joint position error (rad)')
                         end
-                        if j == 7
+                        if j == IiwaRobot.n_joints
                             xlabel('time (s)');
                         end
                         s = sprintf('j%d',j);
@@ -196,11 +197,11 @@ classdef IiwaPlotter < handle
         function joint_position(joint_position, t)
             time_plot=0.05; %seconds
             if (mod(t, time_plot)==0)
-                for j = 1:7
-                    subplot(7,1,j);
+                for j = 1:IiwaRobot.n_joints
+                    subplot(IiwaRobot.n_joints,1,j);
                     hold on
                     plot(t, joint_position(:,j), [IiwaPlotter.ColorCommanded, '.']); 
-                    if j == 7
+                    if j == IiwaRobot.n_joints
                         xlabel('time (s)');
                     end
                     s = sprintf('j%d',j);
@@ -230,8 +231,8 @@ classdef IiwaPlotter < handle
            % your computer's resources
            time_plot=0.05; %seconds
            if (mod(as_feedback_msg.TimeFromStart, time_plot)==0)
-                for j=1:7
-                    subplot(7,1,j);
+                for j=1:IiwaRobot.n_joints
+                    subplot(IiwaRobot.n_joints,1,j);
                     plot(as_feedback_msg.TimeFromStart, as_feedback_msg.PointCommanded.Effort(j), ['.', IiwaPlotter.ColorCommanded]);
                     hold on;
                     plot(as_feedback_msg.TimeFromStart, as_feedback_msg.JointState.Effort(j), ['.', IiwaPlotter.ColorRead]);
@@ -245,8 +246,8 @@ classdef IiwaPlotter < handle
             ts_comm=timeseries(traj_des.effort, traj_des.t);
             [ts_des, ts_comm] = synchronize(ts_des, ts_comm, 'Intersection');
             ts_pdTorque=ts_comm-ts_des;
-            for j = 1:7
-                subplot(7,1,j);
+            for j = 1:IiwaRobot.n_joints
+                subplot(IiwaRobot.n_joints,1,j);
                 plot(traj_des.t, traj_des.effort(:,j), IiwaPlotter.ColorDesired); hold on
                 plot(ts_pdTorque.Time, ts_pdTorque.Data(:,j), IiwaPlotter.ColorOthers);
                 plot(traj_comm.t, traj_comm.effort(:,j), IiwaPlotter.ColorCommanded);
@@ -254,7 +255,7 @@ classdef IiwaPlotter < handle
                     legend('Torque desired (N)','PD torque','Total torque');
                     title('Commanded and output efforts with PD efforts')
                 end
-                if j == 7
+                if j == IiwaRobot.n_joints
                     xlabel('time (s)');
                 end
                 s = sprintf('j%d',j);
@@ -263,7 +264,7 @@ classdef IiwaPlotter < handle
             end
         end
         function effortWithPD_compare_big(traj_comm, traj_output, traj_withoutPD)
-            for i=1:7
+            for i=1:IiwaRobot.n_joints
                 figure;hold on;
                 plot(traj_comm.t,traj_comm.effort(:,i), IiwaPlotter.ColorCommanded);
                 plot(traj_withoutPD.t,traj_withoutPD.effort(:,i), IiwaPlotter.ColorOthers);
@@ -276,7 +277,7 @@ classdef IiwaPlotter < handle
         end
         function joint_efforts_compare(traj_comm, traj_output)
             figure;
-            for j=1:7
+            for j=1:IiwaRobot.n_joints
                 subplot(7,1,j);
                 plot(traj_comm.t, traj_comm.effort(:,j), IiwaPlotter.ColorCommanded);
                 hold on;
@@ -285,7 +286,7 @@ classdef IiwaPlotter < handle
                     legend('Commanded joint effort(N)','Output joint effort');
                     title('Commanded and output efforts')
                 end
-                if j == 7
+                if j == IiwaRobot.n_joints
                     xlabel('time (s)');
                 end
                 s = sprintf('j%d',j);
@@ -301,15 +302,15 @@ classdef IiwaPlotter < handle
 
             ts_error = ts_comm-ts_output;
                 
-            for j=1:7
+            for j=1:IiwaRobot.n_joints
 
-                subplot(7,1,j);
+                subplot(IiwaRobot.n_joints,1,j);
                 plot(ts_error.Time, ts_error.Data(:,j), IiwaPlotter.ColorErrors);
                 if j == 1
                     legend('Error joint effort(N)');
                     title('Error between commanded and output efforts')
                 end
-                if j == 7
+                if j == IiwaRobot.n_joints
                     xlabel('time (s)');
                 end
                 s = sprintf('j%d',j);
@@ -318,7 +319,7 @@ classdef IiwaPlotter < handle
             end
         end
         function joint_positions_compare_big(traj_comm, traj_output)
-            for j = 1:7
+            for j = 1:IiwaRobot.n_joints
                 figure;
                 plot(traj_comm.t, traj_comm.q(:,j), IiwaPlotter.ColorCommanded); 
                 hold on
