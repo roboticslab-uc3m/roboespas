@@ -4,7 +4,7 @@ classdef IiwaRobot
     
     properties (Constant)
         l_tool = 0.152; %ManetaFT
-        n_joints = 6;
+        n_joints = 7;
         pk=[0;0;0.36]; 
         pf=[0;0;1.18]; 
         pp=[0;0; 1.306 + IiwaRobot.l_tool];

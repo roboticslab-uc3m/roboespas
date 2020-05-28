@@ -120,6 +120,35 @@ classdef IiwaPlotter < handle
                 grid on;
             end  
         end
+        function cartesian_velocities(trajectories, colors)
+            if (~iscell(trajectories))
+                trajectories={trajectories};
+            end
+            
+            figure;
+            coords={'x', 'y', 'z', 'rx', 'ry', 'rz'};
+            leg={};
+            for coord=1:6
+                subplot(6,1,coord);
+                hold on;
+                for ntraj=1:size(trajectories,2)
+                    if (~isempty(trajectories{ntraj}.x))
+                        plot(trajectories{ntraj}.t, trajectories{ntraj}.xdot(:,coord), colors(ntraj));
+                        hold on;
+                        leg=[leg trajectories{ntraj}.name];
+                    end
+                end
+                if coord == 1
+                    legend(leg);
+                    title('Cartesian velocity (m/s)')
+                end
+                if (coord==6)
+                    xlabel('time(s)');
+                end
+                ylabel(coords{coord});
+                grid on;
+            end
+        end
         %% PLOT ERRORS
         function joint_position_error(traj_baseline, trajectories, colors)
             if (~iscell(trajectories))
@@ -146,6 +175,42 @@ classdef IiwaPlotter < handle
                         end
                         s = sprintf('j%d',j);
                         ylabel(s);
+                        grid on;
+                    end
+                end
+                legend(leg);
+                grid on;
+            end
+        end
+        function cartesian_position_error(traj_baseline, trajectories, colors)
+            if (~iscell(trajectories))
+                trajectories={trajectories};
+            end
+            coords={'x', 'y', 'z', 'rx', 'ry', 'rz'};
+            if (~isempty(traj_baseline.x))
+                figure;
+                leg=cell(1, size(trajectories,2));
+                ts_baseline = timeseries(traj_baseline.x, traj_baseline.t);
+                for ntraj = 1:size(trajectories,2)
+                    ts_trajectory = timeseries(trajectories{ntraj}.x, trajectories{ntraj}.t);
+                    [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Union');
+                    error = zeros(size(ts_trajectory_used.Data,1), 6);
+                    for i=1:size(ts_trajectory_used.Data,1)
+                        error(i,:) = ScrewTheory.screwA2B_A(ts_baseline_used.Data(i,:), ts_trajectory_used.Data(i,:));
+                    end
+                    ts_error = timeseries(error, ts_baseline_used.Time);
+                    for coord = 1:6
+                        subplot(6,1,coord);
+                        plot(ts_error.Time, ts_error.Data(:,coord), colors(ntraj));
+                        hold on;
+                        leg{ntraj} = trajectories{ntraj}.name;
+                        if coord == 1
+                            title('Cartesian position error (m)')
+                        end
+                        if coord == 6
+                            xlabel('time (s)');
+                        end
+                        ylabel(coords{coord});
                         grid on;
                     end
                 end

@@ -18,7 +18,7 @@ factor_correction = 0.1; %factor of multiplication of the velocity of correcctio
 %Find x, q, qdot offline
 traj_straight = ScrewTheory.BuildStraightTrajectoryAtGivenVelocity(q_ini, x_goal, control_step_size, 1, 'commanded');
 
-%%
+%% 
 %Simulate control
 cont = 1;
 %id_curr=1;
@@ -39,10 +39,10 @@ while (cont)
         q_exp = traj_output.q(n-1,:)+ traj_output.qdot(n-1,:)*control_step_size; %time_passed
         q_curr=q_exp;
         %Simular error -> No en Gazebo
-%         %Add random error
+        %Add random error
 %         m=fix(rand([1 7])+0.5);
 %         m(~m)=-1;
-%         error = rand(1,7).*m/100;
+%         error = rand(1,7).*m/150;
 %         if (mod(time_from_start, 0.5) < control_step_size*2)
 %             q_curr = q_curr + error;
 %         end
@@ -59,12 +59,17 @@ while (cont)
     x_exp = traj_straight.x(id_curr,:);
     x_curr = ScrewTheory.ForwardKinematics(q_curr);
     x_next = traj_straight.x(id_curr+1,:);
-    xdot_exp_A = ScrewTheory.screwA2B_A(x_exp, x_next)/control_step_size;
+    
+    if (~isempty(traj_straight.xdot))
+        xdot_exp_A = traj_straight.xdot(id_curr,:);
+    else
+        xdot_exp_A = ScrewTheory.screwA2B_A(x_exp, x_next)/control_step_size;
+    end
     xdot_exp_S = ScrewTheory.tfscrew_A2S(xdot_exp_A, x_exp);
     xdot_err_A = ScrewTheory.screwA2B_A(x_curr, x_exp)/control_step_size;
     xdot_err_S = ScrewTheory.tfscrew_A2S(xdot_err_A, x_curr);
     
-    xdot_S = xdot_exp_S + xdot_err_S*factor_correction;
+    xdot_S = xdot_exp_S;% + xdot_err_S*factor_correction;
     % Calculate joint velocity with Moore-Penrose pseudojacobian
     qdot = ScrewTheory.IDK_point(q_curr, xdot_S);
     %%
@@ -84,6 +89,7 @@ end
 
 %% Plot
 IiwaPlotter.cartesian_positions({traj_straight, traj_output}, ['b', 'g']);
+IiwaPlotter.cartesian_position_error(traj_straight, traj_output, 'b');
 %IiwaPlotter.joint_positions({traj_straight, traj_output}, ['b', 'g']);
 %IiwaPlotter.joint_position_error(traj_straight, traj_output, 'r');
 
