@@ -74,6 +74,7 @@ add_action_files(
     FILES
     IiwaCommand.action
     MoveJ.action
+    MoveL.action
 )
 
 ## Generate added messages and services with any dependencies listed here
@@ -82,6 +83,7 @@ generate_messages(
    sensor_msgs
    std_msgs
    trajectory_msgs
+   geometry_msgs
    actionlib_msgs
 )
 
@@ -117,7 +119,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES iiwa_command
-  CATKIN_DEPENDS roscpp rospy sensor_msgs std_msgs trajectory_msgs message_generation message_runtime actionlib_msgs
+  CATKIN_DEPENDS roscpp rospy sensor_msgs std_msgs trajectory_msgs message_generation message_runtime actionlib_msgs geometry_msgs
 #  DEPENDS system_lib
 )
 

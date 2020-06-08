@@ -1,4 +1,5 @@
 clear all;
+close all;
 init_ros;
 
 [MoveJASrv_cli, MoveJASrv_msg] = rosactionclient('MoveJ');
@@ -8,8 +9,8 @@ MoveJASrv_cli.ActivationFcn = @(~) disp('MoveJ action server active');
 MoveJASrv_cli.FeedbackFcn = @(~,msg) (1);
 MoveJASrv_cli.ResultFcn = @(~,msg) disp('MoveJ action server result received');
 
-%MoveJASrv_msg.JointPosition=[0.7 -1.2 0.7 -1 0.3 -0.5 0.5];
-MoveJASrv_msg.JointPosition=[-0.7 1.2 -0.7 1 -0.3 0.5 -0.5];
+%MoveJASrv_msg.JointPosition=[-0.7 1.2 -0.7 1 -0.3 0.5 -0.5];
+MoveJASrv_msg.JointPosition=[0.7 -1.2 0.7 -1 0.3 -0.5 0.5];
 resultMsg = sendGoalAndWait(MoveJASrv_cli, MoveJASrv_msg);
 
 %%

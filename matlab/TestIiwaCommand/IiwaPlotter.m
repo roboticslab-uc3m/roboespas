@@ -88,7 +88,7 @@ classdef IiwaPlotter < handle
                 end
                 if coord == 1
                     legend(leg);
-                    title('Cartesian position (m)')
+                    title('Cartesian position (m, rad)')
                 end
                 if (coord==6)
                     xlabel('time(s)');
@@ -205,7 +205,7 @@ classdef IiwaPlotter < handle
                         hold on;
                         leg{ntraj} = trajectories{ntraj}.name;
                         if coord == 1
-                            title('Cartesian position error (m)')
+                            title('Cartesian position error (m, rad)')
                         end
                         if coord == 6
                             xlabel('time (s)');

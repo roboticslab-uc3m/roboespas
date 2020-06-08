@@ -100,18 +100,18 @@ namespace gazebo
                 ROS_ERROR("Failed to read '/iiwa_command/control_step_size' on param server");
             }
             //Read limits from parameter server: position, velocity and torque
-            if (!nh->getParam("/iiwa_limits/joint_position", q_max))
+            if (!nh->getParam("/iiwa/limits/joint_position", q_max))
             {
-                ROS_ERROR("Failed to read '/iiwa_limits/joint_position' on param server");
+                ROS_ERROR("Failed to read '/iiwa/limits/joint_position' on param server");
             }
             std::vector<double> qdot_max;
-            if (!nh->getParam("/iiwa_limits/joint_velocity", qdot_max))
+            if (!nh->getParam("/iiwa/limits/joint_velocity", qdot_max))
             {
-                ROS_ERROR("Failed to read '/iiwa_limits/joint_velocity' on param server");
+                ROS_ERROR("Failed to read '/iiwa/limits/joint_velocity' on param server");
             }
-            if (!nh->getParam("/iiwa_limits/joint_torque", qtorque_limit))
+            if (!nh->getParam("/iiwa/limits/joint_torque", qtorque_limit))
             {
-                ROS_ERROR("Failed to read '/iiwa_limits/joint_torque' on param server.");
+                ROS_ERROR("Failed to read '/iiwa/limits/joint_torque' on param server.");
             }
             //Transform position into radians
             for (int j=0; j<qdot_max.size(); j++)

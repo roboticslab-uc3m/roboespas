@@ -90,6 +90,80 @@ classdef IiwaTrajectory
         end
     end
     methods (Static)
+        %% Funciones Ana
+        function traj = TrapezoidalVelocityTrajectoryParameterized(tacc, tflat, a, time_step, name)
+            %Returns a 1 coordinate trajectory with v0=0 and vend=0, given 
+            %a certain time for accelerating/deccelerating, a time in which
+            %the velocity maintains constant, the acceleration and the 
+            %time step, as well as the name for the given trajectory
+            traj=IiwaTrajectory(name);
+            if (isinf(tacc) || isinf(tflat))
+                ME=MException('IiwaTrajectory:infiniteTimes', 'Acceleration and flat times must be non infinite');
+                throw(ME);
+                return;
+            end
+            ttotal = tacc*2 + tflat;
+            %Build parameterized trajectory
+            ids_acc = 2:round(tacc/time_step)+1;
+            ids_flat = round(tacc/time_step)+1:round((tacc+tflat)/time_step)+1;
+            ids_dec = round((tacc+tflat)/time_step)+1:round(ttotal/time_step)+1;
+
+            traj.xdotdot(ids_acc,:) = a;
+            traj.xdotdot(ids_flat,:) = 0;
+            traj.xdotdot(ids_dec(1:end-1),:) = -a;
+            traj.xdotdot(ids_dec(end),:) = 0;
+            traj.t = (0:time_step:ttotal)';
+            traj.x = zeros(size(traj.t,1), 1);
+            traj.xdot = zeros(size(traj.t,1), 1);
+            traj.x(1) = 0;
+            traj.xdot(1) = 0;
+            for i=ids_acc(2:end)
+                traj.x(i) = 0.5 * a * traj.t(i)*traj.t(i);
+                traj.xdot(i) = a*traj.t(i);
+            end
+            for i=ids_flat(2:end)
+               t_=traj.t(i)-traj.t(ids_flat(1));
+               traj.x(i) = traj.x(ids_flat(1))+traj.xdot(ids_flat(1))*t_;
+               traj.xdot(i)=traj.xdot(ids_flat(1));
+            end
+            for i=ids_dec(2:end)
+                t_=traj.t(i)-traj.t(ids_dec(1));
+                traj.x(i) = traj.x(ids_dec(1)) + traj.xdot(ids_dec(1))*t_-0.5*a*t_*t_;
+                traj.xdot(i) = traj.xdot(ids_dec(1)) -a*t_;
+            end
+        end
+        function traj = Deparametrize(traj_pos, traj_ori, axis_tras, axis_rot, xini, name)
+            traj = IiwaTrajectory(name);
+            traj.t = traj_pos.t;
+            traj.xdot = [traj_pos.xdot*axis_tras, traj_ori.xdot*axis_rot];
+            traj.xdotdot = [traj_pos.xdotdot*axis_tras, traj_ori.xdotdot*axis_rot];
+            for i=1:size(traj.t,1)
+                traj.x(i,:) = ScrewTheory.tfframe_A(xini, [traj_pos.x(i)*axis_tras, traj_ori.x(i)*axis_rot]);
+            end
+        end
+        function traj = TrapezoidalVelocityTrajectory(qini, xgoal, ttotal, control_step_size, name)
+            xini= ScrewTheory.ForwardKinematics(qini);
+            xinc_A = ScrewTheory.screwA2B_A(xini, xgoal);
+
+            axis_rot=xinc_A(4:6)/norm(xinc_A(4:6))
+            angle=norm(xinc_A(4:6))
+            
+            axis_tras=xinc_A(1:3)/norm(xinc_A(1:3))
+            dist=norm(xinc_A(1:3))
+            
+            
+            [a_pos, tacc, tflat] = ScrewTheory.GetTrapezoidalTrajectoryTimeParameters(ttotal, dist, IiwaRobot.CartAccMax, control_step_size);
+            a_ori = ScrewTheory.GetTrapezoidalTrajectoryAcceleration(angle, tacc, tflat);
+            
+            %Build trajectories with the given acceleration, tacc, tflat
+            %and control_step_size
+            traj_para_pos = IiwaTrajectory.TrapezoidalVelocityTrajectoryParameterized(tacc, tflat, a_pos, control_step_size, 'parametrized_pos');
+            traj_para_ori = IiwaTrajectory.TrapezoidalVelocityTrajectoryParameterized(tacc, tflat, a_ori, control_step_size, 'parametrized_ori');
+            
+            %Deparametrize
+            traj = IiwaTrajectory.Deparametrize(traj_para_pos, traj_para_ori, axis_tras, axis_rot, xini, name);
+        end
+        %% Funciones Nacho
         function [t_trayectoria,q_trayectoria] = redireccionarInicioTrayectoria(tWaypoints,qWaypoints)
 
             % homeRobotPosition = joint positions [0,0,0,0,0,0,0]

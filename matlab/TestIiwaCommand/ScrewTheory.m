@@ -33,10 +33,12 @@ classdef ScrewTheory < handle
             if norm(w) == 0 % only translation
                r = eye(3);
                p = v*t;
-            else
+            elseif (norm(v)==0)
                r = ScrewTheory.expAxAng([w' t]);
                p = (eye(3)-r)*(cross(w,v)); % for only rotation joint.
-        %      p = (eye(3)-r)*(cross(w,v))+w*w'*v*t; % for general (rot+tra) screw.     
+            else
+               r = ScrewTheory.expAxAng([w' t]);
+               p = (eye(3)-r)*(cross(w,v))+w*w'*v*t; % for general (rot+tra) screw.     
             end
             H = [r, p; [0 0 0 1]];
         end
@@ -154,77 +156,10 @@ classdef ScrewTheory < handle
             xinc_total_A = ScrewTheory.GetCartesianIncrementStraightLine(qini, xgoal);
             xdot_A = xinc_total_A/ttotal; %meters/radians per second
         end
-        function xinc_total_A = GetCartesianIncrementStraightLine(qini,xgoal)
-            xini = ScrewTheory.ForwardKinematics(qini);
-            xinc_total_A = ScrewTheory.screwA2B_A(xini, xgoal);
-        end
      
         %% Build trajectory
-        function traj = BuildTrapezoidalTrajectory(qini, xgoal, ttotal, control_step_size, name) %6coord
-            traj = IiwaTrajectory(name);
-            xini= ScrewTheory.ForwardKinematics(qini);
-            xinc_A = ScrewTheory.GetCartesianIncrementStraightLine(qini, xgoal);
 
-            axis_rot=xinc_A(4:6)/norm(xinc_A(4:6));
-            angle=norm(xinc_A(4:6));
-            
-            axis_tras=xinc_A(1:3)/norm(xinc_A(1:3));
-            dist=norm(xinc_A(1:3));
-            
-            [a_pos, tacc, tflat] = ScrewTheory.GetTrapezoidalTrajectoryTimeParameters(ttotal, dist, IiwaRobot.CartAccMax, control_step_size);
-            a_ori = ScrewTheory.GetTrapezoidalTrajectoryAcceleration(angle, tacc, tflat);
-            
-            [~, xpos, xdotpos, xdotdotpos] = ScrewTheory.BuildTrapezoidalTrajectory1Coord(tacc, tflat, a_pos, control_step_size);
-            [t, xori, xdotori, xdotdotori] = ScrewTheory.BuildTrapezoidalTrajectory1Coord(tacc, tflat, a_ori, control_step_size);
-            
-            %Deparametrize
-            traj.t = t;
-            traj.xdot = [xdotpos*axis_tras, xdotori*axis_rot];
-            traj.xdotdot = [xdotdotpos*axis_tras, xdotdotori*axis_rot];
-            for i=1:size(traj.t,1)
-                traj.x(i,:) = ScrewTheory.tfframe_A(xini, [xpos(i)*axis_tras, xori(i)*axis_rot]);
-            end
-        end
-        
-        function [t, x, xdot, xdotdot] = BuildTrapezoidalTrajectory1Coord(tacc, tflat, a, step_size)          
-            if (isinf(tacc) || isinf(tflat))
-                t=0;
-                x=0;
-                xdot=0;
-                xdotdot=0;
-                return;
-            end
-            ttotal = tacc*2 + tflat;
-            %Build parameterized trajectory
-            ids_acc = 2:round(tacc/step_size)+1;
-            ids_flat = round(tacc/step_size)+1:round((tacc+tflat)/step_size)+1;
-            ids_dec = round((tacc+tflat)/step_size)+1:round(ttotal/step_size)+1;
 
-            xdotdot(ids_acc,:) = a;
-            xdotdot(ids_flat,:) = 0;
-            xdotdot(ids_dec(1:end-1),:) = -a;
-            xdotdot(ids_dec(end),:) = 0;
-            t = (0:step_size:ttotal)';
-            x = zeros(size(t,1), 1);
-            xdot = zeros(size(t,1), 1);
-            x(1) = 0;
-            xdot(1) = 0;
-            for i=ids_acc(2:end)
-                x(i) = 0.5 * a * t(i)*t(i);
-                xdot(i) = a*t(i);
-            end
-            for i=ids_flat(2:end)
-               t_=t(i)-t(ids_flat(1));
-               x(i) = x(ids_flat(1))+xdot(ids_flat(1))*t_;
-               xdot(i)=xdot(ids_flat(1));
-            end
-            for i=ids_dec(2:end)
-                t_=t(i)-t(ids_dec(1));
-                x(i) = x(ids_dec(1)) + xdot(ids_dec(1))*t_-0.5*a*t_*t_;
-                xdot(i) = xdot(ids_dec(1)) -a*t_;
-            end
-        end
-        
         function a = GetTrapezoidalTrajectoryAcceleration(dtotal, tacc, tflat)
             a = dtotal/(tacc*tflat + tacc*tacc);
         end
@@ -234,6 +169,8 @@ classdef ScrewTheory < handle
             % Opt1:Using the roots function
             %p = [1/a_max, -ttotal, dtotal];
             %vflat_sols = roots(p);
+            %Make sure ttotal is achievable with the given time_step
+            ttotal = ceil(ttotal/time_step)*time_step; 
             a_min = (4*dtotal)/(ttotal*ttotal);
             %a_max=a_min;
             % Opt2: Using the formula for 2nd grade polynomials
@@ -275,7 +212,7 @@ classdef ScrewTheory < handle
             %enough so it doesnt get limited by qdot limit
             time_first_approach = 20;
             tic
-            traj_straight = ScrewTheory.BuildTrapezoidalTrajectory(q_ini, x_goal, time_first_approach, control_step_size, 'straight');
+            traj_straight = IiwaTrajectory.TrapezoidalVelocityTrajectory(q_ini, x_goal, time_first_approach, control_step_size, 'straight');
             toc
             %Get joint positions and velocities needed to follow that
             %straight trajectory (in theory)
@@ -297,7 +234,7 @@ classdef ScrewTheory < handle
             %And adjust it the control_step_size
             time_new = ceil(time_new/control_step_size)*control_step_size;
             %Finally recalculate the straight trajectory for this time
-            traj_output = ScrewTheory.BuildTrapezoidalTrajectory(q_ini, x_goal, time_new, control_step_size, name);
+            traj_output = IiwaTrajectory.TrapezoidalVelocityTrajectory(q_ini, x_goal, time_new, control_step_size, name);
         end
         %% Complete trajectories with certain data
         function traj = FillJointPositionsFromCartesianPositions(traj, qini)

@@ -1,5 +1,5 @@
 clear all
-%close all
+close all
 q_ini=[0.7 -1.2 0.7 -1 0.3 -0.5 0.5];
 q_goal=[-0.7 1.2 -0.7 1 -0.3 0.5 -0.5];
 x_goal=ScrewTheory.ForwardKinematics(q_goal);
@@ -7,7 +7,7 @@ format long;
 
 % Given parameters
 velocity=1;
-control_step_size=0.001;
+control_step_size=0.02;
 
 % Selected parameters
 total_time = 5;
@@ -31,8 +31,8 @@ qdot1=ScrewTheory.IDK_point(q_curr, traj_straight.xdot(1,:));
 t_pauses=zeros(1, size(traj_straight.x,1));
 timeStart = tic;
 while (cont)
-    time_from_start = (n-1)*control_step_size;%toc(timeStart); %
-    id_curr = n;% round(time_from_start/control_step_size) +1; %
+    time_from_start = toc(timeStart); %(n-1)*control_step_size;%
+    id_curr =  round(time_from_start/control_step_size) +1; %n;%
     if (n~=1)
         %Simular que se mueve el robot -> No en Gazebo
         time_passed = time_from_start - traj_output.t(n-1);
@@ -69,7 +69,7 @@ while (cont)
     xdot_err_A = ScrewTheory.screwA2B_A(x_curr, x_exp)/control_step_size;
     xdot_err_S = ScrewTheory.tfscrew_A2S(xdot_err_A, x_curr);
     
-    xdot_S = xdot_exp_S;% + xdot_err_S*factor_correction;
+    xdot_S = xdot_exp_S + xdot_err_S*factor_correction;
     % Calculate joint velocity with Moore-Penrose pseudojacobian
     qdot = ScrewTheory.IDK_point(q_curr, xdot_S);
     %%

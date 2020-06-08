@@ -7,24 +7,28 @@
 #include "sensor_msgs/JointState.h"
 #include "trajectory_msgs/JointTrajectoryPoint.h"
 #include "trajectory_msgs/JointTrajectory.h"
-#include <iiwa_command/MoveJAction.h>
+#include "geometry_msgs/Twist.h"
+#include <iiwa_command/MoveLAction.h>
 #include <actionlib/server/simple_action_server.h>
 #include <Eigen/Dense>
 #include <math.h>
 #include <cmath>
 #include <iiwa_msgs/JointPosition.h>
 #include <iiwa_msgs/TimeToDestination.h>
+#include "IiwaTrajectoryGeneration.cpp"
+#include "IiwaScrewTheory.cpp"
+
 
 using namespace std;
 
-class MoveJAction
+class MoveLAction
 {
     protected:
     ros::NodeHandle nh;
     //Iiwa command action server variables
-    actionlib::SimpleActionServer<iiwa_command::MoveJAction> as;
-    iiwa_command::MoveJFeedback as_feedback;
-    iiwa_command::MoveJResult as_result;
+    actionlib::SimpleActionServer<iiwa_command::MoveLAction> as;
+    iiwa_command::MoveLFeedback as_feedback;
+    iiwa_command::MoveLResult as_result;
     //Iiwa gazebo state subscriber
     ros::Subscriber iiwa_state_sub;
     sensor_msgs::JointState joint_state;
@@ -42,8 +46,8 @@ class MoveJAction
 
     public:
 
-    MoveJAction(std::string name) :
-    as(nh, name, boost::bind(&MoveJAction::callback_MoveJ, this, _1), false) //Create the action server
+    MoveLAction(std::string name) :
+    as(nh, name, boost::bind(&MoveLAction::callback_MoveL, this, _1), false) //Create the action server
     {
         as.start();
         ROS_INFO("Action server %s started", name.c_str());
@@ -74,7 +78,7 @@ class MoveJAction
         if (strcmp(robot_mode.c_str(), "gazebo")==0)
         {
             iiwa_command_pub = nh.advertise<trajectory_msgs::JointTrajectoryPoint>("/iiwa_gazebo/joint_command", 1000, false);
-            iiwa_state_sub = nh.subscribe("/iiwa_gazebo/joint_state", 1000, &MoveJAction::callback_iiwa_gazebo_state, this);
+            iiwa_state_sub = nh.subscribe("/iiwa_gazebo/joint_state", 1000, &MoveLAction::callback_iiwa_gazebo_state, this);
         }
         else if (strcmp(robot_mode.c_str(), "iiwa_stack")==0)
         {
@@ -90,42 +94,75 @@ class MoveJAction
     {
         joint_state=iiwa_gazebo_state_msg;
     }
-    void callback_MoveJ(const iiwa_command::MoveJGoalConstPtr &goal)
+    void callback_MoveL(const iiwa_command::MoveLGoalConstPtr &goal)
     {   
-        ROS_INFO("MoveJ action server active");
-        //Variables returned
-        trajectory_msgs::JointTrajectory trajectory_commanded;
-        std::vector<sensor_msgs::JointState> trajectory_joint_state;
-        //First save in an std::vector
-        std::vector<double> q_goal_vec=goal->joint_position;
-        //Check position is not empty
-        if (q_goal_vec.empty())
-        {
-            ROS_ERROR("Empty joint position");
-            as.setSucceeded(as_result);
-            return;
-        }
-        //Transform into Eigen::VectorXd
-        Eigen::VectorXd q_goal = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned> (q_goal_vec.data(), q_goal_vec.size());
-        //Check position is inside the workspace
-        for (int j=0; j<q_goal.size(); j++)
-        {
-            if (std::abs(q_goal[j]) >= q_max[j])
-            {
-                ROS_ERROR("Goal joint position outside workspace");
-                as_result.trajectory_joint_state=trajectory_joint_state;
-                as_result.trajectory_commanded=trajectory_commanded;
-                as.setSucceeded(as_result);
-                return;
-            }
-        }
-        //Limit velocity
+        ROS_INFO("MoveL action server active");
         //Read velocity percentage
         double velocity=0.5; //from 0 to 1
         if (!nh.getParam("/iiwa_command/velocity", velocity))
         {
             ROS_ERROR("Failed to read '/iiwa_command/velocity' on param server, using 0.5");
         }
+        //Variables returned
+        trajectory_msgs::JointTrajectory trajectory_commanded;
+        std::vector<sensor_msgs::JointState> trajectory_joint_state;
+        //First save in an std::vector
+        std::vector<double> x_goal_vec=goal->cartesian_position;
+        //Check position is not empty
+        if (x_goal_vec.empty())
+        {
+            ROS_ERROR("Empty cartesian position");
+            as.setSucceeded(as_result);
+            return;
+        }
+        //Transform into Eigen::VectorXd
+        Eigen::VectorXd x_goal = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned> (x_goal_vec.data(), x_goal_vec.size());
+        //TODO:Check position is inside the cartesian workspace
+        /*
+        for (int j=0; j<x_goal.size(); j++)
+        {
+            if (std::abs(x_goal[j]) >= x_max[j]) //*x_max doesn't exist yet
+            {
+                ROS_ERROR("Goal cartesian position outside workspace");
+                as_result.trajectory_joint_state=trajectory_joint_state;
+                as_result.trajectory_commanded=trajectory_commanded;
+                as.setSucceeded(as_result);
+                return;
+            }
+        }*/
+        //TODO: Add limitation to cartesian_velocity
+
+        //Get current cartesian position from current joint position
+        sensor_msgs::JointState freezed_joint_state = joint_state;
+        Eigen::VectorXd q_curr = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(freezed_joint_state.position.data(), freezed_joint_state.position.size());
+        Eigen::VectorXd x_curr = IiwaScrewTheory::ForwardKinematics(q_curr);
+
+        Eigen::VectorXd x_ini = x_curr;
+        Eigen::Vector3d v;
+        v<<-0.3, 0.1, 0.2;
+        double mag = 0.2;
+        
+        Eigen::VectorXd x_inc_A = IiwaScrewTheory::ScrewA2B_A(x_ini, x_goal);
+
+        double angle_rot = x_inc_A.tail(3).norm();
+        Eigen::Vector3d axis_rot = x_inc_A.tail(3)/angle_rot;
+
+        double dist_tras = x_inc_A.head(3).norm();
+        Eigen::Vector3d axis_tras = x_inc_A.head(3)/dist_tras;
+
+        std::cout << "angle: " << angle_rot << ", axis: " << axis_rot.transpose() << std::endl;
+        std::cout << "dist: " << dist_tras << ", axis: " << axis_tras.transpose() << std::endl;
+
+        
+        //Calculate the expected cartesian trajectory from x_curr to x_goal
+        //std::vector<Eigen::VectorXd> x, xdot, xdotdot;
+        //Eigen::VectorXd timestamps;
+        
+        //x = IiwaTrajectoryGeneration::TrapezoidalVelocityProfile(x_curr, x_goal, control_step_size, velocity, timestamps, xdot, xdotdot);
+
+        /*
+        //Limit velocity
+
         //If mode is gazebo or fri, the joint_position should be divided in several near joint_positions
         if (strcmp(robot_mode.c_str(), "gazebo")==0 || strcmp(robot_mode.c_str(), "fri")==0)
         {
@@ -138,9 +175,7 @@ class MoveJAction
             bool cont=true;
             while (cont)
             {
-                sensor_msgs::JointState freezed_joint_state = joint_state;
-                //Get current position;
-                Eigen::VectorXd q_curr = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(freezed_joint_state.position.data(), freezed_joint_state.position.size());
+
                 //Calculate the difference in radians        
                 Eigen::VectorXd q_diff = q_goal-q_curr;
                 //Check if it is far from the goal position
@@ -213,20 +248,18 @@ class MoveJAction
 		        if (remainingTime==-999)
 			        break;
 	        }
-	        //If there was an error, return false
+	        //If there was an error, return an error
 	        if (remainingTime==-999)
 	        {
-		        res.success=false;
 		        ROS_INFO("Error");
 	        }
-	        else
-	        {
-		        res.success=true;
-	        }
             */ //TODO:Uncomment when connected to iiwa_stack to check it works
-        }
+        //}*/
+
+        as_result.trajectory_joint_state=trajectory_joint_state;
+        as_result.trajectory_commanded=trajectory_commanded;
         as.setSucceeded(as_result);
-        ROS_INFO("MoveJ action server result sent");
+        ROS_INFO("MoveL action server result sent");
     }
 };
 
