@@ -141,7 +141,7 @@ class MoveLAction
         Eigen::Vector3d v;
         v<<-0.3, 0.1, 0.2;
         double mag = 0.2;
-        
+
         Eigen::VectorXd x_inc_A = IiwaScrewTheory::ScrewA2B_A(x_ini, x_goal);
 
         double angle_rot = x_inc_A.tail(3).norm();
@@ -153,16 +153,18 @@ class MoveLAction
         std::cout << "angle: " << angle_rot << ", axis: " << axis_rot.transpose() << std::endl;
         std::cout << "dist: " << dist_tras << ", axis: " << axis_tras.transpose() << std::endl;
 
-        
+        double a_tras, a_rot, tacc, tflat;
+        double tinicial = 20.0; //segundos
+        IiwaTrajectoryGeneration::ParameterizedTrapezoidalVelocityProfileTrajectory(tinicial, 
+
         //Calculate the expected cartesian trajectory from x_curr to x_goal
         //std::vector<Eigen::VectorXd> x, xdot, xdotdot;
         //Eigen::VectorXd timestamps;
-        
+
         //x = IiwaTrajectoryGeneration::TrapezoidalVelocityProfile(x_curr, x_goal, control_step_size, velocity, timestamps, xdot, xdotdot);
 
         /*
         //Limit velocity
-
         //If mode is gazebo or fri, the joint_position should be divided in several near joint_positions
         if (strcmp(robot_mode.c_str(), "gazebo")==0 || strcmp(robot_mode.c_str(), "fri")==0)
         {
@@ -175,7 +177,6 @@ class MoveLAction
             bool cont=true;
             while (cont)
             {
-
                 //Calculate the difference in radians        
                 Eigen::VectorXd q_diff = q_goal-q_curr;
                 //Check if it is far from the goal position
@@ -185,7 +186,6 @@ class MoveLAction
                 {
                     q_diff = q_diff.array()/ratio_farest;
                 } //else stay as it is
-
                 //Get the next joint position
                 Eigen::VectorXd q_next = q_curr + q_diff;
                 //Check its inside the workspace
@@ -208,7 +208,6 @@ class MoveLAction
                 }
                 ros::Duration time_from_start = ros::Time::now()-tStartTraj;
                 point_command.time_from_start = time_from_start;
-
                 //Save point_commanded and joint_state into vectors
                 trajectory_commanded.points.push_back(point_command);
                 trajectory_joint_state.push_back(freezed_joint_state);
@@ -262,4 +261,5 @@ class MoveLAction
         ROS_INFO("MoveL action server result sent");
     }
 };
+
 
