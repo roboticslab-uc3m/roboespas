@@ -35,10 +35,33 @@ dataUsed='IIWA_Kinect'; %'Kinect' 'IIWA_Kinect' 'IIWA'
 oposicionMov='Sin fuerza'; % Sin fuerza    Con fuerza
 grado=4; % Regresión fuerzas Screw Theory
 
-pathOpenSimControl = 'D:\Leytha\Documentos\GitHub\roboespas\matlab\OpenSimControl\';
-pathMatlab = 'C:\Program Files\MATLAB\R2019a\';
-pathOpensim = 'C:\Program Files (x86)\SimTK\OpenSim 4.1\';
-KinectFilename = "Tray7.csv";
+file_path = which(mfilename);
+id_ch_folders = find(file_path =='\');
+pathOpenSimControl = file_path(1:id_ch_folders(end-2));
+disp(['Using OpenSimControl path: ', pathOpenSimControl]);
+
+pathOpenSim = 'C:\Program Files (x86)\SimTK\OpenSim 4.1\';
+title=strcat('Selecciona el directorio de instalación de OpenSim') ;
+pathOpenSim = uigetdir(pathOpenSim, title);
+if (pathOpenSim == 0)
+    ME = MException('Main:NoOpenSimPath', 'No OpenSim path selected');
+    throw(ME);
+end
+disp(['Using OpenSim installation path: ', pathOpenSim]);
+
+if isequal(oposicionMov,'Sin fuerza')
+    KinectFilepath = [pathOpenSimControl, '\TrayectoriasGrabadas\Test-1707\TrayectoriasKinect1707\Sin fuerza'];
+    title = strcat ('Selecciona la trayectoria sin fuerza');
+    [KinectFilename,KinectFilepath] = uigetfile([KinectFilepath, '\*.csv'], title);
+else
+    KinectFilepath = [pathOpenSimControl, '\TrayectoriasGrabadas\Test-1707\TrayectoriasKinect1707\Con fuerza'];
+    title = strcat ('Selecciona la trayectoria con fuerza');
+    [KinectFilename,KinectFilepath] = uigetfile([KinectFilepath, '\*.csv'], title);
+end
+if (KinectFilename == 0)
+    ME = MException('Main:NoTrajectoryName', 'No trajectory selected');
+    throw(ME);
+end
 
 switch modeladoMuscular
     case 'Spastic_Thelen'
@@ -74,11 +97,6 @@ CD_model= [pathOpenSimControl, '\ROBOESPAS_FLEXION'];
 %Kinect:
 KinectFrequency = 30; %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 tsample=1/KinectFrequency;
-if isequal(oposicionMov,'Sin fuerza')
-    KinectFilepath = [pathOpenSimControl, '\TrayectoriasGrabadas\Test-1707\TrayectoriasKinect1707\Sin fuerza'];
-else
-    KinectFilepath = [pathOpenSimControl, '\TrayectoriasGrabadas\Test-1707\TrayectoriasKinect1707\Con fuerza'];
-end
 KinectData=importdata(strcat(KinectFilepath,'\',KinectFilename));
 KinectStartRow=3;
 KinectEndRow=size(KinectData,1);
@@ -440,8 +458,8 @@ numMuscles=model.getMuscles.getSize;
 for i=0:numMuscles-1
     if model.getMuscles.get(i).hasProperty('gain_factor') %Si tiene la propiedad gain_factor significa que es espástico
         spasticMuscleName = char(model.getMuscles.get(i).getName);
-        fid = fopen( strcat(pathOpensim,'\bin\',spasticMuscleName,'_previousFiberVelocities.txt'), 'wt' );
-        fidMatlab = fopen( strcat(pathMatlab,'\bin\win64\',spasticMuscleName,'_previousFiberVelocities.txt'), 'wt' );
+        fid = fopen( strcat(pathOpenSim,'\bin\',spasticMuscleName,'_previousFiberVelocities.txt'), 'wt' );
+        fidMatlab = fopen( strcat(matlabroot,'\bin\win64\',spasticMuscleName,'_previousFiberVelocities.txt'), 'wt' );
         fclose(fid);
         fclose(fidMatlab);
     end
