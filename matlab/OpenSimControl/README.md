@@ -12,7 +12,7 @@
 3. Download the folders inside the *AddToOpenSimDir* Drive folder (https://drive.google.com/drive/u/4/folders/1dpf1CuUMkGFJbfxdy6ACZUnbttgPLTjY) and copy them in the OpenSim installation directory: 
    - The folder *Geometry* already exist, and there may be some downloaded files already present there, do not overwrite them, just copy the new ones.
 4. Download the folders inside the *AddToOpenSimControlDir* Drive folder (https://drive.google.com/drive/u/4/folders/1srC4AXj5f4QFgC-2gBhiMFmkBGDkVZFl). These folders are the model directory called *ROBOESPAS_FLEXION* and some example trajectories called *TrayectoriasGrabadas* and should be placed at the same level of this *README* and the folder *MatlabCode*. Do not change the names of the folders as they are added to the .gitignore file.
-5. Modify the paths in the file *Main.m* inside the *MatlabCode* folder: 
+5. Modify the paths in the file *Main.m* inside the *MatlabCode\Principales* folder: 
    - Line 54: *path_to_OpenSimControl\TrayectoriasGrabadas\Test-1707\iiwa1707*
    - Line 74: *path_to_OpenSimControl\TrayectoriasGrabadas\Test-1707\TrayectoriasKinect1707\Sin fuerza*
    - Line 68: *path_to_OpenSimControl\ROBOESPAS_FLEXION*
