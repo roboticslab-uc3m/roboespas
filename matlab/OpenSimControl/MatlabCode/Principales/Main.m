@@ -81,12 +81,11 @@ end
 
 %IIWA:
 IIWADataPath=[pathOpenSimControl, '\TrayectoriasGrabadas\Test-1707\iiwa1707'];
-cd(IIWADataPath);
 if isequal(oposicionMov,'Con fuerza')
-    Dsalida = load ('confuerza.mat');
+    Dsalida = load ([IIWADataPath, '\confuerza.mat']);
     Datos=Dsalida.AVRconfuerza;
 else
-    Dsalida = load ('sinfuerza.mat');
+    Dsalida = load ([IIWADataPath, '\sinfuerza.mat']);
     Datos=Dsalida.AVRsinfuerza;
 end
 
@@ -437,8 +436,8 @@ V_IIWA=V_IIWA(1:dataSize,:);
 
 % Lo imprimo en un archivo .trc (Coordenadas cartesianas espaciales)
 
-cd(CD_trc)
-org.opensim.modeling.TRCFileAdapter.write(TrcTableCreada,'Lab.trc')
+%cd(CD_trc)
+org.opensim.modeling.TRCFileAdapter.write(TrcTableCreada,[CD_trc, '\Lab.trc']);
 pause(0.2);
 
 %Variables para compensar los valores de los momentos:
@@ -477,7 +476,7 @@ pause(2);
 
 
 %% Obtención de las fuerzas y momentos en el TCP
-cd(CD_model);
+%cd(CD_model);
 if ~isequal(dataUsed,'Kinect')
     if isequal(methodIIWA_FD,'Screw Theory')
         [ForceAndTorque,stampsST] = f_IIWA_FD(Datos,DatosVacio,tsample); % SCREW THEORY
