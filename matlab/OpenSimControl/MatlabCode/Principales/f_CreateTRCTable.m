@@ -20,7 +20,11 @@ TrcTableCreada.addTableMetaDataString('OrigDataStart','1');
 TrcTableCreada.addTableMetaDataString('OrigNumFrames',NFrames);
 
 %Añado una fila y una columna inicial:
-RV=org.opensim.modeling.RowVectorVec3();
+if (strcmp(org.opensim.modeling.opensimCommon.GetVersion(), '4.1'))
+    RV=org.opensim.modeling.RowVectorVec3();
+else
+    RV=org.opensim.modeling.RowVectorOfVec3();
+end
 TrcTableCreada.appendRow(1,RV); %añado una fila vacia
 
 %Añado la columna:
@@ -28,7 +32,11 @@ TrcTableCreada.appendRow(1,RV); %añado una fila vacia
 MarkersNames = org.opensim.modeling.StdVectorString();
 TrcTableCreada.setColumnLabels(MarkersNames);
 V=org.opensim.modeling.Vec3(1,1,1);
-VV=org.opensim.modeling.VectorVec3(1,V);
+if (strcmp(org.opensim.modeling.opensimCommon.GetVersion(), '4.1'))
+    VV=org.opensim.modeling.VectorVec3(1,V);
+else
+    VV=org.opensim.modeling.VectorOfVec3(1,V);
+end
 if isequal(dataUsed ,'IIWA')
     TrcTableCreada.appendColumn('Handle',VV);
     dataLength=length(CMarkers.Handle(:,1)); % Revisar cuando se tengan todos los datos
@@ -60,7 +68,11 @@ TrcTableCreada.removeRowAtIndex(0);
 %Añado el numero de filas de la tabla del laboratorio
 
 for i= 1:dataLength %BUCLE DE ROWS
-    RV=org.opensim.modeling.RowVectorVec3();
+    if (strcmp(org.opensim.modeling.opensimCommon.GetVersion(), '4.1'))
+        RV=org.opensim.modeling.RowVectorVec3();
+    else
+        RV=org.opensim.modeling.RowVectorOfVec3();
+    end
     if (isequal(dataUsed ,'IIWA_Kinect') ||isequal(dataUsed ,'Kinect'))
         RV.resize(14);
         
