@@ -40,7 +40,7 @@ id_ch_folders = find(file_path =='\');
 pathOpenSimControl = file_path(1:id_ch_folders(end-2));
 disp(['Using OpenSimControl path: ', pathOpenSimControl]);
 
-pathOpenSim = 'C:\Program Files (x86)\SimTK\OpenSim 4.1\';
+pathOpenSim = 'C:\OpenSim 4.0';
 title=strcat('Selecciona el directorio de instalación de OpenSim') ;
 pathOpenSim = uigetdir(pathOpenSim, title);
 if (pathOpenSim == 0)
