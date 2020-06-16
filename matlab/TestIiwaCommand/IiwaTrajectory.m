@@ -117,16 +117,16 @@ classdef IiwaTrajectory
             traj.xdot = zeros(size(traj.t,1), 1);
             traj.x(1) = 0;
             traj.xdot(1) = 0;
-            for i=ids_acc(2:end)
+            for i=ids_acc(1:end)
                 traj.x(i) = 0.5 * a * traj.t(i)*traj.t(i);
                 traj.xdot(i) = a*traj.t(i);
             end
-            for i=ids_flat(2:end)
+            for i=ids_flat(1:end)
                t_=traj.t(i)-traj.t(ids_flat(1));
                traj.x(i) = traj.x(ids_flat(1))+traj.xdot(ids_flat(1))*t_;
                traj.xdot(i)=traj.xdot(ids_flat(1));
             end
-            for i=ids_dec(2:end)
+            for i=ids_dec(1:end)
                 t_=traj.t(i)-traj.t(ids_dec(1));
                 traj.x(i) = traj.x(ids_dec(1)) + traj.xdot(ids_dec(1))*t_-0.5*a*t_*t_;
                 traj.xdot(i) = traj.xdot(ids_dec(1)) -a*t_;
@@ -145,11 +145,11 @@ classdef IiwaTrajectory
             xini= ScrewTheory.ForwardKinematics(qini);
             xinc_A = ScrewTheory.screwA2B_A(xini, xgoal);
 
-            axis_rot=xinc_A(4:6)/norm(xinc_A(4:6))
-            angle=norm(xinc_A(4:6))
+            axis_rot=xinc_A(4:6)/norm(xinc_A(4:6));
+            angle=norm(xinc_A(4:6));
             
-            axis_tras=xinc_A(1:3)/norm(xinc_A(1:3))
-            dist=norm(xinc_A(1:3))
+            axis_tras=xinc_A(1:3)/norm(xinc_A(1:3));
+            dist=norm(xinc_A(1:3));
             
             
             [a_pos, tacc, tflat] = ScrewTheory.GetTrapezoidalTrajectoryTimeParameters(ttotal, dist, IiwaRobot.CartAccMax, control_step_size);

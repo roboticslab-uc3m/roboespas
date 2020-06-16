@@ -35,6 +35,7 @@ namespace IiwaScrewTheory
     }
     static Vector4d Rotm2AxisAngle(Matrix3d R)
     {
+        //TODO: Add description to all functions in this file
         AngleAxisd axang(R);
         Vector4d axang_4;
         axang_4.head(3) = axang.axis();
@@ -47,6 +48,13 @@ namespace IiwaScrewTheory
         Vector3d axang_3;
         axang_3 = axang.axis() * axang.angle();
         return axang_3;
+    }
+    static Matrix3d AxisAngle2Rotm(Vector3d axis_angle_3)
+    {
+        double angle = axis_angle_3.norm();
+        Vector3d axis = axis_angle_3/ angle;
+        AngleAxisd axang(angle, axis);
+        return axang.toRotationMatrix();
     }
     static Matrix3d AxisToSkew(Vector3d axis)
     {
@@ -74,7 +82,6 @@ namespace IiwaScrewTheory
         }
         Vector3d vee = screw.head(3);
         Vector3d om = screw.tail(3);
-        //std::cout << "vee: " << vee.transpose()  << " om: " << om.transpose() << " mag: " << mag << std::endl;
 
         R = AxangExponential(om, mag);
         Vector3d t; 
@@ -115,7 +122,7 @@ namespace IiwaScrewTheory
         x.tail(3) = Rotm2Eul(R);
         return x;
     }
-//Orientations operations
+//Orientation transformations
     static Vector3d AxangA2B_A(Vector3d axang_A, Vector3d axang_B)
     {
         Matrix3d R_SA = Eul2Rotm(axang_A);
@@ -125,13 +132,34 @@ namespace IiwaScrewTheory
         Vector3d axang_3 = Rotm2Axis(R_AB);
         return axang_3;
     }
-//Screw operations
+//Screw transformations
     static VectorXd ScrewA2B_A(VectorXd x_A, VectorXd x_B)
     {
         VectorXd screw(6);
         screw.head(3) = x_B.head(3)-x_A.head(3);
         screw.tail(3) = AxangA2B_A(x_A.tail(3), x_B.tail(3));
         return screw;   
+    }
+//Frame transformations
+    static Vector3d RotOrientation(Vector3d ori_A, Vector3d axang_A)
+    {
+        Vector3d ori_B = ori_A;
+        double angle = axang_A.norm();
+        if (angle !=0)
+        {
+            Matrix3d R_AB = AxisAngle2Rotm(axang_A);
+            Matrix3d R_SA = Eul2Rotm(ori_A);
+            Matrix3d R_SB = R_SA*R_AB;
+            ori_B = Rotm2Eul(R_SB);
+        }
+        return ori_B;
+    }
+    static VectorXd TransformFrame(VectorXd frame_A, VectorXd screw_A)
+    {
+        VectorXd frame_B(6);
+        frame_B.head(3) = frame_A.head(3) + screw_A.head(3);
+        frame_B.tail(3) = RotOrientation(frame_A.tail(3), screw_A.tail(3));
+        return frame_B;
     }
 }
 #endif

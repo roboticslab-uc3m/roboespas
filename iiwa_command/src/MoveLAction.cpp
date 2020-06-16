@@ -136,14 +136,11 @@ class MoveLAction
         sensor_msgs::JointState freezed_joint_state = joint_state;
         Eigen::VectorXd q_curr = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(freezed_joint_state.position.data(), freezed_joint_state.position.size());
         Eigen::VectorXd x_curr = IiwaScrewTheory::ForwardKinematics(q_curr);
-
         Eigen::VectorXd x_ini = x_curr;
-        Eigen::Vector3d v;
-        v<<-0.3, 0.1, 0.2;
-        double mag = 0.2;
 
         Eigen::VectorXd x_inc_A = IiwaScrewTheory::ScrewA2B_A(x_ini, x_goal);
 
+        //Parametrize the trajectory as two increments along two axes
         double angle_rot = x_inc_A.tail(3).norm();
         Eigen::Vector3d axis_rot = x_inc_A.tail(3)/angle_rot;
 
@@ -154,8 +151,22 @@ class MoveLAction
         std::cout << "dist: " << dist_tras << ", axis: " << axis_tras.transpose() << std::endl;
 
         double a_tras, a_rot, tacc, tflat;
+
+        //First build a trajectory for a big total time, to find out the joint velocities this produce. 
+        //This will allow then to rescale the total time to fit to the desired joint velocities
         double tinicial = 20.0; //segundos
-        IiwaTrajectoryGeneration::ParameterizedTrapezoidalVelocityProfileTrajectory(tinicial, 
+        IiwaTrajectoryGeneration::ParameterizedTrapezoidalVelocityTrajectory(tinicial, dist_tras, 0.5, control_step_size, a_tras, tacc, tflat);
+        a_rot = IiwaTrajectoryGeneration::GetAccelerationFromTrapezoidalVelocityTrajectory(angle_rot, tacc, tflat);
+        std::cout << "a_tras: " << a_tras << std::endl;
+        std::cout << "a_rot: " << a_rot << std::endl;
+        std::cout << "tacc: " << tacc << std::endl;
+        std::cout << "tflat: " << tflat << std::endl;
+
+        //Deparameterize this trajectory and transform it into cartesian positions
+        IiwaTrajectory traj_inicial = IiwaTrajectoryGeneration:: DeparameterizeTrapezoidalVelocityTrajectory(x_ini, tacc, tflat, a_tras, axis_tras, a_rot, axis_rot, control_step_size);
+        
+
+        //Now we have a correct
 
         //Calculate the expected cartesian trajectory from x_curr to x_goal
         //std::vector<Eigen::VectorXd> x, xdot, xdotdot;
