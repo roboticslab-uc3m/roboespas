@@ -41,8 +41,7 @@ pathOpenSimControl = file_path(1:id_ch_folders(end-2));
 disp(['Using OpenSimControl path: ', pathOpenSimControl]);
 
 
-pathOpensim = dir('C:\OpenSim*');
-pathOpenSim = [pathOpensim.folder, pathOpensim.name];
+pathOpenSim = ['C:\OpenSim ', char(org.opensim.modeling.opensimCommon.GetVersion())];
 % title=strcat('Selecciona el directorio de instalación de OpenSim') ;
 % pathOpenSim = uigetdir(pathOpenSim, title);
 % if (pathOpenSim == 0)
@@ -69,15 +68,15 @@ switch modeladoMuscular
     case 'Spastic_Thelen'
         %Load spasticMuscleModelPlugin
         opensimCommon.LoadOpenSimLibrary("..\Plugins\SpasticThelenMuscleModel.dll")
-        MODELO= 'Arm_Flexion_SpasticThelen.osim';
+        MODELO= 'Arm_Flexion_SpasticThelen - V2.osim';
     case 'Spastic_Millard'
         %Load spasticMillardMuscleModel
         opensimCommon.LoadOpenSimLibrary("..\Plugins\SpasticMillardMuscleModel.dll")
-        MODELO= 'Arm_Flexion_SpasticMillard.osim';
+        MODELO= 'Arm_Flexion_SpasticMillard_V2.osim';
     case 'Sano_Thelen'
-        MODELO='Arm_Flexion_Thelen.osim';
+        MODELO='Arm_Flexion_Thelen - V2.osim';
     case 'Sano_Millard'
-        MODELO='Arm_Flexion_Millard.osim';
+        MODELO='Arm_Flexion_Millard_V2.osim';
 end
 
 
