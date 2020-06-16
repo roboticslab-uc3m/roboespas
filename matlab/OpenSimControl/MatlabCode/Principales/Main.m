@@ -106,7 +106,7 @@ switch dataUsed
     case 'IIWA'
         % Modificaciones del sistema de coordenadas
         % requeridas para adaptar el sistema de coordenadas del laboratorio al del entorno SimTK
-        [Handle] = f_CoordModifications(Datos);
+        [Handle] = f_CoordModifications(Datos, dataUsed);
     case 'Kinect'
         % Datos recogidos por la Kinect
         CMarkers = f_CSVreader(KinectFilepath,KinectFilename,KinectStartRow,KinectEndRow);
@@ -426,7 +426,7 @@ V_IIWA=V_IIWA(1:dataSize,:);
 
 % Una vez cortados y equidistanciados, corregimos el sistema de
 % coordenadas del IIWA
-[CMarkers.Handle] = f_CoordModifications(CMarkers);
+[CMarkers.Handle] = f_CoordModifications(CMarkers, dataUsed);
 % Modificación de los datos de fuerzas y momentos (para reducir tiempos de
 % computación en las pruebas) OPCIONAL
 % FuerzasIIWA = f_ForcesModifications(Datos);
