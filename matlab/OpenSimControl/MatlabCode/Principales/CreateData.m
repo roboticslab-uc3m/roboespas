@@ -1,4 +1,4 @@
-for iiwa_files=0:10
+for iiwa_files=0:1
     
     clearvars -except iiwa_files
     
@@ -473,7 +473,9 @@ for iiwa_files=0:10
     % Replace Force Set
     cmcTool.setReplaceForceSet(false);
     % Results
-    cmcTool.setResultsDir(strcat(pathModel,'\CMCResults\G1\TrayIIWA',string(iiwa_files)));
+    pathResults=[pathModel,'\CMCResults\G1\TrayIIWA', num2str(iiwa_files), '\'];
+    mkdir(pathResults);
+    cmcTool.setResultsDir(pathResults);
     % Output precision
     cmcTool.setOutputPrecision(20);
     % Time Range
@@ -514,6 +516,10 @@ for iiwa_files=0:10
     % %   cmcTool.setDesiredPointsFileName(motFilePath);
     
     cmcTool.print(strcat(CD_cmc,'\setupActualCMC.xml'));
+    
+    cmc = CMCTool(strcat(CD_cmc,'\setupActualCMC.xml'));
+    
+    %Crear carpetas de resultados
     
     cmc = CMCTool(strcat(CD_cmc,'\setupActualCMC.xml'));
     cmc.run; %Esto se hace por seguridad. Recomendación de OpenSim.
