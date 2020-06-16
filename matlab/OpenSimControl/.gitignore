@@ -1,2 +1,5 @@
 ROBOESPAS_FLEXION/
 TrayectoriasGrabadas/
+*.dll
+*/*/build/
+*/*/CMakeLists.txt
