@@ -2,6 +2,7 @@ for iiwa_files=0:1
 
     clearvars -except iiwa_files
 
+    %PATATAS
     import org.opensim.modeling.*
     format long
     pause(2);
