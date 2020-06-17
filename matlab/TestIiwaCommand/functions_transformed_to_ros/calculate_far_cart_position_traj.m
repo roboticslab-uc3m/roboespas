@@ -1,5 +1,5 @@
 clear all
-close all
+%close all
 q_ini=[0.7 -1.2 0.7 -1 0.3 -0.5 0.5];
 q_goal=[-0.7 1.2 -0.7 1 -0.3 0.5 -0.5];
 x_goal=ScrewTheory.ForwardKinematics(q_goal);
@@ -16,7 +16,7 @@ factor_correction = 0.1; %factor of multiplication of the velocity of correcctio
 
 %% Option 2(correct): Obtain velocity -> Obtain positions
 %Find x, q, qdot offline
-traj_straight = ScrewTheory.BuildStraightTrajectoryAtGivenVelocity(q_ini, x_goal, control_step_size, 1, 'commanded');
+traj_straight = IiwaTrajectoryGeneration.BuildStraightTrajectoryAtGivenVelocity(q_ini, x_goal, control_step_size, 1, 'commanded');
 
 %% 
 %Simulate control

@@ -35,7 +35,7 @@ while(cont)
     cont = max(abs(q_diff))>0.0001;
     n=n+1;
 end
-traj.CompleteCartesian();
+traj = traj.CompleteCartesian();
 
 IiwaPlotter.joint_positions(traj, 'b');
 IiwaPlotter.cartesian_positions(traj, 'b');

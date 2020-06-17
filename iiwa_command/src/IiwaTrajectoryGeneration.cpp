@@ -73,9 +73,9 @@ namespace IiwaTrajectoryGeneration
         int npoints = ttotal/step_size+ 1 ;
 
         IiwaTrajectory traj(npoints, step_size);
-        traj.x.col(0) = x_ini;
         traj.xdotdot.col(0) = Eigen::VectorXd::Zero(6);
         traj.xdot.col(0) = Eigen::VectorXd::Zero(6);
+        traj.x.col(0) = x_ini;
 
         std::cout << "xini: " << traj.x.col(0).transpose() << std::endl;
         std::cout << "a_screw: " << a_screw.transpose() << std::endl;
