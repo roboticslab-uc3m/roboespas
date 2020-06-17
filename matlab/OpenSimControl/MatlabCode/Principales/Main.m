@@ -39,14 +39,16 @@ file_path = which(mfilename);
 id_ch_folders = find(file_path =='\');
 pathOpenSimControl = file_path(1:id_ch_folders(end-2));
 disp(['Using OpenSimControl path: ', pathOpenSimControl]);
-pathOpenSim = 'C:\OpenSim 4.0';
-title=strcat('Selecciona el directorio de instalaci�n de OpenSim') ;
-pathOpenSim = uigetdir(pathOpenSim, title);
-if (pathOpenSim == 0)
-    ME = MException('Main:NoOpenSimPath', 'No OpenSim path selected');
-    throw(ME);
-end
-disp(['Using OpenSim installation path: ', pathOpenSim]);
+
+
+pathOpenSim = ['C:\OpenSim ', char(org.opensim.modeling.opensimCommon.GetVersion())];
+% title=strcat('Selecciona el directorio de instalaci�n de OpenSim') ;
+% pathOpenSim = uigetdir(pathOpenSim, title);
+% if (pathOpenSim == 0)
+%     ME = MException('Main:NoOpenSimPath', 'No OpenSim path selected');
+%     throw(ME);
+% end
+% disp(['Using OpenSim installation path: ', pathOpenSim]);
 
 if isequal(oposicionMov,'Sin fuerza')
     KinectFilepath = [pathOpenSimControl, '\TrayectoriasGrabadas\Test-1707\TrayectoriasKinect1707\Sin fuerza'];
@@ -66,26 +68,25 @@ switch modeladoMuscular
     case 'Spastic_Thelen'
         %Load spasticMuscleModelPlugin
         opensimCommon.LoadOpenSimLibrary("..\Plugins\SpasticThelenMuscleModel.dll")
-        MODELO= 'Arm_Flexion_SpasticThelen.osim';
+        MODELO= 'Arm_Flexion_SpasticThelen - V2.osim';
     case 'Spastic_Millard'
         %Load spasticMillardMuscleModel
         opensimCommon.LoadOpenSimLibrary("..\Plugins\SpasticMillardMuscleModel.dll")
-        MODELO= 'Arm_Flexion_SpasticMillard.osim';
+        MODELO= 'Arm_Flexion_SpasticMillard_V2.osim';
     case 'Sano_Thelen'
-        MODELO='Arm_Flexion_Thelen.osim';
+        MODELO='Arm_Flexion_Thelen - V2.osim';
     case 'Sano_Millard'
-        MODELO='Arm_Flexion_Millard.osim';
+        MODELO='Arm_Flexion_Millard_V2.osim';
 end
 
 
 %IIWA:
 IIWADataPath=[pathOpenSimControl, '\TrayectoriasGrabadas\Test-1707\iiwa1707'];
-cd(IIWADataPath);
 if isequal(oposicionMov,'Con fuerza')
-    Dsalida = load ('confuerza.mat');
+    Dsalida = load ([IIWADataPath, '\confuerza.mat']);
     Datos=Dsalida.AVRconfuerza;
 else
-    Dsalida = load ('sinfuerza.mat');
+    Dsalida = load ([IIWADataPath, '\sinfuerza.mat']);
     Datos=Dsalida.AVRsinfuerza;
 end
 
@@ -105,7 +106,7 @@ switch dataUsed
     case 'IIWA'
         % Modificaciones del sistema de coordenadas
         % requeridas para adaptar el sistema de coordenadas del laboratorio al del entorno SimTK
-        [Handle] = f_CoordModifications(Datos);
+        [Handle] = f_CoordModifications(Datos, dataUsed);
     case 'Kinect'
         % Datos recogidos por la Kinect
         CMarkers = f_CSVreader(KinectFilepath,KinectFilename,KinectStartRow,KinectEndRow);
@@ -425,7 +426,7 @@ V_IIWA=V_IIWA(1:dataSize,:);
 
 % Una vez cortados y equidistanciados, corregimos el sistema de
 % coordenadas del IIWA
-[CMarkers.Handle] = f_CoordModifications(CMarkers);
+[CMarkers.Handle] = f_CoordModifications(CMarkers, dataUsed);
 % Modificaci�n de los datos de fuerzas y momentos (para reducir tiempos de
 % computaci�n en las pruebas) OPCIONAL
 % FuerzasIIWA = f_ForcesModifications(Datos);
@@ -436,8 +437,8 @@ V_IIWA=V_IIWA(1:dataSize,:);
 
 % Lo imprimo en un archivo .trc (Coordenadas cartesianas espaciales)
 
-cd(CD_trc)
-org.opensim.modeling.TRCFileAdapter.write(TrcTableCreada,'Lab.trc')
+%cd(CD_trc)
+org.opensim.modeling.TRCFileAdapter.write(TrcTableCreada,[CD_trc, '\Lab.trc']);
 pause(0.2);
 
 %Variables para compensar los valores de los momentos:
@@ -476,7 +477,7 @@ pause(2);
 
 
 %% Obtenci�n de las fuerzas y momentos en el TCP
-cd(CD_model);
+%cd(CD_model);
 if ~isequal(dataUsed,'Kinect')
     if isequal(methodIIWA_FD,'Screw Theory')
         [ForceAndTorque,stampsST] = f_IIWA_FD(Datos,DatosVacio,tsample); % SCREW THEORY

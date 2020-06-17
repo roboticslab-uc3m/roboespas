@@ -1,4 +1,4 @@
-function [Handle] = f_CoordModifications(Datos)
+function [Handle] = f_CoordModifications(Datos, dataUsed)
 %Esta funcion permite rotar y cambiar el offset de las coordenadas
 %recibidas desde el laboratorio
 
@@ -10,26 +10,29 @@ posicion(:,3)=-Datos.Handle(:,1);
 % Se denomina Handle a la posición proporcionada por el TCP del robot y que
 % se asume como posición de la mano en la simulación.
 
-%Una vez corregida la orientacion calculo los offsets
-posWristX=mean(Datos.WristRight(1:10,1));
-posWristY=mean(Datos.WristRight(1:10,2));
-posWristZ=mean(Datos.WristRight(1:10,3));
-posHandleX=mean(posicion(1:10,1));
-posHandleY=mean(posicion(1:10,2));
-posHandleZ=mean(posicion(1:10,3));
+if contains(dataUsed, 'Kinect')
+    %Una vez corregida la orientacion calculo los offsets
+    posWristX=mean(Datos.WristRight(1:10,1));
+    posWristY=mean(Datos.WristRight(1:10,2));
+    posWristZ=mean(Datos.WristRight(1:10,3));
+    posHandleX=mean(posicion(1:10,1));
+    posHandleY=mean(posicion(1:10,2));
+    posHandleZ=mean(posicion(1:10,3));
 
-diffX=posHandleX-posWristX;
-diffY=posHandleY-posWristY;
-diffZ=posHandleZ-posWristZ;
+    diffX=posHandleX-posWristX;
+    diffY=posHandleY-posWristY;
+    diffZ=posHandleZ-posWristZ;
 
-%Correccion de las coordenadas del Handle
+    %Correccion de las coordenadas del Handle
     x=posicion(:,1)-diffX+0.004;
     y=posicion(:,2)-diffY-0.045;
     z=posicion(:,3)-diffZ+0.00237;
 
-          Handle(:,1)=x;
-          Handle(:,2)=y;
-          Handle(:,3)=z;
-      
+    Handle(:,1)=x;
+    Handle(:,2)=y;
+    Handle(:,3)=z;
+else
+    Handle = posicion;
+end
 end
 
