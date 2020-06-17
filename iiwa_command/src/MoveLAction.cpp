@@ -103,6 +103,11 @@ class MoveLAction
         {
             ROS_ERROR("Failed to read '/iiwa_command/velocity' on param server, using 0.5");
         }
+        //Read control_step_size
+        if (!nh.getParam("/iiwa_command/control_step_size", control_step_size))
+        {
+            ROS_ERROR("Failed to read '/iiwa_command/control_step_size' on param server.");
+        }
         //Variables returned
         trajectory_msgs::JointTrajectory trajectory_commanded;
         std::vector<sensor_msgs::JointState> trajectory_joint_state;

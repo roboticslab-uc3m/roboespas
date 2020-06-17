@@ -77,40 +77,35 @@ namespace IiwaTrajectoryGeneration
         traj.xdot.col(0) = Eigen::VectorXd::Zero(6);
         traj.x.col(0) = x_ini;
 
-        std::cout << "xini: " << traj.x.col(0).transpose() << std::endl;
-        std::cout << "a_screw: " << a_screw.transpose() << std::endl;
-        for (int i=1; i<round(tacc/step_size); i++)
+        int id_acc_start = 1;
+        int id_acc_end = round(tacc/step_size);
+        int id_flat_start = id_acc_end;
+        int id_flat_end = round((tacc+tflat)/step_size);
+        int id_dec_start = id_flat_end;
+        int id_dec_end = round(ttotal/step_size);
+
+        for (int i=id_acc_start; i<=id_acc_end; i++)
         {
             traj.xdotdot.col(i) = a_screw;
             traj.xdot.col(i) = a_screw * traj.t[i];
             traj.x.col(i) = IiwaScrewTheory::TransformFrame(x_ini, 0.5 *a_screw*traj.t[i]*traj.t[i]);
         }
-
-        for (int i=round(tacc/step_size); i<round((tacc+tflat)/step_size); i++)
+        for (int i=id_flat_start; i<=id_flat_end; i++)
         {
             //Time since started flat part
-            double t = traj.t[i] - traj.t[round(tacc/step_size)];
+            double t = traj.t[i] - traj.t[id_flat_start];
             traj.xdotdot.col(i) = Eigen::VectorXd::Zero(6);
-            traj.xdot.col(i) = traj.xdot.col(round(tacc/step_size));
-            traj.x.col(i) = IiwaScrewTheory::TransformFrame(x_ini, traj.x.col(round(tacc/step_size)) + traj.xdot.col(i)*t);
+            traj.xdot.col(i) = traj.xdot.col(id_flat_start);
+            traj.x.col(i) = IiwaScrewTheory::TransformFrame(traj.x.col(id_flat_start), traj.xdot.col(id_flat_start)*t);
         }
-        for (int i=round((tacc+tflat)/step_size); i<round(ttotal/step_size); i++)
+        for (int i=id_dec_start; i<=id_dec_end; i++)
         {
             //Time since started deacceleration part
-            double t = traj.t[i] - traj.t[round((tacc+tflat)/step_size)];
+            double t = traj.t[i] - traj.t[id_dec_start];
             traj.xdotdot.col(i) = -a_screw;
-            traj.xdot.col(i) = traj.xdot.col(round((tacc+tflat)/step_size)) - a_screw*t;
-            traj.x.col(i) = IiwaScrewTheory::TransformFrame(x_ini, traj.x.col(round((tacc+tflat)/step_size)) + traj.xdot.col(i) * t - 0.5 * a_screw * t * t);
+            traj.xdot.col(i) = traj.xdot.col(id_dec_start) - a_screw*t;
+            traj.x.col(i) = IiwaScrewTheory::TransformFrame(traj.x.col(id_dec_start), traj.xdot.col(id_dec_start) * t - 0.5 * a_screw * t * t);
         }
-
-        std::cout << "xdotdot: " << std::endl;
-        std::cout << traj.xdotdot.transpose() << std::endl;
-        std::cout << "xdot: " << std::endl;
-        std::cout << traj.xdot.transpose() << std::endl;
-        std::cout << "x: " << std::endl;
-        std::cout << traj.x.transpose() << std::endl;
-        std::cout << "x_ini_flat: " << traj.x.col(round(tacc/step_size));
-
         return traj;
     }
 
