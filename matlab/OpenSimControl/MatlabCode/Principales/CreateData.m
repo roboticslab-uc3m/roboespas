@@ -1,12 +1,12 @@
 for iiwa_files=0:1
-    
+
     clearvars -except iiwa_files
-    
+
     import org.opensim.modeling.*
     format long
     pause(2);
     %% INPUTS
-    
+
     %   <<<<<<<<<<<<<MODIFICABLES:>>>>>>>>>>>>
     % Masa del sujeto
     masaTotal=67;
@@ -16,37 +16,37 @@ for iiwa_files=0:1
     id_ch_folders = find(file_path =='\');
     pathOpenSimControl = file_path(1:id_ch_folders(end-2));
     disp(['Using OpenSimControl path: ', pathOpenSimControl]);
-    
+
     pathOpensim = dir('C:\OpenSim*');
     pathOpenSim = [pathOpensim.folder, pathOpensim.name];
     disp(['Using OpenSim path: ', pathOpenSim]);
-    
+
     pathModel= [pathOpenSimControl, '\ROBOESPAS_FLEXION'];
     pathGeometry=[pathModel, '\Geometry'];
-    
+
     ModelVisualizer.addDirToGeometrySearchPaths(path);
-    
-    
+
+
     methodIIWA_FD= 'Screw Theory';
     dataUsed='IIWA_Kinect'; %'Kinect' 'IIWA_Kinect' 'IIWA'
     oposicionMov='Sin fuerza'; % Sin fuerza    Con fuerza
-    grado=4; % Regresión fuerzas Screw Theory
+    grado=4; % Regresiï¿½n fuerzas Screw Theory
 
     %Load spasticMillardMuscleModel
- 
+
     opensimCommon.LoadOpenSimLibrary("..\Plugins\SpasticMillardMuscleModel.dll")
     %MODELO= 'Arm_Flexion_SpasticMillard.osim';
     MODELO='Arm_Flexion_Millard.osim';
-    
-    
+
+
     %IIWA:
-    
+
     IIWADataPath=[pathOpenSimControl, '\TrayectoriasGrabadas\Test-1707\iiwa1707'];
     %cd(IIWADataPath);
-    
-    
+
+
     Dsalida = load ([IIWADataPath, '\sinfuerza.mat']);
-    
+
     Data_IIWA_Vacio = Dsalida.vacio;
     Data_IIWA{1} = Dsalida.AVRsinfuerza;
     Data_IIWA{2} = Dsalida.sinfuerza01;
@@ -61,26 +61,26 @@ for iiwa_files=0:1
     Data_IIWA{11} = Dsalida.sinfuerza10;
     %Datos=Dsalida.AVRsinfuerza;
     %Datos=Dsalida.sinfuerza08;
-    
-    
+
+
     %DatosVacio=Dsalida.vacio;
-    
-    
-    
+
+
+
     %Kinect:
     KinectFrequency = 30; %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     tsample=1/KinectFrequency;
-    
-    
-    
+
+
+
     if isequal(oposicionMov,'Sin fuerza')
         KinectFilepath = [pathOpenSimControl, '\TrayectoriasGrabadas\Test-1707\TrayectoriasKinect1707\Sin fuerza'];
     else
         KinectFilepath = [pathOpenSimControl, '\TrayectoriasGrabadas\Test-1707\TrayectoriasKinect1707\Con fuerza'];
     end
-    
+
     title = strcat ('Selecciona la trayectoria');
-    
+
     %
     [KinectFilename,KinectFilepath] = uigetfile([KinectFilepath, '\*.csv'], title);
     if (KinectFilename == 0)
@@ -89,38 +89,38 @@ for iiwa_files=0:1
     end
 
 %     KinectFilename = "Tray7.csv";%"Trayectoria Excel.csv";
-     
-    
+
+
     KinectData=importdata(strcat(KinectFilepath,'\',KinectFilename));
     KinectStartRow=3;
     KinectEndRow=size(KinectData,1);
-    
+
     g_labels= {'0'; '1'; '1.1'; '2'; '3'; '4'};
     Ganancia = 1;
 
-    
+
     %clear cmcTool cmc sto xmlExternalLoadsFileName_FT model V_OpenSim V_IIWA TrcTableCreada trayAnalisis tk tI t StartTime stampsST stamps OutputMotionStr numMuscles motFilePath motExternalLoadsFileName_FT  margin M_OpenSim LastTime initialValueZ initialValueY initialValueX ForceAndTorque FKHandle finalValueZ finalValueY finalValueX ExternalForcesTorquesStorage External_Loads_FT External_Force_FT DatosVacio Datos;
     % clear CMarkers FKHandle jp_Handle;
     pause(10);
     Datos = Data_IIWA{iiwa_files + 1};
-    
+
     DatosVacio=Data_IIWA_Vacio;
-    
-    
+
+
     CMarkers = f_CSVreader(KinectFilepath,KinectFilename,KinectStartRow,KinectEndRow);
-    
-    
-    
-    
-    
+
+
+
+
+
     for i = 0:(KinectEndRow-KinectStartRow)
         tk(i+1)= tsample*i;
     end
-    
-    
+
+
     % Recorto datos de kinect e iiwa para que empiecen y acaben sincronizados:
     %   Para ello, me fijo en todas las componentes de WristRight, que es el marker
-    %   más fiable a la hora de determinar cuando empieza el movimiento.
+    %   mï¿½s fiable a la hora de determinar cuando empieza el movimiento.
     % KINECT
     initialValueX=CMarkers.WristRight(1,1);
     finalValueX=CMarkers.WristRight(end,1);
@@ -147,17 +147,17 @@ for iiwa_files=0:1
             AcotadoSuperior=1;
         end
     end
-    
+
     %Antes de recortar la trayectoria voy a utilizar los primeros
     %valores de la Kinect para hacer un escalado del modelo
     CD_trc=strcat(pathModel,'\CCartesianas');
-    
+
     %Escalado!!!
     %if escalarModelo==true
     %scaleLastTime=j*tsample;
     %[model,MODELO] = f_scaleModel(MODELO,scaleLastTime,mass,CD_model);
     %end
-    
+
     CMarkers.SpineBase= CMarkers.SpineBase(j:k,:);
     CMarkers.SpineMid=CMarkers.SpineMid(j:k,:);
     CMarkers.Neck=CMarkers.Neck(j:k,:);
@@ -172,15 +172,15 @@ for iiwa_files=0:1
     CMarkers.HandTipRight=CMarkers.HandTipRight(j:k,:);
     CMarkers.ThumbRight=CMarkers.ThumbRight(j:k,:);
     tk=tk(j:k)-tk(j);
-    
+
     % IIWA
     % Equidisto los puntos de Handle para que cuadren con la kinect
-    
+
     [stamps, jp_Handle]=equidistant(Datos{1,1}.stamps, Datos{1,1}.trayectoria, tsample);
     FKHandle = FK(jp_Handle);
     CMarkers.Handle=FKHandle(1:3,:)';
     % Acoto los datos del IIWA basandome en la misma idea pero en este caso
-    % utilizando la posición del endeffector
+    % utilizando la posiciï¿½n del endeffector
     initialValueX=CMarkers.Handle(1,1);
     finalValueX=CMarkers.Handle(end,1);
     initialValueY=CMarkers.Handle(1,2);
@@ -209,9 +209,9 @@ for iiwa_files=0:1
     CMarkers.Handle= CMarkers.Handle(j:k,:);
     V_IIWA=CMarkers.Handle;
     tI=stamps(j:k)-stamps(j);
-    
-    
-    
+
+
+
     % Hasta este punto los datos de IIWA y Kinect llegan a la misma frecuencia
     % y empezando y acabando aproximadamente en el mismo instante. No obstante,
     % lo mas probable es que un vector sea de mayor longitud que el otro, por
@@ -233,40 +233,40 @@ for iiwa_files=0:1
     CMarkers.ThumbRight=CMarkers.ThumbRight(1:dataSize,:);
     CMarkers.Handle=CMarkers.Handle(1:dataSize,:);
     V_IIWA=V_IIWA(1:dataSize,:);
-    
+
     % Una vez cortados y equidistanciados, corregimos el sistema de
     % coordenadas del IIWA
     [CMarkers.Handle] = f_CoordModifications(CMarkers);
-    % Modificación de los datos de fuerzas y momentos (para reducir tiempos de
-    % computación en las pruebas) OPCIONAL
+    % Modificaciï¿½n de los datos de fuerzas y momentos (para reducir tiempos de
+    % computaciï¿½n en las pruebas) OPCIONAL
     % FuerzasIIWA = f_ForcesModifications(Datos);
-    
-    
+
+
     % Creo una trcTable nueva
     [TrcTableCreada] = f_CreateTRCTable(t,CMarkers,dataUsed);
-    
+
     % Lo imprimo en un archivo .trc (Coordenadas cartesianas espaciales)
-    
+
     cd(CD_trc)
     org.opensim.modeling.TRCFileAdapter.write(TrcTableCreada,'Lab.trc')
     pause(0.2);
-    
+
     %Variables para compensar los valores de los momentos:
-    % V_IIWA=FKHandle(1:3,:)'; %Posición desde IIWA ya equidistado
+    % V_IIWA=FKHandle(1:3,:)'; %Posiciï¿½n desde IIWA ya equidistado
     V_OpenSim=CMarkers.Handle;
     % clear AcotadoInferior AcotadoSuperior tI tk TrcTableCreada
     clear CMarkers jp_Handle KinectData  %Dsalida
     % clear finalValueX finalValueY finalValueX initialValueX initialValueY initialValueZ
     %% Modificaciones en el modelo previas a su uso
-    
+
     model = f_ModelCoordChanges(pathModel,MODELO);
     model.print(strcat(pathModel,'\',MODELO))
-    
+
     % Creo los archivos txt para almacenar las velocidades de fibra en los
-    % músculos espasticos
+    % mï¿½sculos espasticos
     numMuscles=model.getMuscles.getSize;
     for i=0:numMuscles-1
-        if model.getMuscles.get(i).hasProperty('gain_factor') %Si tiene la propiedad gain_factor significa que es espástico
+        if model.getMuscles.get(i).hasProperty('gain_factor') %Si tiene la propiedad gain_factor significa que es espï¿½stico
             spasticMuscleName = char(model.getMuscles.get(i).getName);
             fid = fopen( strcat(pathOpensim,'\bin\',spasticMuscleName,'_previousFiberVelocities.txt'), 'wt' );
             fidMatlab = fopen( strcat(matlabroot,'\bin\win64\',spasticMuscleName,'_previousFiberVelocities.txt'), 'wt' );
@@ -274,31 +274,31 @@ for iiwa_files=0:1
             fclose(fidMatlab);
         end
     end
-    
+
     %     clear numMuscles spasticMuscleName fid fidMatlab
     pause(0.2);
-    
+
     %% CINEMATICA INVERSA
     OutputMotionStr = 'Movimiento.mot';
     CD_CArticulares=strcat(pathModel,'\CArticulares');
     [StartTime,LastTime]=fCinInv(CD_trc,CD_CArticulares,model,'Lab.trc',OutputMotionStr);
     motFilePath=strcat(CD_CArticulares,'\',OutputMotionStr);
     pause(2);
-    
-    
-    %% Obtención de las fuerzas y momentos en el TCP
+
+
+    %% Obtenciï¿½n de las fuerzas y momentos en el TCP
     cd(pathModel);
-    
+
     [ForceAndTorque,stampsST] = f_IIWA_FD(Datos,DatosVacio,tsample); % SCREW THEORY
-    
-    % Limpio la gráfica por minimos cuadrados
+
+    % Limpio la grï¿½fica por minimos cuadrados
     % Fuerza en X
     if iiwa_files == 0
         x=stampsST(1:end-1); %x=stampsST(1:end-1);
     else
         x=stampsST(1:end);
     end
-    
+
     y=ForceAndTorque(:,1)';
     px = polyfit(x,y,grado);
     ForceAndTorqueLimpio(:,1) = polyval(px,x)';
@@ -330,45 +330,45 @@ for iiwa_files=0:1
     ForceAndTorqueLimpio(:,9) = polyval(pz,x)';
     ForceAndTorque=ForceAndTorqueLimpio;
     clear x y px py pz ForceAndTorqueLimpio
-    
+
     ForceAndTorque=ForceAndTorque(j:j+dataSize-1,:);
-    
+
     % Cambio el sentido de todos los vectores para que actuen sobre el brazo
     % del paciente
     Fx=-ForceAndTorque(:,1);
     Fy=-ForceAndTorque(:,2);
     Fz=-ForceAndTorque(:,3);
-    
+
     Tx=ForceAndTorque(:,7); % El sentido de los torques se trabaja a posteriori
     Ty=ForceAndTorque(:,8);
     Tz=ForceAndTorque(:,9);
-    
-    
-    
-    
+
+
+
+
     ForceAndTorque(:,1)= -Fy;
     ForceAndTorque(:,2)= Fz;
     ForceAndTorque(:,3)= -Fx;
-    
+
     ForceAndTorque(:,4)= 0;
     ForceAndTorque(:,5)= -0.08;
     ForceAndTorque(:,6)= 0;
-    
+
     % Compensar longitudes (brazos) de los momentos
     for i=1:dataSize
         M_OpenSim(i,1)=(norm(V_OpenSim(i,2:3))/norm(V_IIWA(i,2:3)))*Tx(i);
         M_OpenSim(i,2)=(norm(V_OpenSim(i,1:2:3))/norm(V_IIWA(i,1:2)))*Tz(i);
         M_OpenSim(i,3)=(norm(V_OpenSim(i,1:2))/norm(V_IIWA(i,1:2:3)))*Ty(i);
     end
-    
+
     ForceAndTorque(:,7)=M_OpenSim(:,1);
     ForceAndTorque(:,8)=M_OpenSim(:,2);
     ForceAndTorque(:,9)=M_OpenSim(:,3);
-    
-    
+
+
     clear Fx Fy Fz Tx Ty Tz
     %% Creo variable External Forces (FORCES AND TORQUES)
-    
+
     %Guardo todos los datos en un Storage -> ExternalForcesStorage
     ExternalForcesTorquesStorage=org.opensim.modeling.Storage();
     ExternalForcesTorquesStorage.setName('ExternalLoads.mot');   %
@@ -387,7 +387,7 @@ for iiwa_files=0:1
     ColumnLabels.append('hand_torque_x');
     ColumnLabels.append('hand_torque_y');
     ColumnLabels.append('hand_torque_z');
-    
+
     ExternalForcesTorquesStorage.setColumnLabels(ColumnLabels);
     %Meto los valores COMO STATEVECTORS
     for i=1:length(t(1,:))
@@ -402,39 +402,39 @@ for iiwa_files=0:1
         end
         ExternalForcesTorquesStorage.append(fila);
     end
-    
+
     ExternalForcesTorquesStorage.print(strcat(pathModel,'\ForcesAndTorques\ExternalLoads.mot'));
-    
+
     External_Force_FT=org.opensim.modeling.ExternalForce(ExternalForcesTorquesStorage,'hand_force_v','hand_force_p','hand_torque_','hand','ground','hand');
-    
+
     External_Force_FT.setName('TCP_ExternalForce');
     External_Force_FT.setAppliedToBodyName('hand');        %%%%%
     % External_Force.setForceExpressedInBodyName('hand');  % No aplica en
     % el caso de que la fuerza se aplique sobre un body (Instrucciones de
     % OpenSim)
     External_Force_FT.print(strcat(pathModel,'\ForcesAndTorques\ExternalForce.xml'));
-    
+
     clear ColumnLabels fila v
     %% Aplico las fuerzas en External Loads (FORCES AND TORQUES)
-    
+
     External_Loads_FT=org.opensim.modeling.ExternalLoads();
     External_Loads_FT.adoptAndAppend(External_Force_FT);
     External_Loads_FT.setLowpassCutoffFrequencyForLoadKinematics(6);
     External_Loads_FT.setDataFileName('ExternalLoads.mot');
     % External_Loads_FT.setExternalLoadsModelKinematicsFileName(motFilePath); NO ES NECESARIO
-    
+
     xmlExternalLoadsFileName_FT=strcat(pathModel,'\ForcesAndTorques\ExternalLoads.xml');
     External_Loads_FT.print(xmlExternalLoadsFileName_FT);
     motExternalLoadsFileName_FT=strcat(pathModel,'\ForcesAndTorques\ExternalLoads.mot');
-    
-    
+
+
     % clear External_Force_FT External_Loads_FT
     pause(1);
-    
+
     %% CMC
-    
-    
-    
+
+
+
     %return;
     import org.opensim.modeling.*;
     CD_cmc=strcat(pathModel,'\CMC');
@@ -456,13 +456,13 @@ for iiwa_files=0:1
     deviation.set_locked(1);
     flexion.set_locked(1);
     model.print(strcat(pathModel,'\',MODELO));
-    
+
     sto=org.opensim.modeling.Storage(motFilePath);
     % Tiempos:
     StartTime=sto.getFirstTime;
     LastTime=sto.getLastTime;
-    
-    
+
+
     %     cmcTool=CMCTool(strcat(CD_cmc,"\CMC_Setup_Roboespas_Flex.xml"));
     cmcTool=CMCTool();
     % Name
@@ -503,34 +503,34 @@ for iiwa_files=0:1
     cmcTool.setLowpassCutoffFrequency(6);
     % Look ahead window time
     cmcTool.setTimeWindow(0.01);
-    
+
     % Fast Optimization Target. True -> mas rapido y preciso pero tiene que
     % cumplir las aceleraciones. En el GUI esta puesto por defecto.
     % POR EL MOMENTO NO SE PUEDE UTILIZAR DEBIDO A QUE EL MODELO OSIM UTILIZADO
-    % NO TIENE BIEN DEFINIDAS LAS DINÁMICAS. SI EN UN FUTURO SE DISPONE DE OTRO
-    % MODELO QUE CUMPLA ESTO, O SE CONSIGUEN MEJORAR ESTAS DINÁMICAS, SE DEBERÁ
-    % USAR LA OPCIÓN FastTarget
+    % NO TIENE BIEN DEFINIDAS LAS DINï¿½MICAS. SI EN UN FUTURO SE DISPONE DE OTRO
+    % MODELO QUE CUMPLA ESTO, O SE CONSIGUEN MEJORAR ESTAS DINï¿½MICAS, SE DEBERï¿½
+    % USAR LA OPCIï¿½N FastTarget
     cmcTool.setUseFastTarget(false);
-    
+
     % % Points: No es necesario
     % %   cmcTool.setDesiredPointsFileName(motFilePath);
-    
+
     cmcTool.print(strcat(CD_cmc,'\setupActualCMC.xml'));
-    
+
     cmc = CMCTool(strcat(CD_cmc,'\setupActualCMC.xml'));
-    
+
     %Crear carpetas de resultados
-    
+
     cmc = CMCTool(strcat(CD_cmc,'\setupActualCMC.xml'));
-    cmc.run; %Esto se hace por seguridad. Recomendación de OpenSim.
+    cmc.run; %Esto se hace por seguridad. Recomendaciï¿½n de OpenSim.
     % cmcTool.run;
-    
+
     disp('CMC Completado');
-    %% Dinámica directa a partir de las external loads
-    
+    %% Dinï¿½mica directa a partir de las external loads
+
     %[FDOutputPath] = f_FD(model,ExternalForcesTorquesStorage,'',CD_model,xmlExternalLoadsFileName_FT);
     %[FDOutputPath] = f_FD(model,ExternalForcesTorquesStorage,'',CD_model,External_Loads_FT);
     %motExternalLoadsFileName_FT   xmlExternalLoadsFileName_FT
     pause(0.2);
-    
+
 end  %end for para crear diferentes cmc con mismo tray kinect, variando iiwa

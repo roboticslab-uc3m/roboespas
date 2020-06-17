@@ -1,15 +1,15 @@
-% Este programa lee los vectores de posición y fuerzas de la herramienta del robot en
+% Este programa lee los vectores de posiciï¿½n y fuerzas de la herramienta del robot en
 % un archivo .mat y los archivos proporcionados por la Kinect en un archivo CSV.
 % Transforma estas tablas en una tabla .trc para que pueda
-% ser utilizada por OpenSim y realizar una cinemática inversa. Una vez
+% ser utilizada por OpenSim y realizar una cinemï¿½tica inversa. Una vez
 % obtenido el archivo .mot, mediante IK, con el registro de los movimientos de cada
 % coordenada del modelo, se puede lanzar un visualizador para que
 % represente estos movimientos. El programa tras calcular la IK, calcula las fuerzas externas
-% que se aplican sobre el brazo del paciente, para, a continuación, realizar un análisis CMC,
-% que devolverá los valores de excitationes y activaciones. Tras este cálculo, se ejecuta una
-% última herramienta (Forward Dynamics) que calcula el resto de valores necesarios para la investigación.
+% que se aplican sobre el brazo del paciente, para, a continuaciï¿½n, realizar un anï¿½lisis CMC,
+% que devolverï¿½ los valores de excitationes y activaciones. Tras este cï¿½lculo, se ejecuta una
+% ï¿½ltima herramienta (Forward Dynamics) que calcula el resto de valores necesarios para la investigaciï¿½n.
 % Adicionalmente el programa ejecuta una
-% dinamica inversa a partir del archivo .mot, a la que se le podría sumar
+% dinamica inversa a partir del archivo .mot, a la que se le podrï¿½a sumar
 % unas fuerzas externas que interviniesen en el proceso (las realizadas por
 % el brazo robotico).
 
@@ -33,7 +33,7 @@ methodIIWA_FD= 'Screw Theory'; %'Matlab toolbox'   Screw Theory
 modeladoMuscular='Sano_Millard'; %'Spastic_Millard'   Sano_Thelen   Spastic_Thelen   Sano_Millard
 dataUsed='IIWA_Kinect'; %'Kinect' 'IIWA_Kinect' 'IIWA'
 oposicionMov='Sin fuerza'; % Sin fuerza    Con fuerza
-grado=4; % Regresión fuerzas Screw Theory
+grado=4; % Regresiï¿½n fuerzas Screw Theory
 
 file_path = which(mfilename);
 id_ch_folders = find(file_path =='\');
@@ -42,7 +42,7 @@ disp(['Using OpenSimControl path: ', pathOpenSimControl]);
 
 
 pathOpenSim = ['C:\OpenSim ', char(org.opensim.modeling.opensimCommon.GetVersion())];
-% title=strcat('Selecciona el directorio de instalación de OpenSim') ;
+% title=strcat('Selecciona el directorio de instalaciï¿½n de OpenSim') ;
 % pathOpenSim = uigetdir(pathOpenSim, title);
 % if (pathOpenSim == 0)
 %     ME = MException('Main:NoOpenSimPath', 'No OpenSim path selected');
@@ -106,19 +106,19 @@ switch dataUsed
     case 'IIWA'
         % Modificaciones del sistema de coordenadas
         % requeridas para adaptar el sistema de coordenadas del laboratorio al del entorno SimTK
-        [Handle] = f_CoordModifications(Datos);
+        [Handle] = f_CoordModifications(Datos, dataUsed);
     case 'Kinect'
         % Datos recogidos por la Kinect
         CMarkers = f_CSVreader(KinectFilepath,KinectFilename,KinectStartRow,KinectEndRow);
         Handle=CMarkers.HandRight;
-        
+
         % La kinect de momento no proporciona stamps, por lo que utilizo la
-        % frecuencia leida por la kinect, no está comprobada su exactitud
+        % frecuencia leida por la kinect, no estï¿½ comprobada su exactitud
         for i = 0:(KinectEndRow-KinectStartRow)
             tk(i+1)= 1/KinectFrequency*i;
         end
     case 'IIWA_Kinect'
-        
+
         CMarkers = f_CSVreader(KinectFilepath,KinectFilename,KinectStartRow,KinectEndRow);
         for i = 0:(KinectEndRow-KinectStartRow)
             tk(i+1)= tsample*i;
@@ -127,7 +127,7 @@ switch dataUsed
             case 'completa'
                 % Recorto datos de kinect e iiwa para que empiecen y acaben sincronizados:
                 %   Para ello, me fijo en todas las componentes de WristRight, que es el marker
-                %   más fiable a la hora de determinar cuando empieza el movimiento.
+                %   mï¿½s fiable a la hora de determinar cuando empieza el movimiento.
                 % KINECT
                 initialValueX=CMarkers.WristRight(1,1);
                 finalValueX=CMarkers.WristRight(end,1);
@@ -154,7 +154,7 @@ switch dataUsed
                         AcotadoSuperior=1;
                     end
                 end
-                
+
                 %Antes de recortar la trayectoria voy a utilizar los primeros
                 %valores de la Kinect para hacer un escalado del modelo
                 CD_trc=strcat(CD_model,'\CCartesianas');
@@ -162,7 +162,7 @@ switch dataUsed
                     scaleLastTime=j*tsample;
                     [model,MODELO] = f_scaleModel(MODELO,scaleLastTime,mass,CD_model);
                 end
-                
+
                 CMarkers.SpineBase= CMarkers.SpineBase(j:k,:);
                 CMarkers.SpineMid=CMarkers.SpineMid(j:k,:);
                 CMarkers.Neck=CMarkers.Neck(j:k,:);
@@ -177,15 +177,15 @@ switch dataUsed
                 CMarkers.HandTipRight=CMarkers.HandTipRight(j:k,:);
                 CMarkers.ThumbRight=CMarkers.ThumbRight(j:k,:);
                 tk=tk(j:k)-tk(j);
-                
+
                 % IIWA
                 % Equidisto los puntos de Handle para que cuadren con la kinect
-                
+
                 [stamps, jp_Handle]=equidistant(Datos{1,1}.stamps, Datos{1,1}.trayectoria, tsample);
                 FKHandle = FK(jp_Handle);
                 CMarkers.Handle=FKHandle(1:3, :)';
                 % Acoto los datos del IIWA basandome en la misma idea pero en este caso
-                % utilizando la posición del endeffector
+                % utilizando la posiciï¿½n del endeffector
                 initialValueX=CMarkers.Handle(1,1);
                 finalValueX=CMarkers.Handle(end,1);
                 initialValueY=CMarkers.Handle(1,2);
@@ -214,13 +214,13 @@ switch dataUsed
                 CMarkers.Handle= CMarkers.Handle(j:k,:);
                 V_IIWA=CMarkers.Handle;
                 tI=stamps(j:k)-stamps(j);
-                
+
             case 'subida'
                 % Recorto datos de kinect e iiwa para que empiecen y acaben sincronizados:
                 %en este caso solo voy a simular la trayectoria de subida
                 %de la extremidad
                 %   Para ello, me fijo en la componente Y de WristRight, que es el marker
-                %   más fiable a la hora de determinar cuando empieza el movimiento.
+                %   mï¿½s fiable a la hora de determinar cuando empieza el movimiento.
                 % KINECT
                 initialValueY=CMarkers.WristRight(1,2);
                 finalValueY=max(CMarkers.WristRight(:,2));
@@ -243,7 +243,7 @@ switch dataUsed
                         AcotadoSuperior=1;
                     end
                 end
-                
+
                 %Antes de recortar la trayectoria voy a utilizar los primeros
                 %valores de la Kinect para hacer un escalado del modelo
                 CD_trc=strcat(CD_model,'\CCartesianas');
@@ -251,7 +251,7 @@ switch dataUsed
                     scaleLastTime=j*tsample;
                     [model,MODELO] = f_scaleModel(MODELO,scaleLastTime,mass,CD_model);
                 end
-                
+
                 CMarkers.SpineBase= CMarkers.SpineBase(j:k,:);
                 CMarkers.SpineMid=CMarkers.SpineMid(j:k,:);
                 CMarkers.Neck=CMarkers.Neck(j:k,:);
@@ -266,16 +266,16 @@ switch dataUsed
                 CMarkers.HandTipRight=CMarkers.HandTipRight(j:k,:);
                 CMarkers.ThumbRight=CMarkers.ThumbRight(j:k,:);
                 tk=tk(j:k)-tk(j);
-                
+
                 % IIWA
                 % Equidisto los puntos de Handle para que cuadren con la kinect
-                
+
                 [stamps, jp_Handle]=equidistant(Datos{1,1}.stamps, Datos{1,1}.trayectoria, tsample);
                 FKHandle = FK(jp_Handle);
                 CMarkers.Handle=FKHandle(1:3,:)';
                 % Acoto los datos del IIWA basandome en la misma idea pero en este caso
-                % utilizando la posición del endeffector pero para Z porque
-                % todavía no esta el sist. de coordenadas adaptado a Opensim
+                % utilizando la posiciï¿½n del endeffector pero para Z porque
+                % todavï¿½a no esta el sist. de coordenadas adaptado a Opensim
                 initialValueZ=CMarkers.Handle(1,3);
                 finalValueZ=max(CMarkers.Handle(:,3));
                 j=0;
@@ -298,13 +298,13 @@ switch dataUsed
                 CMarkers.Handle= CMarkers.Handle(j:k,:);
                 V_IIWA=CMarkers.Handle;
                 tI=stamps(j:k)-stamps(j);
-                
+
             case 'bajada'
                 % Recorto datos de kinect e iiwa para que empiecen y acaben sincronizados:
                 %en este caso solo voy a simular la trayectoria de subida
                 %de la extremidad
                 %   Para ello, me fijo en la componente Y de WristRight, que es el marker
-                %   más fiable a la hora de determinar cuando empieza el movimiento.
+                %   mï¿½s fiable a la hora de determinar cuando empieza el movimiento.
                 % KINECT
                 initialValueX=max(CMarkers.WristRight(:,1));
                 finalValueX=CMarkers.WristRight(end,1);
@@ -333,7 +333,7 @@ switch dataUsed
                         AcotadoSuperior=1;
                     end
                 end
-                
+
                 %Antes de recortar la trayectoria voy a utilizar los primeros
                 %valores de la Kinect para hacer un escalado del modelo
                 CD_trc=strcat(CD_model,'\CCartesianas');
@@ -341,7 +341,7 @@ switch dataUsed
                     scaleLastTime=j*tsample;
                     [model,MODELO] = f_scaleModel(MODELO,scaleLastTime,mass,CD_model);
                 end
-                
+
                 CMarkers.SpineBase= CMarkers.SpineBase(j:k,:);
                 CMarkers.SpineMid=CMarkers.SpineMid(j:k,:);
                 CMarkers.Neck=CMarkers.Neck(j:k,:);
@@ -356,15 +356,15 @@ switch dataUsed
                 CMarkers.HandTipRight=CMarkers.HandTipRight(j:k,:);
                 CMarkers.ThumbRight=CMarkers.ThumbRight(j:k,:);
                 tk=tk(j:k)-tk(j);
-                
+
                 % IIWA
                 % Equidisto los puntos de Handle para que cuadren con la kinect
-                
+
                 [stamps, jp_Handle]=equidistant(Datos{1,1}.stamps, Datos{1,1}.trayectoria, tsample);
                 FKHandle = FK(jp_Handle);
                 CMarkers.Handle=FKHandle(1:3,:)';
                 % Acoto los datos del IIWA basandome en la misma idea pero en este caso
-                % utilizando la posición del endeffector
+                % utilizando la posiciï¿½n del endeffector
                 initialValueX=max(CMarkers.Handle(:,1));
                 finalValueX=CMarkers.Handle(end,1);
                 initialValueY=max(CMarkers.Handle(:,2));
@@ -393,12 +393,12 @@ switch dataUsed
                 CMarkers.Handle= CMarkers.Handle(j:k,:);
                 V_IIWA=CMarkers.Handle;
                 tI=stamps(j:k)-stamps(j);
-                
-                
-                
-                
-                
-                
+
+
+
+
+
+
         end %switch trayAnalisis
 end %switch dataUsed
 
@@ -426,9 +426,9 @@ V_IIWA=V_IIWA(1:dataSize,:);
 
 % Una vez cortados y equidistanciados, corregimos el sistema de
 % coordenadas del IIWA
-[CMarkers.Handle] = f_CoordModifications(CMarkers);
-% Modificación de los datos de fuerzas y momentos (para reducir tiempos de
-% computación en las pruebas) OPCIONAL
+[CMarkers.Handle] = f_CoordModifications(CMarkers, dataUsed);
+% Modificaciï¿½n de los datos de fuerzas y momentos (para reducir tiempos de
+% computaciï¿½n en las pruebas) OPCIONAL
 % FuerzasIIWA = f_ForcesModifications(Datos);
 
 
@@ -442,7 +442,7 @@ org.opensim.modeling.TRCFileAdapter.write(TrcTableCreada,[CD_trc, '\Lab.trc']);
 pause(0.2);
 
 %Variables para compensar los valores de los momentos:
-% V_IIWA=FKHandle(1:3,:)'; %Posición desde IIWA ya equidistado
+% V_IIWA=FKHandle(1:3,:)'; %Posiciï¿½n desde IIWA ya equidistado
 V_OpenSim=CMarkers.Handle;
 % clear AcotadoInferior AcotadoSuperior tI tk TrcTableCreada
 clear Dsalida CMarkers jp_Handle KinectData
@@ -453,10 +453,10 @@ model = f_ModelCoordChanges(CD_model,MODELO);
 model.print(strcat(CD_model,'\',MODELO))
 
 % Creo los archivos txt para almacenar las velocidades de fibra en los
-% músculos espasticos
+% mï¿½sculos espasticos
 numMuscles=model.getMuscles.getSize;
 for i=0:numMuscles-1
-    if model.getMuscles.get(i).hasProperty('gain_factor') %Si tiene la propiedad gain_factor significa que es espástico
+    if model.getMuscles.get(i).hasProperty('gain_factor') %Si tiene la propiedad gain_factor significa que es espï¿½stico
         spasticMuscleName = char(model.getMuscles.get(i).getName);
         fid = fopen( strcat(pathOpenSim,'\bin\',spasticMuscleName,'_previousFiberVelocities.txt'), 'wt' );
         fidMatlab = fopen( strcat(matlabroot,'\bin\win64\',spasticMuscleName,'_previousFiberVelocities.txt'), 'wt' );
@@ -476,13 +476,13 @@ motFilePath=strcat(CD_CArticulares,'\',OutputMotionStr);
 pause(2);
 
 
-%% Obtención de las fuerzas y momentos en el TCP
+%% Obtenciï¿½n de las fuerzas y momentos en el TCP
 %cd(CD_model);
 if ~isequal(dataUsed,'Kinect')
     if isequal(methodIIWA_FD,'Screw Theory')
         [ForceAndTorque,stampsST] = f_IIWA_FD(Datos,DatosVacio,tsample); % SCREW THEORY
-        
-        % Limpio la gráfica por minimos cuadrados
+
+        % Limpio la grï¿½fica por minimos cuadrados
         % Fuerza en X
         x=stampsST(1:end-1);
         y=ForceAndTorque(:,1)';
@@ -517,20 +517,20 @@ if ~isequal(dataUsed,'Kinect')
         [ForceAndTorque] = f_TCPForces(Datos,DatosVacio,tsample);
     end
     ForceAndTorque=ForceAndTorque(j:j+dataSize-1,:);
-    
+
     % Cambio el sentido de todos los vectores para que actuen sobre el brazo
     % del paciente
     Fx=-ForceAndTorque(:,1);
     Fy=-ForceAndTorque(:,2);
     Fz=-ForceAndTorque(:,3);
-    
+
     Tx=ForceAndTorque(:,7); % El sentido de los torques se trabaja a posteriori
     Ty=ForceAndTorque(:,8);
     Tz=ForceAndTorque(:,9);
-    
-    
+
+
     if isequal(methodIIWA_FD,'Matlab toolbox')
-        % salen con la siguiente orientación de la Toolbox:
+        % salen con la siguiente orientaciï¿½n de la Toolbox:
         %
         %               |----->z
         %              /|
@@ -543,40 +543,40 @@ if ~isequal(dataUsed,'Kinect')
         ForceAndTorque(:,1)= -1.*(Fz);%-Fy(1));
         ForceAndTorque(:,2)=-1.*(Fy);%-Fz(1));
         ForceAndTorque(:,3)= -1.*(Fx);%-Fx(1));
-        
+
         ForceAndTorque(:,4)= 0;
         ForceAndTorque(:,5)= -0.08;
         ForceAndTorque(:,6)= 0;
-        
+
         ForceAndTorque(:,7)= -0.001.*(Tz);%-Ty(1));
         ForceAndTorque(:,8)= -0.001.*(Ty);%-Tz(1));
         ForceAndTorque(:,9)= 0.*-1.*(Tx);%-Tx(1)); % la componente z me da igual porque el propio mango ya resbala
     end
     if isequal(methodIIWA_FD,'Screw Theory')
-        
+
         ForceAndTorque(:,1)= -Fy;
         ForceAndTorque(:,2)= Fz;
         ForceAndTorque(:,3)= -Fx;
-        
+
         ForceAndTorque(:,4)= 0;
         ForceAndTorque(:,5)= -0.08;
         ForceAndTorque(:,6)= 0;
-        
+
         % Compensar longitudes (brazos) de los momentos
         for i=1:dataSize
             M_OpenSim(i,1)=(norm(V_OpenSim(i,2:3))/norm(V_IIWA(i,2:3)))*Tx(i);
             M_OpenSim(i,2)=(norm(V_OpenSim(i,1:2:3))/norm(V_IIWA(i,1:2)))*Tz(i);
             M_OpenSim(i,3)=(norm(V_OpenSim(i,1:2))/norm(V_IIWA(i,1:2:3)))*Ty(i);
         end
-        
+
         ForceAndTorque(:,7)=M_OpenSim(:,1);
         ForceAndTorque(:,8)=M_OpenSim(:,2);
         ForceAndTorque(:,9)=M_OpenSim(:,3);
-        
+
     end
     clear Fx Fy Fz Tx Ty Tz
     %% Creo variable External Forces (FORCES AND TORQUES)
-    
+
     %Guardo todos los datos en un Storage -> ExternalForcesStorage
     ExternalForcesTorquesStorage=org.opensim.modeling.Storage();
     ExternalForcesTorquesStorage.setName('ExternalLoads.mot');   %
@@ -595,7 +595,7 @@ if ~isequal(dataUsed,'Kinect')
     ColumnLabels.append('hand_torque_x');
     ColumnLabels.append('hand_torque_y');
     ColumnLabels.append('hand_torque_z');
-    
+
     ExternalForcesTorquesStorage.setColumnLabels(ColumnLabels);
     %Meto los valores COMO STATEVECTORS
     for i=1:length(t(1,:))
@@ -610,37 +610,37 @@ if ~isequal(dataUsed,'Kinect')
         end
         ExternalForcesTorquesStorage.append(fila);
     end
-    
+
     ExternalForcesTorquesStorage.print(strcat(CD_model,'\ForcesAndTorques\ExternalLoads.mot'));
-    
+
     External_Force_FT=org.opensim.modeling.ExternalForce(ExternalForcesTorquesStorage,'hand_force_v','hand_force_p','hand_torque_','hand','ground','hand');
-    
+
     External_Force_FT.setName('TCP_ExternalForce');
     External_Force_FT.setAppliedToBodyName('hand');        %%%%%
     % External_Force.setForceExpressedInBodyName('hand');  % No aplica en
     % el caso de que la fuerza se aplique sobre un body (Instrucciones de
     % OpenSim)
     External_Force_FT.print(strcat(CD_model,'\ForcesAndTorques\ExternalForce.xml'));
-    
+
     clear ColumnLabels fila v
     %% Aplico las fuerzas en External Loads (FORCES AND TORQUES)
-    
+
     External_Loads_FT=org.opensim.modeling.ExternalLoads();
     External_Loads_FT.adoptAndAppend(External_Force_FT);
     External_Loads_FT.setLowpassCutoffFrequencyForLoadKinematics(6);
     External_Loads_FT.setDataFileName('ExternalLoads.mot');
     % External_Loads_FT.setExternalLoadsModelKinematicsFileName(motFilePath); NO ES NECESARIO
-    
+
     xmlExternalLoadsFileName_FT=strcat(CD_model,'\ForcesAndTorques\ExternalLoads.xml');
     External_Loads_FT.print(xmlExternalLoadsFileName_FT);
     motExternalLoadsFileName_FT=strcat(CD_model,'\ForcesAndTorques\ExternalLoads.mot');
-    
-    
+
+
 end
 % clear External_Force_FT External_Loads_FT
 pause(1);
 
-%% Creo variable External Forces (FORCES) - OPCIÓN DESECHADA
+%% Creo variable External Forces (FORCES) - OPCIï¿½N DESECHADA
 %
 % %Guardo todos los datos en un Storage -> ExternalForcesStorage
 % ExternalForcesStorage=org.opensim.modeling.Storage();
@@ -675,7 +675,7 @@ pause(1);
 % % External_Force.setForceExpressedInBodyName('hand');  %%%%%?
 % External_Force_F.print(strcat(CD_model,'\ForcesAndTorques\ExternalForce.xml'));
 
-%% Aplico las fuerzas en External Loads (FORCES) - OPCIÓN DESECHADA
+%% Aplico las fuerzas en External Loads (FORCES) - OPCIï¿½N DESECHADA
 
 % External_Loads_F=org.opensim.modeling.ExternalLoads();
 % External_Loads_F.adoptAndAppend(External_Force_F);
@@ -704,9 +704,9 @@ pause(1);
 %     rraTool.setResultsDir(CD_rra);
 % rraTool.run
 % disp('RRA done');
-%% TASKS - Código de referencia para futuros usos
-% NOTA: Este archivo ya se suministra junto con el resto, el código sirve
-% para crear automáticamente el archivo xml en el caso de querer
+%% TASKS - Cï¿½digo de referencia para futuros usos
+% NOTA: Este archivo ya se suministra junto con el resto, el cï¿½digo sirve
+% para crear automï¿½ticamente el archivo xml en el caso de querer
 % modificarlo.
 % %Marker Tasks
 %     %Handle
@@ -790,9 +790,9 @@ cmcTool.setTimeWindow(0.01);
 % Fast Optimization Target. True -> mas rapido y preciso pero tiene que
 % cumplir las aceleraciones. En el GUI esta puesto por defecto.
 % POR EL MOMENTO NO SE PUEDE UTILIZAR DEBIDO A QUE EL MODELO OSIM UTILIZADO
-% NO TIENE BIEN DEFINIDAS LAS DINÁMICAS. SI EN UN FUTURO SE DISPONE DE OTRO
-% MODELO QUE CUMPLA ESTO, O SE CONSIGUEN MEJORAR ESTAS DINÁMICAS, SE DEBERÁ
-% USAR LA OPCIÓN FastTarget
+% NO TIENE BIEN DEFINIDAS LAS DINï¿½MICAS. SI EN UN FUTURO SE DISPONE DE OTRO
+% MODELO QUE CUMPLA ESTO, O SE CONSIGUEN MEJORAR ESTAS DINï¿½MICAS, SE DEBERï¿½
+% USAR LA OPCIï¿½N FastTarget
 cmcTool.setUseFastTarget(false);
 
 % % Points: No es necesario
@@ -801,11 +801,11 @@ cmcTool.setUseFastTarget(false);
 cmcTool.print(strcat(CD_cmc,'\setupActualCMC.xml'));
 
 cmc = CMCTool(strcat(CD_cmc,'\setupActualCMC.xml'));
-cmc.run; %Esto se hace por seguridad. Recomendación de OpenSim.
+cmc.run; %Esto se hace por seguridad. Recomendaciï¿½n de OpenSim.
 % cmcTool.run;
 
 disp('CMC Completado');
-%% Dinámica directa a partir de las external loads
+%% Dinï¿½mica directa a partir de las external loads
 
 [FDOutputPath] = f_FD(model,ExternalForcesTorquesStorage,'',CD_model,External_Loads_FT);
 
@@ -836,18 +836,18 @@ Motion="Movimiento.mot";
 % CD_IDOutput=strcat(CD_model,'\ID_Output');
 % % f_ID(CD_IDOutput,model,strcat(CD_CArticulares,'\',OutputMotionStr),OutputIDStr,StartTime,LastTime);
 
-%% AJUSTE ESTÁTICO DE LOS PARAMETROS MUSCULARES
+%% AJUSTE ESTï¿½TICO DE LOS PARAMETROS MUSCULARES
 % [model] = f_MuscleModelChanges(CD_model,MODELO);
-% EN TRABAJOS FUTUROS ESTA FUNCIÓN SE PUEDE UTILIZAR PARA DEFINIR LOS
-% VALORES DE LOS PARÁMETROS DE UN MODELO THELEN
+% EN TRABAJOS FUTUROS ESTA FUNCIï¿½N SE PUEDE UTILIZAR PARA DEFINIR LOS
+% VALORES DE LOS PARï¿½METROS DE UN MODELO THELEN
 
 
 
 
 %% ELIJO ENTRE EL MODELO DE VELOCIDADES O EL DE FUERZAS - NO FUNCIONA
-% ESTE CÓDIGO ÚNICAMENTE SE DEJA POR SI ALGUNA INSTRUCCIÓN PUDIERA SERVIR
-% DE AYUDA, PERO NO ES FUNCIONAL. CORRESPONDE A LA SOLUCIÓN 1 DE LA
-% MEMORIA DE EDUARDO SÁENZ
+% ESTE Cï¿½DIGO ï¿½NICAMENTE SE DEJA POR SI ALGUNA INSTRUCCIï¿½N PUDIERA SERVIR
+% DE AYUDA, PERO NO ES FUNCIONAL. CORRESPONDE A LA SOLUCIï¿½N 1 DE LA
+% MEMORIA DE EDUARDO Sï¿½ENZ
 % ELECCION = 4; % 1-> VELOCIDAD    2-> FUERZA    3 -> pruebas fd  4-> LONGITUD DE FIBRA
 %
 % %% PRUEBA: FD CON LONGITUD DE FIBRA
@@ -958,7 +958,7 @@ Motion="Movimiento.mot";
 % %     final_time = StoData.getLastTime();
 % %
 % %
-% %     % Si quiero añadir un analisis:
+% %     % Si quiero aï¿½adir un analisis:
 % %         % Kinematics
 % %         Kin=Kinematics();
 % %         Kin.setModel(model);
@@ -989,7 +989,7 @@ Motion="Movimiento.mot";
 % % outfile = ['Setup_Analyze_' name '.xml'];
 % % analyzeTool.print(fullfile(CD_model, outfile));
 % %
-% %     %Ejecuto solo un análisis cinematico
+% %     %Ejecuto solo un anï¿½lisis cinematico
 % %     MuscleAnalysis=model.getAnalysisSet.get(2);
 % %     model.removeAnalysis(MuscleAnalysis);
 % % %     MuscleAnalysis=model.getAnalysisSet.get(0)
@@ -999,7 +999,7 @@ Motion="Movimiento.mot";
 % % analyzeTool.run();
 % %     end
 % % disp(strcat('Analisis realizado correctamente y guardado en: ', results_folder));
-% % disp(strcat(' XML del análisis -> ',outfile));
+% % disp(strcat(' XML del anï¿½lisis -> ',outfile));
 %
 % %% NUEVA FD
 % if ELECCION == 3
@@ -1077,10 +1077,10 @@ Motion="Movimiento.mot";
 %
 % %   2 opciones: 1- _states.sto -> ya esta en radianes y creo que se puede
 % %   trabajar con el .sto igual que con el .mot
-% %               2- states_degrees.mot -> habría que pasarlo a radianes pero
+% %               2- states_degrees.mot -> habrï¿½a que pasarlo a radianes pero
 % %               ya es un .mot
 %
-% % OPCIÓN 1:
+% % OPCIï¿½N 1:
 % %Copio los datos de _states.sto
 % %Copio la estructura del archivo de Movimiento.mot
 %
@@ -1116,7 +1116,7 @@ Motion="Movimiento.mot";
 %
 % OldSto.print(strcat(FDOutputPath,'FDOutput_ValuesFDSto.sto'));
 %
-% % OPCIÓN 2:
+% % OPCIï¿½N 2:
 % %Copio la estructura y los datos del archivo de Movimiento.mot y lo dejo en
 % %grados
 %
@@ -1170,4 +1170,4 @@ Motion="Movimiento.mot";
 % %  f_PlayVisualizer("D:\User\escrit\Universidad\Master\2\TFM\MODELO\Arm_THELEN_4M - OS40\PRUEBAS\",model,"prueba4_states_degrees.mot")
 %
 %
-% disp('REPRODUCCIÓN ACABADA');
+% disp('REPRODUCCIï¿½N ACABADA');
