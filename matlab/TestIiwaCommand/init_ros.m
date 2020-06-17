@@ -7,9 +7,13 @@ function init_ros(varargin)
     if (robotics.ros.internal.Global.isNodeActive)
         rosshutdown;
     end
-
     if (isunix)
-        [~, ros_ip] = system('(ifconfig |grep -A 1 "wlp2s0" |tail -1 |cut -d ":" -f 2| cut -d " " -f 1)');
+        network_name = 'wlp2s0';
+        [~, ros_ip] = system(['(ifconfig |grep -A 1 "', network_name, '" |tail -1 |cut -d ":" -f 2| cut -d " " -f 1)']);
+        if (isempty(ros_ip))
+            network_name = 'enp3s0';
+            [~, ros_ip] = system(['(ifconfig |grep -A 1 "', network_name, '" |tail -1 |cut -d ":" -f 2| cut -d " " -f 1)']);
+        end
         ros_ip = ros_ip(1:end-1);
         ros_master_uri = strcat('http://', ros_ip,':11311');
     else
