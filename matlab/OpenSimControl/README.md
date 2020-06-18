@@ -8,8 +8,8 @@
 2. Configure MATLAB to use OpenSim (from https://simtk-confluence.stanford.edu:8443/display/OpenSim33/Scripting+with+Matlab)
     - In MATLAB, go to *<OpenSim installation folder>\Resources\Code\Matlab*
     - Run the script *configureOpenSim.m*
-    - Add to path *<OpenSim installation folder>\bin* folder. To do this, type in the Windows start menu *Path*, and the first search result should be something similar to *Edit environment variables*. Inside, click *Environment variables*, and edit the *System variable* named ```PATH```. Add at the end the *<OpenSim installation dir>\bin*. Save and exit. Restart MATLAB.
-    - To check if the folder was correctly added to the path, type in MATLAB: ```model = org.opensim.modeling.Model();``` and check it works.
+    - Add *<OpenSim installation folder>\bin* folder to the Windows path. To do this, type in the Windows start menu *Path*, and the first search result should be something similar to *Edit environment variables*. Inside, click *Environment variables*, and edit the *System variable* named ```PATH```. Add at the end the *<OpenSim installation dir>\bin*. Save and exit. Restart MATLAB.
+    - To check if OpenSim was correctly configurated, type in MATLAB: ```model = org.opensim.modeling.Model();``` and check it works.
 3. To use this model, download the folders inside the *AddToOpenSimDir* Drive folder (https://drive.google.com/drive/u/4/folders/1dpf1CuUMkGFJbfxdy6ACZUnbttgPLTjY) and copy them inside *<OpenSim installation folder>*.
    - The folder *Geometry* already exists, and there may be some downloaded files already present there, do not overwrite them, just copy the new ones.
 4. Now, download the model and the trajectories, found inside the *AddToOpenSimControlDir* Drive folder (https://drive.google.com/drive/u/4/folders/1srC4AXj5f4QFgC-2gBhiMFmkBGDkVZFl). *ROBOESPAS_FLEXION* contain everything necessary to run the model, and *TrayectoriasGrabadas* contain some example trajectories. Both of them should be placed at the same level as this *README* and the folder *MatlabCode*. Do not change the names of them as they are added to the .gitignore file.
