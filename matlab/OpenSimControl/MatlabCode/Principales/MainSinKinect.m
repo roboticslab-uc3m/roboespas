@@ -423,6 +423,18 @@ cmc.run; %Esto se hace por seguridad. Recomendaci�n de OpenSim.
 % cmcTool.run;
 
 disp('CMC Completado');
+
+%% Representar excitaciones estimadas con CMC
+[cmcExcitations] = f_importCMCExcitations(strcat(CD_cmc, 'Results\CMCtool_controls.sto'));
+muscles = fieldnames(cmcExcitations);
+numMuscles = length(muscles)-1;
+f = figure('Name', 'Estimated EMG', 'WindowState', 'maximized');
+for i = 1:numMuscles
+    subplot(numMuscles,1,i, 'Parent',f);
+    plot(cmcExcitations.time, cmcExcitations.(muscles{i+1}))
+    title(muscles{i+1})
+    drawnow
+end
 %% Din�mica directa a partir de las external loads
 
 [FDOutputPath] = f_FD(model,ExternalForcesTorquesStorage,'',CD_model,External_Loads_FT);
