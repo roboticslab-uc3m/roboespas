@@ -9,10 +9,7 @@ Based on: https://simtk-confluence.stanford.edu:8443/display/OpenSim33/Step-by-S
    - Select your version of Visual Studio. Check the version before, versions are not related with years, for example version 15 is from 2017. 
    - Select x64 platform.
    - Click *Finish* and wait for CMake to configure.
-5. Tailor your configuration:
-   - Change the ```TARGET``` variable to the name you wish to give to the *.dll* file. For example, for the Millard muscle, set ```TARGET``` to *SpasticMillardMuscleModel*.
-   - Change the ```CMAKE_INSTALL_PREFIX``` to the muscle folder, for example, *...\roboespas\cpp\SpasticMuscleModels\SpasticMillardMuscleModel*.
-   - Click *Configure* again, and then *Generate*
+5. Click *Generate*. 
 6. Open the project in Visual Studio by clicking the button next to *Generate*. You may close CMake now. 
 7. To compile, select the *Release* configuration, and *x64* platform in the top part of VisualStudio. Then click *Compile\Compile solution*. 
 8. If the compilation was correct, a new *.dll* file should have appeared in *...roboespas\cpp\SpasticMuscleModels\SpasticMillardMuscleModel\build\Release*. It should have appeared a new *.dll* called *SpasticMillardMuscleModel.dll*.
