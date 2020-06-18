@@ -1,5 +1,4 @@
 *.dll
 */build/
-*/CMakeLists.txt
 /*/.vs/
 *FiberVelocities.txt
