@@ -1,10 +1,10 @@
-project(SpasticMuscleModel)
+project(SpasticMillardMuscleModel)
 
 cmake_minimum_required(VERSION 3.2)
 
 # Settings.
 # ---------
-set(TARGET SpasticMuscleModel CACHE TYPE STRING)
+set(TARGET SpasticMillardMuscleModel CACHE TYPE STRING)
 set(OPENSIM_INSTALL_DIR $ENV{OPENSIM_HOME}
         CACHE PATH "Top-level directory of OpenSim install")
 
