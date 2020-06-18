@@ -1,25 +1,29 @@
-for iiwa_files=0:1
 
-    clearvars -except iiwa_files
+prompt = 'Que cantidad de fuerzas externas desea simular? ';
+cantidadIIWA = input(prompt);
+
+file_path = which(mfilename);
+id_ch_folders = find(file_path =='\');
+pathOpenSimControl = file_path(1:id_ch_folders(end-2));
+disp(['Using OpenSimControl path: ', pathOpenSimControl]);
+
+pathOpensim = dir('C:\OpenSim*');
+pathOpenSim = [pathOpensim.folder, pathOpensim.name];
+disp(['Using OpenSim path: ', pathOpenSim]);
+
+prompt = 'Simular con musculo espastico? si(1) / no (0)';
+MusculoModelo = input(prompt);
+
+
+for iiwa_files=0:cantidadIIWA
+
+    clearvars -except iiwa_files cantidadIIWA pathOpenSimControl MusculoModelo
 
     import org.opensim.modeling.*
     format long
-    pause(2);
-    %% INPUTS
+    pause(2)
 
-    %   <<<<<<<<<<<<<MODIFICABLES:>>>>>>>>>>>>
-    % Masa del sujeto
-    masaTotal=67;
-    mass=4.77882; %4.77882 es la que tiene el modelo por defecto
-    %masaTotal*0.55; % la masa del tronco superior es aproximadamente el 55% de la masa  total
-    file_path = which(mfilename);
-    id_ch_folders = find(file_path =='\');
-    pathOpenSimControl = file_path(1:id_ch_folders(end-2));
-    disp(['Using OpenSimControl path: ', pathOpenSimControl]);
 
-    pathOpensim = dir('C:\OpenSim*');
-    pathOpenSim = [pathOpensim.folder, pathOpensim.name];
-    disp(['Using OpenSim path: ', pathOpenSim]);
 
     pathModel= [pathOpenSimControl, '\ROBOESPAS_FLEXION'];
     pathGeometry=[pathModel, '\Geometry'];
@@ -32,11 +36,14 @@ for iiwa_files=0:1
     oposicionMov='Sin fuerza'; % Sin fuerza    Con fuerza
     grado=4; % Regresi�n fuerzas Screw Theory
 
-    %Load spasticMillardMuscleModel
-
-    opensimCommon.LoadOpenSimLibrary("..\Plugins\SpasticMillardMuscleModel.dll")
-    %MODELO= 'Arm_Flexion_SpasticMillard.osim';
-    MODELO='Arm_Flexion_Millard.osim';
+ 
+    if MusculoModelo == 1
+        opensimCommon.LoadOpenSimLibrary("..\Plugins\SpasticMillardMuscleModel.dll")
+        MODELO= 'Arm_Flexion_SpasticMillard.osim';
+    else
+        MODELO='Arm_Flexion_Millard.osim';
+    end
+   
 
 
     %IIWA:
@@ -59,18 +66,12 @@ for iiwa_files=0:1
     Data_IIWA{9} = Dsalida.sinfuerza08;
     Data_IIWA{10} = Dsalida.sinfuerza09;
     Data_IIWA{11} = Dsalida.sinfuerza10;
-    %Datos=Dsalida.AVRsinfuerza;
-    %Datos=Dsalida.sinfuerza08;
-
-
-    %DatosVacio=Dsalida.vacio;
 
 
 
     %Kinect:
-    KinectFrequency = 30; %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    KinectFrequency = 30;
     tsample=1/KinectFrequency;
-
 
 
     if isequal(oposicionMov,'Sin fuerza')
@@ -81,15 +82,12 @@ for iiwa_files=0:1
 
     title = strcat ('Selecciona la trayectoria');
 
-    %
+  
     [KinectFilename,KinectFilepath] = uigetfile([KinectFilepath, '\*.csv'], title);
     if (KinectFilename == 0)
         ME = MException('Main:NoTrajectoryName', 'No trajectory selected');
         throw(ME);
     end
-
-%     KinectFilename = "Tray7.csv";%"Trayectoria Excel.csv";
-
 
     KinectData=importdata(strcat(KinectFilepath,'\',KinectFilename));
     KinectStartRow=3;
@@ -97,20 +95,13 @@ for iiwa_files=0:1
 
     g_labels= {'0'; '1'; '1.1'; '2'; '3'; '4'};
     Ganancia = 1;
-
-
-    %clear cmcTool cmc sto xmlExternalLoadsFileName_FT model V_OpenSim V_IIWA TrcTableCreada trayAnalisis tk tI t StartTime stampsST stamps OutputMotionStr numMuscles motFilePath motExternalLoadsFileName_FT  margin M_OpenSim LastTime initialValueZ initialValueY initialValueX ForceAndTorque FKHandle finalValueZ finalValueY finalValueX ExternalForcesTorquesStorage External_Loads_FT External_Force_FT DatosVacio Datos;
-    % clear CMarkers FKHandle jp_Handle;
-    pause(10);
+    
     Datos = Data_IIWA{iiwa_files + 1};
 
     DatosVacio=Data_IIWA_Vacio;
 
 
     CMarkers = f_CSVreader(KinectFilepath,KinectFilename,KinectStartRow,KinectEndRow);
-
-
-
 
 
     for i = 0:(KinectEndRow-KinectStartRow)
@@ -211,7 +202,6 @@ for iiwa_files=0:1
     tI=stamps(j:k)-stamps(j);
 
 
-
     % Hasta este punto los datos de IIWA y Kinect llegan a la misma frecuencia
     % y empezando y acabando aproximadamente en el mismo instante. No obstante,
     % lo mas probable es que un vector sea de mayor longitud que el otro, por
@@ -236,11 +226,10 @@ for iiwa_files=0:1
 
     % Una vez cortados y equidistanciados, corregimos el sistema de
     % coordenadas del IIWA
-    [CMarkers.Handle] = f_CoordModifications(CMarkers);
+   [CMarkers.Handle] = f_CoordModifications(CMarkers); 
     % Modificaci�n de los datos de fuerzas y momentos (para reducir tiempos de
     % computaci�n en las pruebas) OPCIONAL
     % FuerzasIIWA = f_ForcesModifications(Datos);
-
 
     % Creo una trcTable nueva
     [TrcTableCreada] = f_CreateTRCTable(t,CMarkers,dataUsed);
@@ -343,9 +332,6 @@ for iiwa_files=0:1
     Ty=ForceAndTorque(:,8);
     Tz=ForceAndTorque(:,9);
 
-
-
-
     ForceAndTorque(:,1)= -Fy;
     ForceAndTorque(:,2)= Fz;
     ForceAndTorque(:,3)= -Fx;
@@ -373,9 +359,6 @@ for iiwa_files=0:1
     ExternalForcesTorquesStorage=org.opensim.modeling.Storage();
     ExternalForcesTorquesStorage.setName('ExternalLoads.mot');   %
     ExternalForcesTorquesStorage.setInDegrees(true); %Igual que en Gait2354
-    % Time=TrcTableCreada.getIndependentColumn;
-    %     Force=ForceAndTorque(:,1:3);
-    %     Torque=ForceAndTorque(:,7:9);
     ColumnLabels=org.opensim.modeling.ArrayStr();
     ColumnLabels.append('time');
     ColumnLabels.append('hand_force_vx');
@@ -398,7 +381,6 @@ for iiwa_files=0:1
             v.set(int16(j-1),ForceAndTorque(i,j)); %Vector empieza desde 0
             fila.setStates(1,v);
             fila.setTime(t(i));
-            %             size=fila.getSize;
         end
         ExternalForcesTorquesStorage.append(fila);
     end
@@ -408,10 +390,7 @@ for iiwa_files=0:1
     External_Force_FT=org.opensim.modeling.ExternalForce(ExternalForcesTorquesStorage,'hand_force_v','hand_force_p','hand_torque_','hand','ground','hand');
 
     External_Force_FT.setName('TCP_ExternalForce');
-    External_Force_FT.setAppliedToBodyName('hand');        %%%%%
-    % External_Force.setForceExpressedInBodyName('hand');  % No aplica en
-    % el caso de que la fuerza se aplique sobre un body (Instrucciones de
-    % OpenSim)
+    External_Force_FT.setAppliedToBodyName('hand');        
     External_Force_FT.print(strcat(pathModel,'\ForcesAndTorques\ExternalForce.xml'));
 
     clear ColumnLabels fila v
@@ -432,10 +411,6 @@ for iiwa_files=0:1
     pause(1);
 
     %% CMC
-
-
-
-    %return;
     import org.opensim.modeling.*;
     CD_cmc=strcat(pathModel,'\CMC');
     %Coordenadas (todas)
@@ -473,8 +448,10 @@ for iiwa_files=0:1
     % Replace Force Set
     cmcTool.setReplaceForceSet(false);
     % Results
-    pathResults=[pathModel,'\CMCResults\G1\TrayIIWA', num2str(iiwa_files), '\'];
+    pathResults=[pathModel,'\CMCResults\laqtal\TrayIIWA', num2str(iiwa_files)];
+    
     mkdir(pathResults);
+    
     cmcTool.setResultsDir(pathResults);
     % Output precision
     cmcTool.setOutputPrecision(20);
