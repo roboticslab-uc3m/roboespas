@@ -22,7 +22,7 @@
 
 ## Update model
 - To update the current model, redownload the *ROBOESPAS_FLEXION* folder from https://drive.google.com/drive/u/4/folders/1V7qWE1J8TyKvULD6XaxHi28FcEYq3kem, and replace it in the directory *<OpenSimControl folder>*.
-- If you just want to change the *.osim* files, but maintain the folder structure, download the .osim files and place them inside *<OpenSimControl folder>\ROBOESPAS_FLEXION*.
+- If you just want to change the *.osim* files, but maintain the folder structure, download the .osim files and place them inside *<OpenSimControl folder>\ROBOESPAS_FLEXION\*.
 
 ## Update spastic muscles
-- To update the spastic muscles, redownload the *.dll* files from https://drive.google.com/drive/u/4/folders/1za-quUcaOSUanj3SFdcleALyak0YqJJg, and replace them in the directory *<OpenSim installation folder>\Plugins*.
+- To update the spastic muscles, redownload the *.dll* files from https://drive.google.com/drive/u/4/folders/1za-quUcaOSUanj3SFdcleALyak0YqJJg, and replace them in the directory *<OpenSim installation folder>\Plugins\*.
