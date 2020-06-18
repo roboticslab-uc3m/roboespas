@@ -24,8 +24,8 @@ pause(2);
 %   <<<<<<<<<<<<<MODIFICABLES:>>>>>>>>>>>>
 % Masa del sujeto
 masaTotal=67;
-mass=4.77882; %4.77882 es la que tiene el modelo por defecto
-%masaTotal*0.55; % la masa del tronco superior es aproximadamente el 55% de la masa  total
+% mass=4.77882; %4.77882 es la que tiene el modelo por defecto
+mass = masaTotal*0.55; % la masa del tronco superior es aproximadamente el 55% de la masa  total
 
 escalarModelo=false;
 trayAnalisis='completa'; %'bajada' 'completa' 'subida'
@@ -33,13 +33,12 @@ methodIIWA_FD= 'Screw Theory'; %'Matlab toolbox'   Screw Theory
 modeladoMuscular='Sano_Millard'; %'Spastic_Millard'   Sano_Thelen   Spastic_Thelen   Sano_Millard
 oposicionMov='Sin fuerza'; % Sin fuerza    Con fuerza
 grado=4; % Regresi�n fuerzas Screw Theory
+version='V1'; % V2 %'V1' para usar el modelo de Eduardo, 'V2' para usar el modelo de Anaelle
 
 file_path = which(mfilename);
 id_ch_folders = find(file_path =='\');
 pathOpenSimControl = file_path(1:id_ch_folders(end-2));
 disp(['Using OpenSimControl path: ', pathOpenSimControl]);
-
-
 
 pathOpenSim = ['C:\OpenSim ', char(org.opensim.modeling.opensimCommon.GetVersion())];
 % title=strcat('Selecciona el directorio de instalaci�n de OpenSim') ;
@@ -50,24 +49,27 @@ pathOpenSim = ['C:\OpenSim ', char(org.opensim.modeling.opensimCommon.GetVersion
 % end
 % disp(['Using OpenSim installation path: ', pathOpenSim]);
 
+% Path trayectorias Iiwa
+IIWADataPath=[pathOpenSimControl, '\TrayectoriasGrabadas\Test-1707\iiwa1707'];
+
+% Path model folder
+CD_model= [pathOpenSimControl, '\ROBOESPAS_FLEXION'];
+%% Load data
+% Get model name, load plugin in OpenSim if its spastic
 switch modeladoMuscular
     case 'Spastic_Thelen'
-        %Load spasticMuscleModelPlugin
         opensimCommon.LoadOpenSimLibrary("..\Plugins\SpasticThelenMuscleModel.dll")
-        MODELO= 'Arm_Flexion_SpasticThelen - V2.osim';
+        MODELO = ['Arm_Flexion_SpasticThelen_', version, '.osim'];
     case 'Spastic_Millard'
-        %Load spasticMillardMuscleModel
         opensimCommon.LoadOpenSimLibrary("..\Plugins\SpasticMillardMuscleModel.dll")
-        MODELO= 'Arm_Flexion_SpasticMillard_V2.osim';
+        MODELO = ['Arm_Flexion_SpasticMillard_', version, '.osim'];
     case 'Sano_Thelen'
-        MODELO='Arm_Flexion_Thelen - V2.osim';
+        MODELO = ['Arm_Flexion_Thelen_', version, '.osim'];
     case 'Sano_Millard'
-        MODELO='Arm_Flexion_Millard_V2.osim';
+        MODELO = ['Arm_Flexion_Millard_', version, '.osim'];
 end
 
-
-%IIWA:
-IIWADataPath=[pathOpenSimControl, '\TrayectoriasGrabadas\Test-1707\iiwa1707'];
+% Load Iiwa trajectory
 if isequal(oposicionMov,'Con fuerza')
     Dsalida = load ([IIWADataPath, '\confuerza.mat']);
     Datos=Dsalida.AVRconfuerza;
@@ -75,10 +77,7 @@ else
     Dsalida = load ([IIWADataPath, '\sinfuerza.mat']);
     Datos=Dsalida.AVRsinfuerza;
 end
-
 DatosVacio=Dsalida.vacio;
-
-CD_model= [pathOpenSimControl, '\ROBOESPAS_FLEXION'];
 
 %% Introduccion y adecuacion de los datos del laboratorio
 % Obtenci�n de la trayectoria del Handle del IIWA a trav�s de FK
