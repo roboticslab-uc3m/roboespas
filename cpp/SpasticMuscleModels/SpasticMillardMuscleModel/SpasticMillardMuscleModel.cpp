@@ -156,6 +156,7 @@ double SpasticMillardMuscleModel::updatePreviousFiberVelocities(double fvi) cons
 	const char *previousFiberVelocitiesFile = previousFiberVelocitiesFileStr.c_str();
 	const char *tempPFVFile = tempPFVFileStr.c_str();
 	
+	double Lista[100];//[31];                                    !!!!  no me deja ponerla una variable, pongo 100 aunque no la vaya a rellenar nunca
 
 	ifs.open(previousFiberVelocitiesFileStr, std::ifstream::in);
 	ofs.open(tempPFVFileStr, std::ofstream::out);
@@ -239,9 +240,14 @@ double SpasticMillardMuscleModel::updatePreviousFiberVelocities(double fvi) cons
 				//rename("tempPFV.txt", "previousFiberVelocities.txt");
 			}		
 		}
-
-		return pastFV;
 	}
+	cout << "Lista: " << endl;
+	for (int i = 0; i < 100; i++)
+	{
+		cout << Lista[i] << endl;
+	}
+
+	return pastFV;
 
 }
 
@@ -251,9 +257,7 @@ double SpasticMillardMuscleModel::applySpasticEffect(const SimTK::State& s/*, do
 	//cout << "DENTRO de applySpasticEffect en el musculo \n";
 	// Allow Super to assign any state derivative values for states it allocated
 	//Super::computeStateVariableDerivatives(s);
-
 	// int nd = getNumStateVariables();
-
 	SimTK_ASSERT1(getNumStateVariables() == 2,
 		"SpasticMillardMuscleModel: Expected 2 state variables"
 		" but encountered  %f.", getNumStateVariables());
@@ -263,13 +267,43 @@ double SpasticMillardMuscleModel::applySpasticEffect(const SimTK::State& s/*, do
 	double gainFactor = get_gain_factor();
 	double thresholdValue = get_threshold_value();
 	double timeDelay = get_time_delay();
-	//cout << "spasExcitation= " << spasExcitation << endl;
+	double maxSizeFiberVelocities = timeDelay * 1000 / 2; 
 	FiberVelocityInfo fvi;
 	calcFiberVelocityInfo(s, fvi); //*fvi
 	double fv = fvi.normFiberVelocity;
+
+	// Using time point and system_clock 
+	std::chrono::time_point<std::chrono::system_clock> start, end;
+
+	start = std::chrono::system_clock::now();
+	//Update mutable std::vector
+	fiberVelocities.push_back(fv);
+	if (fiberVelocities.size() > maxSizeFiberVelocities)
+	{
+		fiberVelocities.erase(fiberVelocities.begin());
+	}
+	double pastFV2 = fiberVelocities[0];
+	end = std::chrono::system_clock::now();
+
+	std::chrono::duration<double> elapsed_seconds = end - start;
+	std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
+
+	//Update .txt files
+	start = std::chrono::system_clock::now();
 	double pastFV = updatePreviousFiberVelocities(fv);
-	//cout << "pastFV= " << pastFV << endl << endl;
-	
+	end = std::chrono::system_clock::now();
+	elapsed_seconds = end - start;
+	std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
+
+	cout << "fiberVelocities: " << endl;
+	for (int i = 0; i < fiberVelocities.size(); i++)
+	{
+		cout << fiberVelocities[i] << endl;
+	}
+
+	cout << "pastFV= " << pastFV << endl;
+	cout << "pastFV2= " << pastFV << endl;
+
 	double actualTime = s.getTime();
 	if ((pastFV > thresholdValue) && (actualTime > timeDelay))
 	{

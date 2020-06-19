@@ -114,7 +114,7 @@ namespace OpenSim {
 		double SpasticMillardMuscleModel::updatePreviousFiberVelocities(double fiberVelocity) const;
 		/** construct the new properties and set their default values */
 		void constructProperties();
-
+		mutable std::vector<double> fiberVelocities;
 		//=============================================================================
 	};  // END of class SpasticMillardMuscleModel
 	//=============================================================================
