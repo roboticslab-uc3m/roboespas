@@ -28,7 +28,7 @@ mass = masaTotal*0.55; % la masa del tronco superior es aproximadamente el 55% d
 escalarModelo=false;
 trayAnalisis='completa'; %'bajada' %'completa' %'subida' %
 methodIIWA_FD= 'Screw Theory'; %'Matlab toolbox' %'Screw Theory' %
-modeladoMuscular='Sano_Millard'; %'Spastic_Millard' %'Sano_Thelen' %'Spastic_Thelen' %'Sano_Millard' %
+modeladoMuscular='Spastic_Millard'; %'Spastic_Millard' %'Sano_Thelen' %'Spastic_Thelen' %'Sano_Millard' %
 dataUsed='IIWA_Kinect'; %'Kinect' % 'IIWA' %
 oposicionMov='Sin fuerza'; % 'Con fuerza' % 'Sin fuerza' %
 grado=4; % Grado de la regresión fuerzas Screw Theory
@@ -428,19 +428,6 @@ clear Dsalida CMarkers jp_Handle KinectData
 %% Modificaciones en el modelo previas a su uso
 model = f_ModelCoordChanges(CD_model,MODELO);
 model.print(strcat(CD_model,'\',MODELO))
-% Creo los archivos txt para almacenar las velocidades de fibra en los
-% músculos espasticos
-numMuscles=model.getMuscles.getSize;
-for i=0:numMuscles-1
-    if model.getMuscles.get(i).hasProperty('gain_factor') %Si tiene la propiedad gain_factor significa que es espástico
-        spasticMuscleName = char(model.getMuscles.get(i).getName);
-        fid = fopen( strcat(pathOpenSim,'\bin\',spasticMuscleName,'_previousFiberVelocities.txt'), 'wt' );
-        fidMatlab = fopen( strcat(matlabroot,'\bin\win64\',spasticMuscleName,'_previousFiberVelocities.txt'), 'wt' );
-        fclose(fid);
-        fclose(fidMatlab);
-    end
-end
-%clear numMuscles spasticMuscleName fid fidMatlab
 
 %% Cinemática inversa del brazo humano dadas las c.cartesianas del TCP del iiwa y de otros puntos característicos
 OutputMotionStr = 'Movimiento.mot';

@@ -111,7 +111,6 @@ namespace OpenSim {
 		void computeStateVariableDerivatives(const SimTK::State& s) const override;
 	private:
 		double SpasticMillardMuscleModel::applySpasticEffect(const SimTK::State& s /*, double excitation*/) const;
-		double SpasticMillardMuscleModel::updatePreviousFiberVelocities(double fiberVelocity) const;
 		/** construct the new properties and set their default values */
 		void constructProperties();
 		mutable std::vector<double> fiberVelocities;

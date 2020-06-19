@@ -28,9 +28,7 @@
 #include "SpasticMillardMuscleModel.h"
 #include <OpenSim/OpenSim.h>
 #include <fstream>
-//#include <iostream.h>
 #include <stdio.h>
-//#include "apstring.cpp"
 
 
 //=============================================================================
@@ -91,22 +89,6 @@ void SpasticMillardMuscleModel::constructProperties()
 	constructProperty_time_delay(0.03);
 
 }
-/*
-// Define new states and their derivatives in the underlying system
-void SpasticMuscleModelPlugin::extendAddToSystem(SimTK::MultibodySystem& system) const
-{
-	// Allow Thelen2003Muscle to add its states, before extending
-	Super::extendAddToSystem(system);
-
-	// Now add the states necessary to implement the spastic behavior
-	//addStateVariable("fiber_velocity");
-	//addStateVariable("muscle_excitation");
-	// and their corresponding derivatives
-	addCacheVariable("fiber_velocity_deriv", 0.0, SimTK::Stage::Dynamics);
-	addCacheVariable("muscle_excitation_deriv", 0.0, SimTK::Stage::Dynamics);
-}
-*/
-
 
 //--------------------------------------------------------------------------
 // GET & SET Properties
@@ -126,138 +108,19 @@ void SpasticMillardMuscleModel::setTimeDelay(double aTimeDelay)
 	set_time_delay(aTimeDelay);
 }
 
-
-
-// Initiate Fiber Velocity Analysis  
-//_fiberVelocityAnalysis = new FiberVelocityAnalysis(_model, getActuatorSet()[0].getName());
-//_model->addAnalysis(_fiberVelocityAnalysis);
-
 //=============================================================================
 // COMPUTATION
 //=============================================================================
 
-double SpasticMillardMuscleModel::updatePreviousFiberVelocities(double fvi) const
-{
-	char buffer[MAX_PATH];
-	GetModuleFileName(NULL, buffer, MAX_PATH);
-	string::size_type pos = string(buffer).find_last_of("\\/");
-	string ExePath = string(buffer).substr(0, pos);
-
-	string	muscleName = this->getName();
-	double pastFV = 0;
-	std::ifstream ifs;
-	std::ofstream ofs;
-
-	////// MEJORAR EN EL FUTURO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	std::string previousFiberVelocitiesFileStr = ExePath + "/" + muscleName + "_previousFiberVelocities.txt";
-	std::string tempPFVFileStr = ExePath + "/" + muscleName + "_tempPFV.txt";
-	
-
-	const char *previousFiberVelocitiesFile = previousFiberVelocitiesFileStr.c_str();
-	const char *tempPFVFile = tempPFVFileStr.c_str();
-	
-	double Lista[100];//[31];                                    !!!!  no me deja ponerla una variable, pongo 100 aunque no la vaya a rellenar nunca
-
-	ifs.open(previousFiberVelocitiesFileStr, std::ifstream::in);
-	ofs.open(tempPFVFileStr, std::ofstream::out);
-	if (!ifs.is_open() || !ofs.is_open())
-	{
-		// Los archivos ifs de cada músculo se crean desde matlab al iniciar la simulación, cuando se llega aqui ya tienen que exisitir
-		cout << "Could not open previousFiberVelocities file\n";
-		return 0;
-	}
-	
-	else
-	{
-		// Count number of lines in the file y voy rellenando Lista
-		int  n = 0;
-		double timeDelay = get_time_delay();
-		const int listaLength = timeDelay*1000/2;                           //      !!!!
-		double Lista[100];//[31];                                    !!!!  no me deja ponerla una variable, pongo 100 aunque no la vaya a rellenar nunca
-		std::string line;
-		// Actualizo la lista y cuento el numero de valores presentes en ifs
-		while (getline(ifs, line))
-		{
-			//cout << n << "-> " << line << endl;
-			Lista[n] = atof(line.c_str());
-			n = n + 1;
-		}
-		//cout << "Count=" << n << endl;
-		if (n < listaLength)//15)//30)                                    !!!!
-		{
-			//cout << "Smaller than 30, fvi= ";
-			//cout << fvi << endl;
-			// Relleno el file con la lista, que voy actualizando
-			for (int i = 0; i <= n - 1; i = i + 1)
-			{
-				ofs << Lista[i];
-				ofs << endl;
-			}
-			// WRITE NEW LINE AT THE END OF THE LIST
-			ofs << fvi;
-			ofs << std::endl;
-		}
-		else // La lista ya está llena
-		{
-			//cout << "Bigger than 30, pastFV=" << Lista[0] << endl;
-			//cout << "fvi:" << fvi << endl;
-			// Introduzco nuevo valor fvi
-			Lista[listaLength] = fvi; //Lista[15] = fvi; //Lista[30] = fvi;                                    !!!!
-			// Obtengo el primer valor de la lista (pastFV)
-			pastFV = Lista[0];
-
-			// Relleno el file con la lista, que voy actualizando
-			for (int i = 0; i <= n - 1; i = i + 1)
-			{
-				Lista[i] = Lista[i + 1];
-				ofs << Lista[i];
-				ofs << endl;
-			}
-		}
-
-		ifs.close();
-		ofs.close();
-
-		if (ifs.is_open())
-		{
-			cout << "ifs not closed \n";
-			ifs.close();
-		}
-		if (ofs.is_open())
-		{
-			cout << "ofs not closed \n";
-			ofs.close();
-		}
-		if (!ofs.is_open())
-		{
-			// delete the original file
-			remove(previousFiberVelocitiesFile); //ifs
-
-			// rename old to new
-			while (rename(tempPFVFile, previousFiberVelocitiesFile) != 0) //ifs=ofs
-			{
-				cout << "Error renaming file";
-				//rename("tempPFV.txt", "previousFiberVelocities.txt");
-			}		
-		}
-	}
-	return pastFV;
-
-}
 
 double SpasticMillardMuscleModel::applySpasticEffect(const SimTK::State& s/*, double excitation*/) const //11
 {
-	
 	//cout << "DENTRO de applySpasticEffect en el musculo \n";
-	// Allow Super to assign any state derivative values for states it allocated
-	//Super::computeStateVariableDerivatives(s);
-	// int nd = getNumStateVariables();
 	SimTK_ASSERT1(getNumStateVariables() == 2,
 		"SpasticMillardMuscleModel: Expected 2 state variables"
 		" but encountered  %f.", getNumStateVariables());
 
-
-	double spasExcitation = getExcitation(s); //excitation; // getExcitation(s);      //11
+	double spasExcitation = getExcitation(s); 
 	double gainFactor = get_gain_factor();
 	double thresholdValue = get_threshold_value();
 	double timeDelay = get_time_delay();
@@ -266,40 +129,24 @@ double SpasticMillardMuscleModel::applySpasticEffect(const SimTK::State& s/*, do
 	calcFiberVelocityInfo(s, fvi); //*fvi
 	double fv = fvi.normFiberVelocity;
 
-	// Using time point and system_clock 
-	std::chrono::time_point<std::chrono::system_clock> start, end;
-
-	start = std::chrono::system_clock::now();
 	//Update mutable std::vector
+	//Add new fiber velocity
 	fiberVelocities.push_back(fv);
-	double pastFV2 = fiberVelocities[0];
-
+	//Get the one at the beginning
+	double pastFV = fiberVelocities[0];
+	//Delete this one if there are already too much velocities in the vector
 	if (fiberVelocities.size() > maxSizeFiberVelocities)
 	{
 		fiberVelocities.erase(fiberVelocities.begin());
 	}
-	end = std::chrono::system_clock::now();
 
-	std::chrono::duration<double> elapsed_seconds = end - start;
-	std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
-
-	//Update .txt files
-	start = std::chrono::system_clock::now();
-	double pastFV = updatePreviousFiberVelocities(fv);
-	end = std::chrono::system_clock::now();
-	elapsed_seconds = end - start;
-	std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
-
-	cout << "pastFV= " << pastFV << endl;
-	cout << "pastFV2= " << pastFV2 << endl;
-
+	//Apply spasticity if fiberVelocity is higher than the threshold value
 	double actualTime = s.getTime();
 	if ((pastFV > thresholdValue) && (actualTime > timeDelay))
 	{
 		//cout << "EXISTE ESPASTICIDAD, pastNFV= " << pastFV << "At Time = " << actualTime << " en: " << this->getName() << endl;//
-		spasExcitation = pastFV * gainFactor + spasExcitation; // Comprobar que hace bien la suma
+		spasExcitation = pastFV * gainFactor + spasExcitation; 
 	}
-
 	return spasExcitation;
 }
 
@@ -327,12 +174,4 @@ void SpasticMillardMuscleModel::computeStateVariableDerivatives(const SimTK::Sta
 		setStateVariableDerivativeValue(s, "fiber_length", ldot);
 	}
 }
-/*double Millard2012EquilibriumMuscle::getSpasticActivationDerivative(const SimTK::State& s) const
-{
-	if (get_ignore_activation_dynamics())
-		return 0.0;
-
-	return getActivationModel().calcDerivative(getActivation(s),
-		getExcitation(s));
-}*/
 
