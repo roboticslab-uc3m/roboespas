@@ -87,7 +87,6 @@ void SpasticMillardMuscleModel::constructProperties()
 	constructProperty_gain_factor(2);
 	constructProperty_threshold_value(0.1);
 	constructProperty_time_delay(0.03);
-
 }
 
 //--------------------------------------------------------------------------
@@ -113,45 +112,66 @@ void SpasticMillardMuscleModel::setTimeDelay(double aTimeDelay)
 //=============================================================================
 
 
-double SpasticMillardMuscleModel::applySpasticEffect(const SimTK::State& s/*, double excitation*/) const //11
+double SpasticMillardMuscleModel::applySpasticEffect(const SimTK::State& s) const
 {
+	double currentTime = s.getTime();
 	//cout << "DENTRO de applySpasticEffect en el musculo \n";
 	SimTK_ASSERT1(getNumStateVariables() == 2,
 		"SpasticMillardMuscleModel: Expected 2 state variables"
-		" but encountered  %f.", getNumStateVariables());
-
-	double spasExcitation = getExcitation(s); 
+		" but encountered  %f.", getNumStateVariables());		
+	double spasExcitation = getExcitation(s);
 	double gainFactor = get_gain_factor();
 	double thresholdValue = get_threshold_value();
 	double timeDelay = get_time_delay();
-	double maxSizeFiberVelocities = timeDelay * 1000 / 2; 
 	FiberVelocityInfo fvi;
-	calcFiberVelocityInfo(s, fvi); //*fvi
+	calcFiberVelocityInfo(s, fvi);
 	double fv = fvi.normFiberVelocity;
-
-	//Update mutable std::vector
-	//Add new fiber velocity
-	fiberVelocities.push_back(fv);
-	//Get the one at the beginning
-	double pastFV = fiberVelocities[0];
-	//Delete this one if there are already too much velocities in the vector
-	if (fiberVelocities.size() > maxSizeFiberVelocities)
+	if (stampsFiberVelocities.empty())
 	{
-		fiberVelocities.erase(fiberVelocities.begin());
+		//If the vector is empty, just save a new fiber velocity + stamp
+		fiberVelocities.push_back(fv);
+		stampsFiberVelocities.push_back(currentTime);
 	}
+	else
+	{
+		//If it is not empty, check if the stamp already exists
+		if (currentTime > stampsFiberVelocities[stampsFiberVelocities.size() - 1])
+		{
+			//If there is a new stamp, save it
+			fiberVelocities.push_back(fv);
+			stampsFiberVelocities.push_back(currentTime);
+		}
+		else if (currentTime = stampsFiberVelocities[stampsFiberVelocities.size() - 1])
+		{
+			//If there is a repeated stamp, replace the fiber velocity
+			fiberVelocities[stampsFiberVelocities.size() - 1] = fv;
+			stampsFiberVelocities[stampsFiberVelocities.size() - 1] = currentTime;
+		}
+		//Delete the fiberVelocities recorded more than timeDelay seconds ago in simulation
+		double saved_time = stampsFiberVelocities[stampsFiberVelocities.size() - 1] - stampsFiberVelocities[0];
+		while (saved_time > timeDelay)
+		{
+			stampsFiberVelocities.erase(stampsFiberVelocities.begin());
+			fiberVelocities.erase(fiberVelocities.begin());
+			saved_time = stampsFiberVelocities[stampsFiberVelocities.size() - 1] - stampsFiberVelocities[0];
+		}
+	}
+	//Get the one at the beginning (timeDelay seconds ago)
+	double pastFV = fiberVelocities[0];
 
-	//Apply spasticity if fiberVelocity is higher than the threshold value
+	//Apply spasticity if fiberVelocity is higher than the threshold value, and if it has passed enough time since the beginning to apply spasticity
 	double actualTime = s.getTime();
 	if ((pastFV > thresholdValue) && (actualTime > timeDelay))
 	{
 		//cout << "EXISTE ESPASTICIDAD, pastNFV= " << pastFV << "At Time = " << actualTime << " en: " << this->getName() << endl;//
-		spasExcitation = pastFV * gainFactor + spasExcitation; 
+		spasExcitation = pastFV * gainFactor + spasExcitation;
 	}
 	return spasExcitation;
 }
 
 void SpasticMillardMuscleModel::computeStateVariableDerivatives(const SimTK::State& s) const
 {
+
 	// Activation dynamics if not ignored
 	if (!get_ignore_activation_dynamics()) {
 		double adot = 0;

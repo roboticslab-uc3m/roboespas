@@ -82,8 +82,6 @@ namespace OpenSim {
 		double getTimeDelay() const { return get_time_delay(); }
 			void setTimeDelay(double aTimeDelay);
 
-		
-
 		//-------------------------------------------------------------------------
 		// GET & SET STATES and their derivatives
 		//-------------------------------------------------------------------------
@@ -114,6 +112,7 @@ namespace OpenSim {
 		/** construct the new properties and set their default values */
 		void constructProperties();
 		mutable std::vector<double> fiberVelocities;
+		mutable std::vector<double> stampsFiberVelocities;
 		//=============================================================================
 	};  // END of class SpasticMillardMuscleModel
 	//=============================================================================
