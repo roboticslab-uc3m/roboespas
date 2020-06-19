@@ -272,11 +272,12 @@ double SpasticMillardMuscleModel::applySpasticEffect(const SimTK::State& s/*, do
 	start = std::chrono::system_clock::now();
 	//Update mutable std::vector
 	fiberVelocities.push_back(fv);
+	double pastFV2 = fiberVelocities[0];
+
 	if (fiberVelocities.size() > maxSizeFiberVelocities)
 	{
 		fiberVelocities.erase(fiberVelocities.begin());
 	}
-	double pastFV2 = fiberVelocities[0];
 	end = std::chrono::system_clock::now();
 
 	std::chrono::duration<double> elapsed_seconds = end - start;
