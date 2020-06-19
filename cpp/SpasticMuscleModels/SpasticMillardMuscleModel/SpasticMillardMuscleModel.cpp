@@ -241,12 +241,6 @@ double SpasticMillardMuscleModel::updatePreviousFiberVelocities(double fvi) cons
 			}		
 		}
 	}
-	cout << "Lista: " << endl;
-	for (int i = 0; i < 100; i++)
-	{
-		cout << Lista[i] << endl;
-	}
-
 	return pastFV;
 
 }
@@ -294,12 +288,6 @@ double SpasticMillardMuscleModel::applySpasticEffect(const SimTK::State& s/*, do
 	end = std::chrono::system_clock::now();
 	elapsed_seconds = end - start;
 	std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
-
-	cout << "fiberVelocities: " << endl;
-	for (int i = 0; i < fiberVelocities.size(); i++)
-	{
-		cout << fiberVelocities[i] << endl;
-	}
 
 	cout << "pastFV= " << pastFV << endl;
 	cout << "pastFV2= " << pastFV2 << endl;
