@@ -115,7 +115,6 @@ void SpasticMillardMuscleModel::setTimeDelay(double aTimeDelay)
 double SpasticMillardMuscleModel::applySpasticEffect(const SimTK::State& s) const
 {
 	double currentTime = s.getTime();
-	//cout << "DENTRO de applySpasticEffect en el musculo \n";
 	SimTK_ASSERT1(getNumStateVariables() == 2,
 		"SpasticMillardMuscleModel: Expected 2 state variables"
 		" but encountered  %f.", getNumStateVariables());		

@@ -115,6 +115,7 @@ namespace OpenSim {
 		/** construct the new properties and set their default values */
 		void constructProperties();
 		mutable std::vector<double> fiberVelocities;
+		mutable std::vector<double> stampsFiberVelocities;
 		//=============================================================================
 	};  // END of class SpasticThelenMuscleModel
 	//=============================================================================

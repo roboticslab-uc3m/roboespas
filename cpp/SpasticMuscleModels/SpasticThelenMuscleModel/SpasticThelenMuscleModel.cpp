@@ -109,7 +109,7 @@ void SpasticThelenMuscleModel::setTimeDelay(double aTimeDelay)
 
 double SpasticThelenMuscleModel::applySpasticEffect(const SimTK::State& s/*, double excitation*/) const //11
 {
-	
+	double currentTime = s.getTime();
 	SimTK_ASSERT1(getNumStateVariables() == 2,
 		"SpasticThelenMuscleModel: Expected 2 state variables"
 		" but encountered  %f.", getNumStateVariables());
@@ -124,14 +124,40 @@ double SpasticThelenMuscleModel::applySpasticEffect(const SimTK::State& s/*, dou
 	calcFiberVelocityInfo(s, fvi); //*fvi
 	double fv = fvi.normFiberVelocity;
 	//Add new fiber velocity
-	fiberVelocities.push_back(fv);
+	if (stampsFiberVelocities.empty())
+	{
+		//If the vector is empty, just save a new fiber velocity + stamp
+		fiberVelocities.push_back(fv);
+		stampsFiberVelocities.push_back(currentTime);
+	}
+	else
+	{
+		//If it is not empty, check if the stamp already exists
+		if (currentTime > stampsFiberVelocities[stampsFiberVelocities.size() - 1])
+		{
+			//If there is a new stamp, save it
+			fiberVelocities.push_back(fv);
+			stampsFiberVelocities.push_back(currentTime);
+		}
+		else if (currentTime = stampsFiberVelocities[stampsFiberVelocities.size() - 1])
+		{
+			//If there is a repeated stamp, replace the fiber velocity
+			fiberVelocities[stampsFiberVelocities.size() - 1] = fv;
+			stampsFiberVelocities[stampsFiberVelocities.size() - 1] = currentTime;
+		}
+		//Delete the fiberVelocities recorded more than timeDelay seconds ago in simulation
+		double saved_time = stampsFiberVelocities[stampsFiberVelocities.size() - 1] - stampsFiberVelocities[0];
+		while (saved_time > timeDelay)
+		{
+			stampsFiberVelocities.erase(stampsFiberVelocities.begin());
+			fiberVelocities.erase(fiberVelocities.begin());
+			saved_time = stampsFiberVelocities[stampsFiberVelocities.size() - 1] - stampsFiberVelocities[0];
+		}
+	}
+
+
 	//Get the one at the beginning
 	double pastFV = fiberVelocities[0];
-	//Delete this one if there are already too much velocities in the vector
-	if (fiberVelocities.size() > maxSizeFiberVelocities)
-	{
-		fiberVelocities.erase(fiberVelocities.begin());
-	}
 
 	double actualTime = s.getTime();
 	if ((pastFV > thresholdValue) && (actualTime > timeDelay))
