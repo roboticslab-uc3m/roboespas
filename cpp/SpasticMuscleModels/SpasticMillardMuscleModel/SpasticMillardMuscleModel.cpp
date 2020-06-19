@@ -302,7 +302,7 @@ double SpasticMillardMuscleModel::applySpasticEffect(const SimTK::State& s/*, do
 	}
 
 	cout << "pastFV= " << pastFV << endl;
-	cout << "pastFV2= " << pastFV << endl;
+	cout << "pastFV2= " << pastFV2 << endl;
 
 	double actualTime = s.getTime();
 	if ((pastFV > thresholdValue) && (actualTime > timeDelay))
