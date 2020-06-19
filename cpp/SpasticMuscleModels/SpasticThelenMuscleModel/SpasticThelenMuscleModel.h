@@ -112,10 +112,9 @@ namespace OpenSim {
 
 	private:
 		double SpasticThelenMuscleModel::applySpasticEffect(const SimTK::State& s /*, double excitation*/) const;
-		double SpasticThelenMuscleModel::updatePreviousFiberVelocities(double fiberVelocity) const;
 		/** construct the new properties and set their default values */
 		void constructProperties();
-
+		mutable std::vector<double> fiberVelocities;
 		//=============================================================================
 	};  // END of class SpasticThelenMuscleModel
 	//=============================================================================
