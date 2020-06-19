@@ -13,11 +13,11 @@ Based on: https://simtk-confluence.stanford.edu:8443/display/OpenSim33/Step-by-S
 6. Open the project in Visual Studio by clicking the button next to *Generate*. You may close CMake now. 
 7. To compile, select the *Release* configuration, and *x64* platform in the top part of VisualStudio. Then click *Compile\Compile solution*. 
 8. If the compilation was correct, a new *.dll* file should have appeared in *...roboespas\cpp\SpasticMuscleModels\SpasticMillardMuscleModel\build\Release*. It should have appeared a new *.dll* called *SpasticMillardMuscleModel.dll*.
-9. To add the spastic muscle as a plugin, copy the *.dll* file mentioned before inside *<OpenSim installation folder>\Plugins\*. Restart OpenSim.
-10. To use this plugin, launch OpenSim and click *Tools\User Plugins\SpasticMillardMuscleModel.dll*. You should do this before opening the model in OpenSim to be able to use this muscle.
-11. 
-
-
-
-
-
+9. Copy the *.dll* file mentioned before inside *<OpenSim installation folder>\Plugins\*. Restart OpenSim.
+10. To use this plugin:
+    - Launch OpenSim.
+    - Load the plugin in *Tools\User Plugins\SpasticMillardMuscleModel.dll*. You should do this before opening the model in OpenSim to be able to use this muscle in the model.
+    - Load the model *ROBOESPAS_FLEXION\...SpasticMillard_V?.osim*.
+    - Generate the configuration file for the CMC using *\roboespas\matlab\OpenSimControl\MatlabCode\Principales\Main.m* and executing it until the line ```cmc.run()```, not included. This will generate a file inside *...\OpenSimControl\ROBOESPAS_CONTROL\CMC\* called *setupActualCMC.xml*.
+    - Launch the CMC calculations in *Tools\Computed Muscle Control*, click *Load* and select *...\ROBOESPAS_FLEXION\setupActualCMC.xml* configuration file. Click Run. You can also configure it manually instead of loading a setup file.
+    - Look at the output. For example, if you placed a ```cout``` inside the spastic muscle, and you followed the steps correctly you should now see your output in the OpenSim Messages window.
