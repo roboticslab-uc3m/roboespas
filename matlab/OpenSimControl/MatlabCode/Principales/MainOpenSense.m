@@ -90,7 +90,7 @@ STOFileAdapterQuaternion.write(quatTable,  [IMUpath, '\', trial '_orientations.s
 
 %% Calibrate OpenSim model
 % Set variables to use
-MODELO = [CD_model, '\', MODELO];
+modeloPath = [CD_model, '\', MODELO];
 orientationsFileName = [IMUpath,'/PruebaFlexExt_orientations.sto'];%'MT_012005D6_009-001_orientations.sto';   % The path to orientation data for calibration 
 sensor_to_opensim_rotation = Vec3(0, pi/2, 0);% The rotation of IMU data to the OpenSim world frame 
 % baseIMUName = 'humerus_imu';                     % The base IMU is the IMU on the base body of the model that dictates the heading (forward) direction of the model.
@@ -101,7 +101,7 @@ visulizeCalibration = false;                     % Boolean to Visualize the Outp
 imuPlacer = IMUPlacer();
 
 % Set properties for the IMUPlacer
-imuPlacer.set_model_file(MODELO);
+imuPlacer.set_model_file(modeloPath);
 imuPlacer.set_orientation_file_for_calibration(orientationsFileName);
 imuPlacer.set_sensor_to_opensim_rotations(sensor_to_opensim_rotation);
 % imuPlacer.set_base_imu_label(baseIMUName);
@@ -114,11 +114,11 @@ imuPlacer.run(visulizeCalibration);
 model = imuPlacer.getCalibratedModel();
 
 % Print the calibrated model to file.
-model.print(strrep(MODELO, '.osim', '_calibrated.osim') );
-
+model.print(strrep(modeloPath, '.osim', '_calibrated.osim') );
 %% Obtain IK motion from orientation tracking
 % Set variables to use
-MODELO = [CD_model, '\Arm_Flexion_Millard_V2_calibrated.osim']; %'Rajagopal_2015_calibrated.osim';                % The path to an input model
+% modeloPath = [CD_model, '\Arm_Flexion_Millard_V2_calibrated.osim']; %'Rajagopal_2015_calibrated.osim';                % The path to an input model
+MODELO = strrep(MODELO, '.osim', '_calibrated.osim');
 visualizeTracking = false;  % Boolean to Visualize the tracking simulation
 startTime = 22; %7.25;          % Start time (in seconds) of the tracking simulation. 
 endTime = 27; %15;              % End time (in seconds) of the tracking simulation.
@@ -128,7 +128,7 @@ resultsDirectory = [CD_model,'\IKResults'];
 imuIK = IMUInverseKinematicsTool();
  
 % Set the model path to be used for tracking
-imuIK.set_model_file(MODELO);
+imuIK.set_model_file([CD_model, '\', MODELO]);
 imuIK.set_orientations_file(orientationsFileName);
 imuIK.set_sensor_to_opensim_rotations(sensor_to_opensim_rotation)
 % Set time range in seconds
