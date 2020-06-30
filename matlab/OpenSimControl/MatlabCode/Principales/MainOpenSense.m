@@ -224,19 +224,24 @@ cmcTool.setUseFastTarget(false);
 cmcTool.print(strcat(CD_cmc,'\setupActualCMC.xml'));
 
 cmc = CMCTool(strcat(CD_cmc,'\setupActualCMC.xml'));
-% cmc.run; %Esto se hace por seguridad. Recomendaciï¿½n de OpenSim.
+cmc.run; %Esto se hace por seguridad. Recomendaciï¿½n de OpenSim.
 % cmcTool.run;
 
 disp('CMC Completado');
 
 %% Representar excitaciones estimadas con CMC
-% [cmcExcitations] = f_importCMCExcitations(strcat(CD_cmc, 'Results\CMCtool_controls.sto'));
-% muscles = fieldnames(cmcExcitations);
-% numMuscles = length(muscles)-1;
-% f = figure('Name', 'Estimated EMG', 'WindowState', 'maximized');
-% for i = 1:numMuscles
-%     subplot(numMuscles,1,i, 'Parent',f);
-%     plot(cmcExcitations.time, cmcExcitations.(muscles{i+1}))
-%     title(muscles{i+1})
-%     drawnow
-% end
+[cmcExcitations] = f_importCMCExcitations(strcat(CD_cmc, 'Results\CMCtool_controls.sto'));
+[cmcActivations] = f_importCMCExcitations(strcat(CD_cmc, 'Results\CMCtool_states.sto'));
+muscles = fieldnames(cmcExcitations);
+numMuscles = length(muscles)-1;
+f = figure('Name', 'Estimated EMG', 'WindowState', 'maximized');
+for i = 1:numMuscles
+    subplot(numMuscles,1,i, 'Parent',f);
+    hold on
+    plot(cmcExcitations.time, cmcExcitations.(muscles{i+1}))
+    plot(cmcActivations.time, cmcActivations.(muscles{i+1}), 'Color', 'r')
+    title(muscles{i+1})
+    legend('Excitación', 'Activación')
+    ylim([0 1])
+    drawnow
+end
