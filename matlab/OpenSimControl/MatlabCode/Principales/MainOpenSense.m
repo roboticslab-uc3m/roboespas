@@ -48,7 +48,7 @@ pathOpenSim = ['C:\OpenSim ', char(org.opensim.modeling.opensimCommon.GetVersion
 % disp(['Using OpenSim installation path: ', pathOpenSim]);
 
 % Path model folder
-CD_model= [pathOpenSimControl, '\ROBOESPAS_FLEXION'];
+CD_model= [pathOpenSimControl, 'ROBOESPAS_FLEXION'];
 
 %% Load data
 % Get model name, load plugin in OpenSim if its spastic
@@ -91,7 +91,7 @@ STOFileAdapterQuaternion.write(quatTable,  [IMUpath, '\', trial '_orientations.s
 %% Calibrate OpenSim model
 % Set variables to use
 MODELO = [CD_model, '\', MODELO];
-orientationsFileName = [IMUpath,'\PruebaFlexExt_orientations.sto'];%'MT_012005D6_009-001_orientations.sto';   % The path to orientation data for calibration 
+orientationsFileName = [IMUpath,'/PruebaFlexExt_orientations.sto'];%'MT_012005D6_009-001_orientations.sto';   % The path to orientation data for calibration 
 sensor_to_opensim_rotation = Vec3(0, pi/2, 0);% The rotation of IMU data to the OpenSim world frame 
 % baseIMUName = 'humerus_imu';                     % The base IMU is the IMU on the base body of the model that dictates the heading (forward) direction of the model.
 % baseIMUHeading = 'y';                           % The Coordinate Axis of the base IMU that points in the heading direction. 
@@ -119,7 +119,7 @@ model.print(strrep(MODELO, '.osim', '_calibrated.osim') );
 %% Obtain IK motion from orientation tracking
 % Set variables to use
 MODELO = [CD_model, '\Arm_Flexion_Millard_V2_calibrated.osim']; %'Rajagopal_2015_calibrated.osim';                % The path to an input model
-visualizeTracking = true;  % Boolean to Visualize the tracking simulation
+visualizeTracking = false;  % Boolean to Visualize the tracking simulation
 startTime = 22; %7.25;          % Start time (in seconds) of the tracking simulation. 
 endTime = 27; %15;              % End time (in seconds) of the tracking simulation.
 resultsDirectory = [CD_model,'\IKResults'];
