@@ -3,27 +3,30 @@
 #include <iomanip>
 #include <string>
 #include <cstring> // strstr
-#include "ROSFRIClient.h"
-#include "fricomm/LBRStateMsg.h"
+#include "IiwaFRIClient.h"
 
+using namespace std;
 using namespace KUKA::FRI;
 //******************************************************************************
-ROSFRIClient::ROSFRIClient(ros::NodeHandle *nh)
+IiwaFRIClient::IiwaFRIClient(ros::NodeHandle *nh)
 {
-	LBRState_pub = nh->advertise<fricomm::LBRStateMsg>("/ROSFRI/LBRState", 10);
-	printf("ROSFRIClient initialized:\n");
+	LBRState_pub = nh->advertise<iiwa_fri::LBRStateMsg>("/iiwa_fri/LBRState", 1);
+	joint_state_pub = nh->advertise<sensor_msgs::JointState>("/iiwa_fri/joint_state", 1);
+	joint_command_sub = nh->subscribe("/iiwa_fri/joint_command", 1, &IiwaFRIClient::JointCommandCallback, this);
+
+	ROS_INFO("IiwaFRIClient initialized\n");
 	first_time=true;
 	first_timestampSec=0;
 	first_timestampNanosec=0;
 }
 
 //******************************************************************************
-ROSFRIClient::~ROSFRIClient()
+IiwaFRIClient::~IiwaFRIClient()
 {
 }
-     
+
 //******************************************************************************
-void ROSFRIClient::onStateChange(ESessionState oldState, ESessionState newState)
+void IiwaFRIClient::onStateChange(ESessionState oldState, ESessionState newState)
 {
    LBRClient::onStateChange(oldState, newState);
    // react on state change events
@@ -31,20 +34,24 @@ void ROSFRIClient::onStateChange(ESessionState oldState, ESessionState newState)
    {
       case MONITORING_WAIT:
       {
-         break;
-      }       
+		  ROS_INFO("Switched to MONITORING_WAIT\n");
+          break;
+      }
       case MONITORING_READY:
       {
-         break;
+		  ROS_INFO("Switched to MONITORING_READY\n");
+          break;
       }
       case COMMANDING_WAIT:
       {
-         break;
-      }   
+		  ROS_INFO("Switched to COMMANDING_WAIT\n");
+		  break;
+      }
       case COMMANDING_ACTIVE:
       {
-         break;
-      }   
+		  ROS_INFO("Switched to COMMANDING_ACTIVE\n");
+          break;
+      }
       default:
       {
          break;
@@ -53,43 +60,68 @@ void ROSFRIClient::onStateChange(ESessionState oldState, ESessionState newState)
 }
 
 //******************************************************************************
-void ROSFRIClient::monitor()
+void IiwaFRIClient::monitor()
 {
 
    	LBRClient::monitor();
-   	this->publishLBRState();
+   	this->publishState();
 
 }
 
 //******************************************************************************
-void ROSFRIClient::waitForCommand()
+void IiwaFRIClient::waitForCommand()
 {
-   // In waitForCommand(), the joint values have to be mirrored. Which is done, 
+   // In waitForCommand(), the joint values have to be mirrored. Which is done,
    // by calling the base method.
    LBRClient::waitForCommand();
-   ROS_INFO("Command ");
+   ROS_INFO("Waiting for Command ");
    if (robotState().getClientCommandMode() == TORQUE)
    {
       //robotCommand().setTorque(_torques);
       ROS_INFO("Set torque");
    }
-   this->publishLBRState();
-   
+   this->publishState();
 }
 
 //******************************************************************************
-void ROSFRIClient::command()
+void IiwaFRIClient::command()
 {
-   
-   // In command(), the joint angle values have to be set. 
-   //robotCommand().setJointPosition( newJointValues );
-   ROS_INFO("Command ");
-   this->publishLBRState();
+    double commJointPos[LBRState::NUMBER_OF_JOINTS];
+	double readJointPos[LBRState::NUMBER_OF_JOINTS];
+    memcpy(commJointPos, robotState().getCommandedJointPosition(), LBRState::NUMBER_OF_JOINTS * sizeof(double));
+    memcpy(readJointPos, robotState().getMeasuredJointPosition(), LBRState::NUMBER_OF_JOINTS * sizeof(double));
+	//readJointPos[0]=readJointPos[0]+0.001;
+	/*cout << "commJointPos: ";
+	for (unsigned int i=0; i<LBRState::NUMBER_OF_JOINTS; i++)
+	{
+		cout << commJointPos[i] << ", ";
+	}
+	cout << endl;
+	cout << "readJointPos: ";
+	for (unsigned int i=0; i<LBRState::NUMBER_OF_JOINTS; i++)
+	{
+		cout << readJointPos[i] << ", ";
+	}
+	cout << endl;*/
+
+	robotCommand().setJointPosition(readJointPos);
+   	// In command(), the joint angle values have to be set.
+   	this->publishState();
 }
 
-void ROSFRIClient::publishLBRState()
+void IiwaFRIClient::JointCommandCallback(const trajectory_msgs::JointTrajectoryPoint::ConstPtr& msg)
 {
-	fricomm::LBRStateMsg LBRState_msg;	
+	cout << "joint_command: ";
+	for (int j=0; j < msg->positions.size(); j++)
+	{
+		cout << msg->positions[j] << ", ";
+	}
+	cout << endl;
+}
+void IiwaFRIClient::publishState()
+{
+	//LBR STATE
+	iiwa_fri::LBRStateMsg LBRState_msg;
 	LBRState currentRobotState=robotState();
 	LBRState_msg.sample_time = currentRobotState.getSampleTime();
 	LBRState_msg.session_state = SESSION_STATES[currentRobotState.getSessionState()];
@@ -114,32 +146,32 @@ void ROSFRIClient::publishLBRState()
 	int timestampSecFromStart=timestampSec-first_timestampSec;
 	int timestampNanosecFromStart=timestampNanosec-first_timestampNanosec;
 	LBRState_msg.timestamp=timestampSecFromStart + 1e-9*timestampNanosecFromStart;
-	
+
 	//Build measured joint position vector
 	const double* measured_joint_position_pointer= currentRobotState.getMeasuredJointPosition();
 	std::vector<double> measured_joint_position(measured_joint_position_pointer, measured_joint_position_pointer + 7);
 	LBRState_msg.measured_joint_position = measured_joint_position;
-	
+
 	//Build commanded joint position vector
 	const double* commanded_joint_position_pointer = currentRobotState.getCommandedJointPosition();
 	std::vector<double> commanded_joint_position(commanded_joint_position_pointer, commanded_joint_position_pointer + 7);
 	LBRState_msg.commanded_joint_position = commanded_joint_position;
-	
+
 	//Build measured joint torque vector
 	const double* measured_joint_torque_pointer = currentRobotState.getMeasuredTorque();
 	std::vector<double> measured_joint_torque(measured_joint_torque_pointer, measured_joint_torque_pointer + 7);
 	LBRState_msg.measured_joint_torque = measured_joint_torque;
-	
+
 	//Build commanded joint torque vector
 	const double* commanded_joint_torque_pointer = currentRobotState.getCommandedTorque();
 	std::vector<double> commanded_joint_torque(commanded_joint_torque_pointer, commanded_joint_torque_pointer + 7);
 	LBRState_msg.commanded_joint_torque = commanded_joint_torque;
-	
+
 	//Build external joint torque vector
 	const double* external_joint_torque_pointer = currentRobotState. getExternalTorque();
 	std::vector<double> external_joint_torque(external_joint_torque_pointer, external_joint_torque_pointer + 7);
 	LBRState_msg.external_joint_torque = external_joint_torque;
-		
+
 	//Fill interpolator joint position if not in Monitor Mode
 	if (LBRState_msg.session_state!="MONITORING_READY" && LBRState_msg.session_state!="MONITORING_WAIT")
 	{
@@ -152,6 +184,16 @@ void ROSFRIClient::publishLBRState()
 		std::vector<double> interpolator_joint_position(7, 0.0);
 		LBRState_msg.interpolator_joint_position = interpolator_joint_position;
 	}
-	
 	LBRState_pub.publish(LBRState_msg);
+
+	//JOINT STATE
+	sensor_msgs::JointState js_msg;
+	for (int i = 0; i < 7; i++)
+	{
+		js_msg.position.push_back(measured_joint_position[i]);
+		js_msg.effort.push_back(measured_joint_torque[i]);
+	}
+	js_msg.name={"joint_1", "joint_2", "joint_3", "joint_4", "joint_5", "joint_6", "joint_7"};
+	js_msg.header.stamp=ros::Time(timestampSecFromStart + 1e-9*timestampNanosecFromStart);
+	joint_state_pub.publish(js_msg);
 }

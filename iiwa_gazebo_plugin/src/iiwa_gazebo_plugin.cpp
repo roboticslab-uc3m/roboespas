@@ -22,7 +22,7 @@ namespace gazebo
         private:
         ros::NodeHandle * nh;
         ros::Publisher joint_state_pub;
-        ros::Subscriber joint_torque_sub;
+        ros::Subscriber joint_command_sub;
         bool applyPastCommand;
         bool applyPastRead;
         int pastCommandCounter;
@@ -36,7 +36,8 @@ namespace gazebo
         int nFrame=1;
         std::string control_type = "joint_position"; //It is read from parameters server initially and it can be "joint_position" or "joint_torque"
 
-        public: void JointStateCallback(const trajectory_msgs::JointTrajectoryPoint::ConstPtr& msg)
+        public:
+        void JointCommandCallback(const trajectory_msgs::JointTrajectoryPoint::ConstPtr& msg)
         {
             this->applyPastCommand = true;
             this->pastCommandCounter = 0;
@@ -94,7 +95,7 @@ namespace gazebo
             boost::bind(&ModelPush::OnUpdate, this, _1));
             this->nh = new ros::NodeHandle("iiwa_gazebo");
             this->joint_state_pub = nh->advertise<sensor_msgs::JointState>("joint_state", 1);
-            this->joint_torque_sub = nh->subscribe("joint_command", 1, &ModelPush::JointStateCallback, this);
+            this->joint_command_sub = nh->subscribe("joint_command", 1, &ModelPush::JointCommandCallback, this);
             this->pastCommandCounter = 0;
             this->applyPastCommand = false;
             //Read control_type from parameter server

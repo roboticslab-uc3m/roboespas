@@ -4,7 +4,7 @@
 #include <boost/filesystem.hpp>
 #include <string>
 #include "ros/ros.h"
-#include "ROSFRIClient.h"
+#include "IiwaFRIClient.h"
 #include "friUdpConnection.h"
 #include "friClientApplication.h"
 
@@ -15,9 +15,9 @@ using namespace KUKA::FRI;
 
 int main(int argc, char **argv)
 {
-	ros::init(argc,argv, "ROSFRI");
+	ros::init(argc,argv, "iiwa_fri");
 	ros::NodeHandle nh;
-	ROS_INFO("Node registered as /ROSFRI");
+	ROS_INFO("Node registered as /iiwa_fri");
 
 	// parse command line arguments
 	if (argc > 1)
@@ -37,8 +37,7 @@ int main(int argc, char **argv)
 	int port = (argc >= 3) ? atoi(argv[2]) : DEFAULT_PORTID;
 
 	// create new client
-	ROSFRIClient lbrClient(&nh);
-	printf("\nEnter Monitor Client Application");
+	IiwaFRIClient lbrClient(&nh);
 
 	// create new udp connection
 	UdpConnection connection;
@@ -58,7 +57,7 @@ int main(int argc, char **argv)
 		// check if we are in IDLE because the FRI session was closed
 		if (lbrClient.robotState().getSessionState() == IDLE)
 		{
-			// We simply quit. Waiting for a FRI new session would be another 
+			// We simply quit. Waiting for a FRI new session would be another
 			// possibility.
 			break;
 		}
@@ -69,4 +68,3 @@ int main(int argc, char **argv)
 	app.disconnect();
 	return 0;
 }
-
