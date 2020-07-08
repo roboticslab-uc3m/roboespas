@@ -1,0 +1,91 @@
+#include <cstdlib>
+#include <iostream>
+#include <fstream>
+#include <boost/filesystem.hpp>
+#include <string>
+#include "ros/ros.h"
+#include "fricomm/LBRStateMsg.h"
+#include "fricomm/CaptureStartSrv.h"
+#include "fricomm/CaptureStopGetClearSrv.h"
+
+using namespace std;
+
+class CaptureNode {
+    private:
+    ros::Subscriber LBRState_sub;
+    ros::ServiceServer start_srv;
+    ros::ServiceServer stopgetclear_srv;
+    bool bCapture = false;
+    std::vector<fricomm::LBRStateMsg> trajectory;
+    public:
+    CaptureNode(ros::NodeHandle *nh) 
+    {
+        LBRState_sub = nh->subscribe("/ROSFRI/LBRState", 1000, &CaptureNode::callback_LBRState, this);
+        start_srv = nh->advertiseService("/capture/start/", &CaptureNode::callback_start, this);
+		stopgetclear_srv = nh->advertiseService("/capture/stop/", &CaptureNode::callback_stopgetclear, this);
+		ROS_INFO("Services advertised: /capture/start/, /capture/stop/");
+	}
+    void callback_LBRState(const fricomm::LBRStateMsg& LBRState_msg)
+    {
+        if (bCapture)
+        {
+        	trajectory.push_back(LBRState_msg);
+        }
+    }
+    bool callback_start(fricomm::CaptureStartSrv::Request &req, fricomm::CaptureStartSrv::Response &res)
+	{
+		this->Start();
+		if (bCapture)
+		{
+			res.success=true;
+			return true;
+		}
+		else
+		{
+			res.success=false;
+			return false;
+		}
+	}
+	bool callback_stopgetclear(fricomm::CaptureStopGetClearSrv::Request &req, fricomm::CaptureStopGetClearSrv::Response &res)
+	{
+		res.trajectory=this->StopGetAndClear();
+		if (res.trajectory.size()>0 && !bCapture && trajectory.size()==0)
+		{
+			res.success=true;
+			return true;
+		}
+		else
+		{
+			res.success=false;
+			return false;
+		}
+	}
+    void Start()
+    {
+    	bCapture = true;
+    }
+    std::vector<fricomm::LBRStateMsg> StopGetAndClear()
+    {
+    	bCapture=false;
+    	std::vector<fricomm::LBRStateMsg> trajectory_ans=trajectory;
+    	trajectory.clear();
+    	return trajectory_ans;
+    }
+};
+
+int main(int argc, char **argv)
+{
+	ros::init(argc,argv, "capture");
+	ros::NodeHandle nh;
+	ROS_INFO("Node registered as /capture");
+	
+	CaptureNode capture_node=CaptureNode(&nh);
+
+	
+	bool success = true;
+	while (ros::ok())
+	{
+		ros::spinOnce();
+	}
+	return 0;
+}
