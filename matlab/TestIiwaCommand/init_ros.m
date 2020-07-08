@@ -7,21 +7,26 @@ function init_ros(varargin)
     if (robotics.ros.internal.Global.isNodeActive)
         rosshutdown;
     end
-    if (isunix)
-        network_name = 'wlp2s0';
-        [~, ros_ip] = system(['(ifconfig |grep -A 1 "', network_name, '" |tail -1 |cut -d ":" -f 2| cut -d " " -f 1)']);
-        if (isempty(ros_ip))
-            network_name = 'enp3s0';
-            [~, ros_ip] = system(['(ifconfig |grep -A 1 "', network_name, '" |tail -1 |cut -d ":" -f 2| cut -d " " -f 1)']);
-        end
-        ros_ip = ros_ip(1:end-1);
+    if (length(varargin)==1)
+        ros_ip = varargin{1};
         ros_master_uri = strcat('http://', ros_ip,':11311');
     else
-        if (length(varargin)==1)
-            ros_ip = varargin{1};
+        if (isunix)
+            network_name = 'wlp2s0';
+            [~, ros_ip] = system(['(ifconfig |grep -A 1 "', network_name, '" |tail -1 |cut -d ":" -f 2| cut -d " " -f 1)']);
+            if (isempty(ros_ip))
+                network_name = 'enp3s0';
+                [~, ros_ip] = system(['(ifconfig |grep -A 1 "', network_name, '" |tail -1 |cut -d ":" -f 2| cut -d " " -f 1)']);
+            end
+            ros_ip = ros_ip(1:end-1);
             ros_master_uri = strcat('http://', ros_ip,':11311');
         else
-            disp('Add IP to function');
+            [~, result] = system('ipconfig');
+            id_ipv4 = strfind(result, 'IPv4');
+            id_nextline = strfind(result, 'Máscara');
+            ros_ip = extractBetween(result,id_ipv4(1)+34,id_nextline(1)-5);
+            ros_ip = ros_ip{1};
+            ros_master_uri = strcat('http://', ros_ip,':11311');
         end
     end
 
