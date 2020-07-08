@@ -84,18 +84,18 @@ class MoveJAction
         else
         {
             ROS_ERROR("Not implemented yet");
-        }        
+        }
     }
     void callback_iiwa_gazebo_state(const sensor_msgs::JointState& iiwa_gazebo_state_msg)
     {
         joint_state=iiwa_gazebo_state_msg;
     }
     void callback_MoveJ(const iiwa_command::MoveJGoalConstPtr &goal)
-    {   
+    {
         ROS_INFO("MoveJ action server active");
         //Variables returned
         trajectory_msgs::JointTrajectory trajectory_commanded;
-        std::vector<sensor_msgs::JointState> trajectory_joint_state;
+        std::vector<sensor_msgs::JointState> trajectory_read;
         //First save in an std::vector
         std::vector<double> q_goal_vec=goal->joint_position;
         //Check position is not empty
@@ -113,7 +113,7 @@ class MoveJAction
             if (std::abs(q_goal[j]) >= q_max[j])
             {
                 ROS_ERROR("Goal joint position outside workspace");
-                as_result.trajectory_joint_state=trajectory_joint_state;
+                as_result.trajectory_read=trajectory_read;
                 as_result.trajectory_commanded=trajectory_commanded;
                 as.setSucceeded(as_result);
                 return;
@@ -132,16 +132,18 @@ class MoveJAction
             //Calculate qdot_max with that percentage
             Eigen::VectorXd qdot = qdot_max * velocity;
             //Calculate maximum joint position increment for each joint, taking into account the control step size and the current maximum velocity
-            // qdot = incq/t -> incq= qdot*t 
-            Eigen::VectorXd qinc_max = qdot*control_step_size;        
+            // qdot = incq/t -> incq= qdot*t
+            Eigen::VectorXd qinc_max = qdot*control_step_size;
             ros::Time tStartTraj = ros::Time::now();
             bool cont=true;
             while (cont)
             {
                 sensor_msgs::JointState freezed_joint_state = joint_state;
+                ros::Duration time_from_start = ros::Time::now()-tStartTraj;
+
                 //Get current position;
                 Eigen::VectorXd q_curr = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(freezed_joint_state.position.data(), freezed_joint_state.position.size());
-                //Calculate the difference in radians        
+                //Calculate the difference in radians
                 Eigen::VectorXd q_diff = q_goal-q_curr;
                 //Check if it is far from the goal position
                 Eigen::VectorXd ratio_far = q_diff.array()/qinc_max.array();
@@ -159,7 +161,7 @@ class MoveJAction
                     if (std::abs(q_next[j]) >= q_max[j])
                     {
                         ROS_ERROR("Intermediate joint position outside workspace");
-                        as_result.trajectory_joint_state=trajectory_joint_state;
+                        as_result.trajectory_read=trajectory_read;
                         as_result.trajectory_commanded=trajectory_commanded;
                         as.setSucceeded(as_result);
                         return;
@@ -171,12 +173,11 @@ class MoveJAction
                 {
                     point_command.positions.push_back(q_next[i]);
                 }
-                ros::Duration time_from_start = ros::Time::now()-tStartTraj;
                 point_command.time_from_start = time_from_start;
 
                 //Save point_commanded and joint_state into vectors
                 trajectory_commanded.points.push_back(point_command);
-                trajectory_joint_state.push_back(freezed_joint_state);
+                trajectory_read.push_back(freezed_joint_state);
                 as_feedback.joint_state = freezed_joint_state;
                 as_feedback.point_commanded = point_command;
                 as_feedback.time_from_start=time_from_start.toSec();
@@ -186,7 +187,7 @@ class MoveJAction
                 cont = q_diff.array().abs().maxCoeff() > error_joint_position_stop;
                 ros::Duration(control_step_size).sleep();
             }
-            as_result.trajectory_joint_state=trajectory_joint_state;
+            as_result.trajectory_read=trajectory_read;
             as_result.trajectory_commanded=trajectory_commanded;
         }
         else if(strcmp(robot_mode.c_str(), "iiwa_stack")==0)
@@ -229,4 +230,3 @@ class MoveJAction
         ROS_INFO("MoveJ action server result sent");
     }
 };
-

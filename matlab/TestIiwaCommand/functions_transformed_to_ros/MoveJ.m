@@ -1,4 +1,5 @@
-clear all
+clear all;
+close all;
 q_ini=[0.7 -1.2 0.7 -1 0.3 -0.5 0.5];
 q_goal=[-0.7 1.2 -0.7 1 -0.3 0.5 -0.5];
 

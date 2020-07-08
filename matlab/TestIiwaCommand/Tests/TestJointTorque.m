@@ -1,4 +1,6 @@
 %% Connect to ROS Network
+clear all;
+close all;
 % Connect with ROS master
 init_ros;
 ptree=rosparam;
@@ -129,7 +131,7 @@ traj_output = IiwaTrajectory('output', jss_output);
 IiwaPlotter.joint_efforts_compare(traj_comm, traj_output);
 % Plot and inspect the actual joint torques and positions versus the desired values. Note that with the feed-forward torque,
 % the PD torques should oscillate around zero.
-IiwaPlotter.effortWithPD_compare(traj_des, traj_comm);
+IiwaPlotter.effortWithPD(traj_des, traj_comm);
 %IiwaPlotter.effortWithPD_compare_big(traj_comm, traj_output, traj_withoutPD);
 
 %Compare joint positions
@@ -141,10 +143,10 @@ IiwaPlotter.joint_position_error(traj_comm, traj_output);
 
 
 %% Save Results
-t_measured = traj_output.t;
-Q = traj_output.q;
-Qdot = traj_output.qdot;
-tau_ID = traj_withoutPD.effort;
-tau_real = traj_output.effort;
-
-save('Input-Dataset-Trayectory9.mat','t_measured','Q','Qdot','tau_ID','tau_real')
+% t_measured = traj_output.t;
+% Q = traj_output.q;
+% Qdot = traj_output.qdot;
+% tau_ID = traj_withoutPD.effort;
+% tau_real = traj_output.effort;
+% 
+% save('Input-Dataset-Trayectory9.mat','t_measured','Q','Qdot','tau_ID','tau_real')

@@ -67,6 +67,8 @@ add_service_files(
     ToJointTrajectory.srv
     FromJointStateVec.srv
     ToJointStateVec.srv
+    FromTwistStampedVec.srv
+    ToTwistStampedVec.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -75,6 +77,7 @@ add_action_files(
     IiwaCommand.action
     MoveJ.action
     MoveL.action
+    MoveLTrajectory.action
 )
 
 ## Generate added messages and services with any dependencies listed here

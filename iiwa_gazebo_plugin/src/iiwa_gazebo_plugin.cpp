@@ -4,7 +4,7 @@
 #include <gazebo/common/common.hh>
 #include <stdio.h>
 #include <iostream>
-#include <cmath> 
+#include <cmath>
 
 #include "ros/ros.h"
 #include "sensor_msgs/JointState.h"
@@ -19,7 +19,7 @@ namespace gazebo
 {
     class ModelPush : public ModelPlugin
     {
-        private: 
+        private:
         ros::NodeHandle * nh;
         ros::Publisher joint_state_pub;
         ros::Subscriber joint_torque_sub;
@@ -43,15 +43,23 @@ namespace gazebo
             this->pastCommandJointTorque.clear();
             this->pastCommandJointPosition.clear();
             //Add first empty torque bc there are 8 joints and first one is not the first of the robot, is the joint between the ground and the robot
-            this->pastCommandJointTorque.push_back(0); 
+            this->pastCommandJointTorque.push_back(0);
             this->pastCommandJointPosition.push_back(0);
-            for (int i = 0; i < msg->effort.size(); i++) 
+            for (int i = 0; i < msg->effort.size(); i++)
             {
                 this->pastCommandJointTorque.push_back(msg->effort[i]);
             }
             //Check the commanded position is in the range of feasible joint positions
             bool in_range = true;
             std::vector<double> diff;
+            //std::cout << "qinc_max: ";
+            //for (unsigned int i=0; i<7; i++)
+            //{
+            //    std::cout << qinc_max[i] << ", ";
+            //}
+            //std::cout << "Current joint position: [" << pastCommandJointPosition[1] << ", " << pastCommandJointPosition[2]<< ", " << pastCommandJointPosition[3]<< ", " << pastCommandJointPosition[4]<< ", " << pastCommandJointPosition[5]<< ", " << pastCommandJointPosition[6]<< ", " << pastCommandJointPosition[7] << "]" << std::endl;
+            //std::cout << "Commanded joint position: [" << msg->positions[0]<< ", " << msg->positions[1]<< ", " << msg->positions[2]<< ", " << msg->positions[3]<< ", " << msg->positions[4]<< ", " << msg->positions[5]<< ", " << msg->positions[6]<< "]" << std::endl;
+
             for (int j=0; j < msg->positions.size(); j++)
             {
                 diff.push_back(std::abs(msg->positions[j]-pastCommandJointPosition[j+1]));
@@ -74,7 +82,7 @@ namespace gazebo
             }
         }
 
-        public: 
+        public:
         void Load(physics::ModelPtr _parent, sdf::ElementPtr /*_sdf*/)
         {
             // Store the pointer to the model
@@ -125,11 +133,12 @@ namespace gazebo
                 double qinc = qdot_max[j]*control_step_size;
                 qinc_max[j] = qinc;
             }
+
             ROS_INFO("Finished loading IIWA Gazebo Command Plugin.");
         }
 
         // Called by the world update start event
-        public: 
+        public:
         void OnUpdate(const common::UpdateInfo & _info)/*_info*/
         {
             physics::Joint_V joints = this->model->GetJoints();
@@ -142,17 +151,17 @@ namespace gazebo
                 {
                     for (int i = 0; i < joints.size() && i < this->pastCommandJointTorque.size(); i++)
                     {
-                        // Force is additive (multiple calls to SetForce to the same joint in the same time step 
+                        // Force is additive (multiple calls to SetForce to the same joint in the same time step
                         // will accumulate forces on that Joint)?
                         //TODO: Limit qtorque
                         joints[i]->SetForce(0, this->pastCommandJointTorque[i]);
                     }
                     this->pastCommandCounter += 1;
-                    if (this->pastCommandCounter >= HOLD_FRAMES) 
-                    { 
+                    if (this->pastCommandCounter >= HOLD_FRAMES)
+                    {
                         this->applyPastCommand = false;
                     }
-                } 
+                }
             }
             else
             {
@@ -164,8 +173,8 @@ namespace gazebo
                         joints[i]->SetPosition(0, this->pastCommandJointPosition[i]);
                     }
                     this->pastCommandCounter += 1;
-                    if (this->pastCommandCounter >= HOLD_FRAMES) 
-                    { 
+                    if (this->pastCommandCounter >= HOLD_FRAMES)
+                    {
                         this->applyPastCommand = false;
                     }
                 }
@@ -174,7 +183,7 @@ namespace gazebo
                     this->applyPastCommand = true;
                     this->pastCommandCounter = 0;
                 }
-                
+
             }
 
             //PUBLISH JOINT STATE
@@ -211,4 +220,3 @@ namespace gazebo
     // Register this plugin with the simulator
     GZ_REGISTER_MODEL_PLUGIN(ModelPush)
 }
-

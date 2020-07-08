@@ -58,4 +58,5 @@ matlab/RoboespasApp/trials.mat
 matlab_gen/
 matlab/ModelCalibration/*.mat
 matlab/TestIiwaCommand/old
+matlab/trials_ERF2020.mat
 

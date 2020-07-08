@@ -14,7 +14,9 @@
 #include "IiwaCommandAction.cpp"
 #include "MoveJAction.cpp"
 #include "MoveLAction.cpp"
+#include "MoveLTrajectoryAction.cpp"
 #include "IiwaScrewTheory.cpp"
+#include <math.h>
 
 using namespace std;
 
@@ -23,8 +25,8 @@ int main(int argc, char **argv)
 	ros::init(argc,argv, "iiwa_command");
     ROS_INFO("Node registered as %s\n", ros::this_node::getName().c_str());
 
-    
     ros::NodeHandle nh;
+	//Load parameters from parameter server
     std::vector<double> twists;
     if (!nh.getParam("/iiwa/twists", twists))
     {
@@ -37,11 +39,18 @@ int main(int argc, char **argv)
         ROS_ERROR("Failed to read '/iiwa/Hst0' on param server");
     }
     Eigen::Matrix4d Hst0 = Eigen::Map<Eigen::Matrix<double, 4,4>>(hst0.data()).transpose();
-
-    IiwaScrewTheory::SetParameters(IiwaTwists, Hst0);
+	std::vector<double> qdotmax;
+	if (!nh.getParam("/iiwa/limits/joint_velocity", qdotmax))
+	{
+		ROS_ERROR("Failed to read '/iiwa/limits/joint_velocity on param server'");
+	}
+	Eigen::VectorXd qdotMax = Eigen::Map<Eigen::Matrix<double, 1, 7>> (qdotmax.data());
+	qdotMax = qdotMax*M_PI/180;
+    IiwaScrewTheory::SetParameters(IiwaTwists, Hst0, qdotMax);
     IiwaCommandAction iiwacommand(ros::this_node::getName());
     MoveJAction movej("MoveJ");
     MoveLAction movel("MoveL");
+	MoveLTrajectoryAction moveltrajectory("MoveLTrajectory");
 
 	bool success = true;
 	while (ros::ok())

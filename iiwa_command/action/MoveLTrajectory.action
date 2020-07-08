@@ -1,10 +1,9 @@
-float64[] cartesian_position
+geometry_msgs/TwistStamped[] trajectory_goal
+float64[] q_ini
 ---
-geometry_msgs/TwistStamped[] x_theory
-geometry_msgs/TwistStamped[] xdot_theory
 trajectory_msgs/JointTrajectory trajectory_commanded
 sensor_msgs/JointState[] trajectory_read
 ---
-trajectory_msgs/JointTrajectoryPoint point_commanded
 sensor_msgs/JointState joint_state
 float64 time_from_start
+trajectory_msgs/JointTrajectoryPoint point_commanded

@@ -23,9 +23,13 @@ classdef IiwaTrajectory
         function obj = IiwaTrajectory(varargin) %lbr, name, tWaypoints, qWaypoints, t)
             if (length(varargin)==5)
                 obj=obj.wayPointsConstructor(varargin{1}, varargin{2}, varargin{3}, varargin{4}, varargin{5});
+            elseif (length(varargin)==3)
+                %First parameter is the name, second is x, and third is
+                %xdot
+                obj=IiwaMsgTransformer.toIiwaTrajectory(varargin{1}, varargin{2}, varargin{3});
             elseif (length(varargin)==2)
                 if (isa (varargin{2}, 'double'))
-                    %Second parameter is npoints
+                    %First parameter is the name, and second parameter is npoints
                     obj.name = varargin{1};
                     obj.npoints = varargin{2};
                     obj.t = zeros(obj.npoints, 1);
@@ -36,6 +40,7 @@ classdef IiwaTrajectory
                     obj.xdot = zeros(obj.npoints,6);
                     obj.xdotdot = zeros(obj.npoints,6);
                 else
+                    %First parameter is name and second is the ros msg
                     obj=IiwaMsgTransformer.toIiwaTrajectory(varargin{1}, varargin{2});
                 end
             elseif (length(varargin)==1)
@@ -58,7 +63,7 @@ classdef IiwaTrajectory
         end
         function obj = CompleteCartesian(obj)
             for i=1:size(obj.q,1)
-                obj.x(i,:)=ScrewTheory.ForwardKinematics(obj.q(i,:));
+                obj.x(i,:)=IiwaScrewTheory.ForwardKinematics(obj.q(i,:));
             end
         end
         function obj = wayPointsConstructor(obj, lbr, name, tWaypoints, qWaypoints, t)

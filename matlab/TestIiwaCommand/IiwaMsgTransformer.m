@@ -1,27 +1,40 @@
 classdef IiwaMsgTransformer < handle
     methods(Static)
-        function iiwa_traj = toIiwaTrajectory(name, input)
+        function iiwa_traj = toIiwaTrajectory(name, input, varargin)
             persistent initialized
             persistent fromJointTrajSrv_cli fromJointTrajSrv_msg;
             persistent fromJointStateVecSrv_cli fromJointStateVecSrv_msg;
+            persistent fromTwistStampedVecSrv_cli fromTwistStampedVecSrv_msg;
             iiwa_traj=IiwaTrajectory();
             if (isempty(initialized))
                 [fromJointTrajSrv_cli, fromJointTrajSrv_msg] = rossvcclient('/msg_transform_helper/from_joint_traj');
-                [fromJointStateVecSrv_cli, fromJointStateVecSrv_msg] = rossvcclient('/msg_transform_helper/from_joint_state_vec');
+                [fromJointStateVecSrv_cli, fromJointStateVecSrv_msg] = rossvcclient('/msg_transform_helper/from_joint_state_vec');                
+                [fromTwistStampedVecSrv_cli, fromTwistStampedVecSrv_msg] = rossvcclient('/msg_transform_helper/from_twist_stamped_vec');
                 initialized='true';
             end
-            if isa(input,'robotics.ros.custom.msggen.iiwa_command.FromJointTrajectoryResponse') || ...
+            if (length(varargin)==1)
+                fromTwistStampedVecSrv_msg.TwistStampedVec = input;
+                x_res = fromTwistStampedVecSrv_cli.call(fromTwistStampedVecSrv_msg);
+                iiwa_traj.t=x_res.Stamps;
+                iiwa_traj.x=reshape(x_res.Values, 6, size(x_res.Values,1)/6, 1)';
+                fromTwistStampedVecSrv_msg.TwistStampedVec = varargin{1};
+                xdot_res = fromTwistStampedVecSrv_cli.call(fromTwistStampedVecSrv_msg);
+                iiwa_traj.xdot=reshape(xdot_res.Values, 6, size(xdot_res.Values,1)/6, 1)';
+                iiwa_traj.npoints=size(iiwa_traj.x,1);
+            elseif isa(input,'robotics.ros.custom.msggen.iiwa_command.FromJointTrajectoryResponse') || ...
                 isa(input, 'robotics.ros.custom.msggen.iiwa_command.FromJointStateVecResponse')
                 iiwa_traj.t=input.Stamps;
                 iiwa_traj.q=reshape(input.Positions, 7, size(input.Positions,1)/7, 1)';
                 iiwa_traj.qdot=reshape(input.Velocities, 7, size(input.Velocities,1)/7, 1)';
                 iiwa_traj.qdotdot=reshape(input.Accelerations, 7, size(input.Accelerations,1)/7, 1)';
                 iiwa_traj.effort=reshape(input.Efforts, 7, size(input.Efforts,1)/7, 1)';
+                iiwa_traj.npoints=size(iiwa_traj.q,1);
             elseif isa(input, 'robotics.ros.msggen.trajectory_msgs.JointTrajectory')
                 %De jointTrajectory a iiwaTrajectory
                 fromJointTrajSrv_msg.JointTrajectory=input;
                 fromJointTrajSrv_res=fromJointTrajSrv_cli.call(fromJointTrajSrv_msg);
                 iiwa_traj=IiwaMsgTransformer.toIiwaTrajectory(name, fromJointTrajSrv_res);
+                iiwa_traj.npoints=size(iiwa_traj.q,1);
             elseif isa(input, 'robotics.ros.msggen.sensor_msgs.JointState')
                 %De vector de joint states a iiwatrajectory
                 fromJointStateVecSrv_msg.JointStateVec=input;
@@ -55,6 +68,18 @@ classdef IiwaMsgTransformer < handle
             end
             joint_state='not implemented';
             % TODO: Implement
+        end
+        function twist_stamped_vec = toTwistStampedVec(values, stamps)
+            persistent initialized;
+            persistent toTwistStampedVecSrv_cli toTwistStampedVecSrv_msg;
+            if (isempty(initialized))
+                [toTwistStampedVecSrv_cli, toTwistStampedVecSrv_msg] = rossvcclient('/msg_transform_helper/to_twist_stamped_vec');
+                initialized='true';
+            end
+            toTwistStampedVecSrv_msg.Stamps = stamps;
+            toTwistStampedVecSrv_msg.Values = reshape(values, size(values,1)* size(values,2),1);
+            twistStampedVecMsg = toTwistStampedVecSrv_cli.call(toTwistStampedVecSrv_msg);
+            twist_stamped_vec = twistStampedVecMsg.TwistStampedVec;
         end
     end
 end

@@ -68,6 +68,53 @@ classdef IiwaPlotter < handle
                 grid on;
             end
         end
+        function joint_efforts(trajectories, colors)
+            if (~iscell(trajectories))
+                trajectories={trajectories};
+            end
+            figure;
+            leg={};
+            for j = 1:IiwaRobot.n_joints
+                subplot(IiwaRobot.n_joints,1,j);
+                for ntraj=1:size(trajectories,2)
+                    if (~isempty(trajectories{ntraj}.qdot))
+                        plot(trajectories{ntraj}.t, trajectories{ntraj}.effort(:,j), [colors(ntraj)]);
+                        hold on;
+                        leg=[leg trajectories{ntraj}.name];
+                    end
+                end
+                if j == 1
+                    legend(leg);
+                    title('Joint effort (Nm)')
+                end
+                if j == IiwaRobot.n_joints
+                    xlabel('time (s)');
+                end
+                s = sprintf('j%d',j);
+                ylabel(s);
+                grid on;
+            end
+        end
+        function joint_efforts_compare(traj_comm, traj_output)
+            figure;
+            for j=1:IiwaRobot.n_joints
+                subplot(7,1,j);
+                plot(traj_comm.t, traj_comm.effort(:,j), IiwaPlotter.ColorCommanded);
+                hold on;
+                plot(traj_output.t, traj_output.effort(:,j), IiwaPlotter.ColorOutput);
+                if j == 1
+                    legend('Commanded joint effort(N)','Output joint effort');
+                    title('Commanded and output efforts')
+                end
+                if j == IiwaRobot.n_joints
+                    xlabel('time (s)');
+                end
+                s = sprintf('j%d',j);
+                ylabel(s);
+                grid on;
+            end
+        end
+        
         function cartesian_positions(trajectories, colors)
             if (~iscell(trajectories))
                 trajectories={trajectories};
@@ -160,7 +207,10 @@ classdef IiwaPlotter < handle
                 ts_baseline = timeseries(traj_baseline.q, traj_baseline.t);
                 for ntraj = 1:size(trajectories,2)
                     ts_trajectory = timeseries(trajectories{ntraj}.q, trajectories{ntraj}.t);
-                    [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Union');
+                    [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Intersection');
+                    if (size(ts_baseline_used.Time,1)<100)
+                        [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Union');
+                    end
                     ts_error = ts_trajectory_used - ts_baseline_used;
                     for j = 1:IiwaRobot.n_joints
                         subplot(IiwaRobot.n_joints,1,j);
@@ -193,10 +243,13 @@ classdef IiwaPlotter < handle
                 ts_baseline = timeseries(traj_baseline.x, traj_baseline.t);
                 for ntraj = 1:size(trajectories,2)
                     ts_trajectory = timeseries(trajectories{ntraj}.x, trajectories{ntraj}.t);
-                    [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Union');
+                    [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Intersection');
+                    if (size(ts_baseline_used.Time,1)<100)
+                        [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Union');
+                    end
                     error = zeros(size(ts_trajectory_used.Data,1), 6);
                     for i=1:size(ts_trajectory_used.Data,1)
-                        error(i,:) = ScrewTheory.screwA2B_A(ts_baseline_used.Data(i,:), ts_trajectory_used.Data(i,:));
+                        error(i,:) = IiwaScrewTheory.screwA2B_A(ts_baseline_used.Data(i,:), ts_trajectory_used.Data(i,:));
                     end
                     ts_error = timeseries(error, ts_baseline_used.Time);
                     for coord = 1:6
@@ -215,6 +268,32 @@ classdef IiwaPlotter < handle
                     end
                 end
                 legend(leg);
+                grid on;
+            end
+        end
+        function effortWithPD(traj_des, traj_comm)
+            figure;
+            ts_des=timeseries(traj_comm.effort, traj_comm.t);
+            ts_comm=timeseries(traj_des.effort, traj_des.t);
+            [ts_des, ts_comm] = synchronize(ts_des, ts_comm, 'Intersection');
+            if (size(ts_des.Time,1)<100)
+            [ts_des, ts_comm] = synchronize(ts_des, ts_comm, 'Union');
+            end
+            ts_pdTorque=ts_comm-ts_des;
+            for j = 1:IiwaRobot.n_joints
+                subplot(IiwaRobot.n_joints,1,j);
+                plot(traj_des.t, traj_des.effort(:,j), IiwaPlotter.ColorDesired); hold on
+                plot(ts_pdTorque.Time, ts_pdTorque.Data(:,j), IiwaPlotter.ColorOthers);
+                plot(traj_comm.t, traj_comm.effort(:,j), IiwaPlotter.ColorCommanded);
+                if j == 1
+                    legend('Torque desired (N)','PD torque','Total torque');
+                    title('Commanded and output efforts with PD efforts')
+                end
+                if j == IiwaRobot.n_joints
+                    xlabel('time (s)');
+                end
+                s = sprintf('j%d',j);
+                ylabel(s);
                 grid on;
             end
         end
@@ -260,12 +339,14 @@ classdef IiwaPlotter < handle
             zlabel('z')
         end
         function joint_position(joint_position, t)
-            time_plot=0.05; %seconds
-            if (mod(t, time_plot)==0)
+            if (mod(t, IiwaPlotter.TimePlot)==0)
                 for j = 1:IiwaRobot.n_joints
                     subplot(IiwaRobot.n_joints,1,j);
                     hold on
                     plot(t, joint_position(:,j), [IiwaPlotter.ColorCommanded, '.']); 
+                    if j == 1
+                        title(['Joint positions from 0 to ', num2str(t), ' (rad)'])
+                    end
                     if j == IiwaRobot.n_joints
                         xlabel('time (s)');
                     end
@@ -276,13 +357,15 @@ classdef IiwaPlotter < handle
             end
         end
         function cartesian_position(cartesian_position, t)
-            time_plot=0.05;
             coords={'x', 'y', 'z', 'rx', 'ry', 'rz'};
-            if (mod(t, time_plot)==0)
+            if (mod(t, IiwaPlotter.TimePlot)==0)
                 for coord=1:6
                     subplot(6,1,coord);
                     hold on;
                     plot(t, cartesian_position(:,coord), [IiwaPlotter.ColorCommanded, '.']);
+                    if coord == 1
+                        title(['Cartesian positions from 0 to ', num2str(t), ' (m, rad)'])
+                    end
                     if (coord==6)
                         xlabel('time(s)');
                     end
@@ -291,43 +374,27 @@ classdef IiwaPlotter < handle
                 end
             end
         end
-        function effortPoint(as_feedback_msg)
+        function joint_effort(effort_commanded, effort_state, t)
            % Time between points plotted. You may need to change this depending on 
            % your computer's resources
-           time_plot=0.05; %seconds
-           if (mod(as_feedback_msg.TimeFromStart, time_plot)==0)
+           if (mod(t, IiwaPlotter.TimePlot)==0)
                 for j=1:IiwaRobot.n_joints
                     subplot(IiwaRobot.n_joints,1,j);
-                    plot(as_feedback_msg.TimeFromStart, as_feedback_msg.PointCommanded.Effort(j), ['.', IiwaPlotter.ColorCommanded]);
+                    if j == 1
+                        title(['Joint efforts from 0 to ', num2str(t), ' (rad)'])
+                    end
+                    if j == IiwaRobot.n_joints
+                        xlabel('time (s)');
+                    end
+                    s = sprintf('e%d',j);
+                    ylabel(s);
+                    plot(t, effort_commanded.Effort(j), ['.', IiwaPlotter.ColorCommanded]);
                     hold on;
-                    plot(as_feedback_msg.TimeFromStart, as_feedback_msg.JointState.Effort(j), ['.', IiwaPlotter.ColorRead]);
+                    plot(t, effort_state(j), ['.', IiwaPlotter.ColorOutput]);
                 end
            end
         end
         %% TODO: Change to trajectories cell
-        function effortWithPD_compare(traj_des, traj_comm)
-            figure;
-            ts_des=timeseries(traj_comm.effort, traj_comm.t);
-            ts_comm=timeseries(traj_des.effort, traj_des.t);
-            [ts_des, ts_comm] = synchronize(ts_des, ts_comm, 'Intersection');
-            ts_pdTorque=ts_comm-ts_des;
-            for j = 1:IiwaRobot.n_joints
-                subplot(IiwaRobot.n_joints,1,j);
-                plot(traj_des.t, traj_des.effort(:,j), IiwaPlotter.ColorDesired); hold on
-                plot(ts_pdTorque.Time, ts_pdTorque.Data(:,j), IiwaPlotter.ColorOthers);
-                plot(traj_comm.t, traj_comm.effort(:,j), IiwaPlotter.ColorCommanded);
-                if j == 1
-                    legend('Torque desired (N)','PD torque','Total torque');
-                    title('Commanded and output efforts with PD efforts')
-                end
-                if j == IiwaRobot.n_joints
-                    xlabel('time (s)');
-                end
-                s = sprintf('j%d',j);
-                ylabel(s);
-                grid on;
-            end
-        end
         function effortWithPD_compare_big(traj_comm, traj_output, traj_withoutPD)
             for i=1:IiwaRobot.n_joints
                 figure;hold on;
@@ -340,25 +407,7 @@ classdef IiwaPlotter < handle
                 ylabel(s);
             end
         end
-        function joint_efforts_compare(traj_comm, traj_output)
-            figure;
-            for j=1:IiwaRobot.n_joints
-                subplot(7,1,j);
-                plot(traj_comm.t, traj_comm.effort(:,j), IiwaPlotter.ColorCommanded);
-                hold on;
-                plot(traj_output.t, traj_output.effort(:,j), IiwaPlotter.ColorOutput);
-                if j == 1
-                    legend('Commanded joint effort(N)','Output joint effort');
-                    title('Commanded and output efforts')
-                end
-                if j == IiwaRobot.n_joints
-                    xlabel('time (s)');
-                end
-                s = sprintf('j%d',j);
-                ylabel(s);
-                grid on;
-            end
-        end
+
         function joint_effort_error(traj_comm, traj_output)
             figure;
             ts_output = timeseries(traj_comm.effort, traj_comm.t);

@@ -1,4 +1,8 @@
 %% Connect to ROS Network
+clear all;
+close all;
+plot_feedback = 1;
+plot_result = 1;
 % Connect with ROS master
 init_ros;
 ptree=rosparam;
@@ -6,11 +10,15 @@ ptree=rosparam;
 % services to create and read the joint_trajectory messages faster
 [iiwaCommandASrv_cli, iiwaCommandASrv_msg] = rosactionclient('iiwa_command');
 iiwaCommandASrv_cli.ActivationFcn = @(~) disp('IiwaCommand action server active');
-iiwaCommandASrv_cli.FeedbackFcn = @(~,msg) (1); %Clean feedback function so it doesn't print the result every time it receives something
+if (plot_feedback)
+    figure; hold on;
+    iiwaCommandASrv_cli.FeedbackFcn = @(~,msg) IiwaPlotter.joint_effort(msg.PointCommanded, msg.JointState.Effort, msg.TimeFromStart);
+else
+    iiwaCommandASrv_cli.FeedbackFcn = @(~,msg) (1);
+end
 iiwaCommandASrv_cli.ResultFcn = @(~,msg) disp('IiwaCommand action server result received');
 
 [mdlConfig_cli, mdlConfig_msg] = rossvcclient('gazebo/set_model_configuration');
-plotter=IiwaPlotter();
 
 %% Create an LBR RigidBodyTree Object from URDF
 control_step_size = get(ptree, '/iiwa_command/control_step_size');
@@ -32,23 +40,17 @@ mdlConfig_msg.JointNames = {'iiwa_joint_1', 'iiwa_joint_2', 'iiwa_joint_3',...
                   'iiwa_joint_4', 'iiwa_joint_5', 'iiwa_joint_6', 'iiwa_joint_7'};
 mdlConfig_msg.JointPositions = homeConfiguration(lbr);
 
-%% Move the robot while plotting the feedback
+%% Move the robot
 call(mdlConfig_cli, mdlConfig_msg);
-figure;
-hold on;
-
-% Comment this to stop plot while executing
-iiwaCommandASrv_cli.FeedbackFcn=@(~, msg) plotter.effortPoint(msg);
 resultMsg = sendGoalAndWait(iiwaCommandASrv_cli, iiwaCommandASrv_msg);
 
+%% Inspect Results
 % Transform into IiwaTrajectories
 traj_comm = IiwaTrajectory('commanded', resultMsg.TrajectoryCommanded);
 traj_output = IiwaTrajectory('output', resultMsg.TrajectoryJointState);
 
-%% Inspect Results
-
-plotter.joint_efforts(traj_comm, traj_output);
+IiwaPlotter.joint_efforts({traj_comm, traj_output}, ['b', 'r']);
 % Plot and inspect the actual joint torques and positions versus the desired values. Note that with the feed-forward torque,
 % the PD torques should oscillate around zero.
-plotter.effortWithPD(traj_des, traj_comm);
-plotter.joint_positions(traj_comm, traj_output);
+IiwaPlotter.effortWithPD(traj_des, traj_comm);
+IiwaPlotter.joint_positions({traj_comm, traj_output}, ['b', 'r']);
