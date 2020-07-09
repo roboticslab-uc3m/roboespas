@@ -691,6 +691,18 @@ sto=org.opensim.modeling.Storage(motFilePath);
 % Tiempos:
 StartTime=sto.getFirstTime;
 LastTime=sto.getLastTime;
+
+% add reserve actuators and residuals
+import org.opensim.modeling.*;
+reserve_actuators = [CD_cmc, '\CMC_Actuators.xml'];
+% reserve_actuators = [CD_model, '\Arm_Flexion_Millard_V2_Actuators.xml'];
+force_set = org.opensim.modeling.ForceSet(reserve_actuators, true);
+force_set.setMemoryOwner(false);  % model will be the owner
+for i = 1:force_set.getSize()-1
+    model.updForceSet().append(force_set.get(i));
+end
+model.print([CD_model,'\',MODELO]);
+
 % cmcTool=CMCTool(strcat(CD_cmc,"\CMC_Setup_Roboespas_Flex.xml"));
 cmcTool=CMCTool();
 % Name
@@ -724,7 +736,7 @@ cmcTool.setDesiredKinematicsFileName(motFilePath);
 % Tasks
 cmcTool.setTaskSetFileName(strcat(CD_cmc,'\CMC_Tasks-ROBOESPAS_flex.xml'));
 % Actuator Constraints
-cmcTool.setConstraintsFileName(strcat(CD_cmc,'\CMC_ControlConstraints_ROBOESPAS.xml'));
+cmcTool.setConstraintsFileName(strcat(CD_cmc,'\CMC_ControlConstraints_ROBOESPAS2.xml'));
 %  Low Pass Frequency
 cmcTool.setLowpassCutoffFrequency(6);
 % Look ahead window time
