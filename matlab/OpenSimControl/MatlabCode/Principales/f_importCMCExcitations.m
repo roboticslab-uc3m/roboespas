@@ -1,4 +1,4 @@
-function [cmcExcitations] = f_importCMCExcitations(sto)
+function [cmcExcitations, others] = f_importCMCExcitations(sto)
 % This function saves in a .mat struct the estimated excitations after CMC
 % completion
     results = importdata(sto);
@@ -13,6 +13,14 @@ function [cmcExcitations] = f_importCMCExcitations(sto)
                 if contains(varName, 'forceset') && contains(varName, 'activation')
                     muscleName = extractBetween(varName,'/forceset/','/activation');
                     cmcExcitations.(muscleName{1}) = results.data(:,i);
+                else
+                    if contains(varName, 'forceset')
+                        muscleName = extractBetween(varName,'/forceset/','/fiber_length');
+                        others.(muscleName{1}) = results.data(:,i);
+                    else
+                        val = find(varName =='/');
+                        others.(varName(val(end-1)+1:val(end)-1)).(varName(val(end)+1:end)) = results.data(:,i);
+                    end
                 end
             end
         end
