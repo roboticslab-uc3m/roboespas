@@ -28,11 +28,11 @@ mass = masaTotal*0.55; % la masa del tronco superior es aproximadamente el 55% d
 escalarModelo=false;
 trayAnalisis='completa'; %'bajada' %'completa' %'subida' %
 methodIIWA_FD= 'Screw Theory'; %'Matlab toolbox' %'Screw Theory' %
-modeladoMuscular='Spastic_Millard'; %'Spastic_Millard' %'Sano_Thelen' %'Spastic_Thelen' %'Sano_Millard' %
+modeladoMuscular='Sano_Millard'; %'Spastic_Millard' %'Sano_Thelen' %'Spastic_Thelen' %'Sano_Millard' %
 dataUsed='IIWA_Kinect'; %'Kinect' % 'IIWA' %
 oposicionMov='Sin fuerza'; % 'Con fuerza' % 'Sin fuerza' %
 grado=4; % Grado de la regresión fuerzas Screw Theory
-version='V1'; % V2 %'V1' para usar el modelo de Eduardo, 'V2' para usar el modelo de Anaelle
+version='V2'; % V2 %'V1' para usar el modelo de Eduardo, 'V2' para usar el modelo de Anaelle
 
 %% Configuración de paths
 % Path OpenSimControl folder
@@ -577,20 +577,79 @@ end
 % clear External_Force_FT External_Loads_FT
 
 %% RRA - PENDIENTE DE VALIDAR
-% import org.opensim.modeling.*
-% CD_rra=strcat(CD_model,'\RRA');
-%     rraTool=RRATool();
-%
-%     rraTool.setDesiredKinematicsFileName(motFilePath);
-%     rraTool.setTaskSetFileName(strcat(CD_rra,'\RRA_Tasks_Roboespas_flex.xml'));
-% %     rraTool.setExternalLoads(External_Loads);
-%     rraTool.setExternalLoadsFileName(xmlExternalLoadsFileName_FT);  %Se queja luego si no lo meto
-%     rraTool.setModel(model);
-%     %Actuators
-% %     rraTool.setForceSetFiles(strcat(CD_rra,'Reserve_Actuators_Roboespas.xml')); %%%%%%%
-%     rraTool.setResultsDir(CD_rra);
+import org.opensim.modeling.*
+CD_rra=strcat(CD_model,'\RRA');
+%Coordenadas (todas)
+CoordSet= model.getCoordinateSet();
+elv_angle=CoordSet.get('elv_angle');
+shoulder_elv=CoordSet.get('shoulder_elv');
+shoulder_rot=CoordSet.get('shoulder_rot');
+elbow_flexion=CoordSet.get('elbow_flexion');
+pro_sup=CoordSet.get('pro_sup');
+deviation=CoordSet.get('deviation');
+flexion=CoordSet.get('flexion');
+%Bloqueos:
+elv_angle.set_locked(0);
+shoulder_elv.set_locked(0);
+shoulder_rot.set_locked(0);
+elbow_flexion.set_locked(0);
+pro_sup.set_locked(1);
+deviation.set_locked(1);
+flexion.set_locked(1);
+model.print([CD_model,'\',MODELO]);
+
+sto=org.opensim.modeling.Storage(motFilePath);
+% Tiempos:
+StartTime=sto.getFirstTime;
+LastTime=sto.getLastTime;
+
+rraTool=RRATool();
+rraTool.setName('RRATool');
+% Model
+rraTool.setModel(model);
+rraTool.setModelFilename(strcat(CD_model,'\',MODELO));
+% Replace Force Set
+rraTool.setReplaceForceSet(true);
+% Set Force Set
+actuatorsFile = [CD_rra, '\RRA_Actuators.xml'];
+forceSetFile = org.opensim.modeling.ArrayStr();
+forceSetFile.append(actuatorsFile);
+rraTool.setForceSetFiles(forceSetFile);
+% Results
+rraTool.setResultsDir(strcat(CD_model,'\RRAResults'));
+% Output precision
+rraTool.setOutputPrecision(20);
+% Time Range
+rraTool.setStartTime(StartTime);
+rraTool.setFinalTime(LastTime);
+% Solve For Equilibrium
+rraTool.setSolveForEquilibrium(false);
+% External Loads File
+rraTool.setExternalLoadsFileName(xmlExternalLoadsFileName_FT);
+% Filtered Motion
+rraTool.setDesiredKinematicsFileName(motFilePath);
+% Tasks
+rraTool.setTaskSetFileName(strcat(CD_rra,'\RRA_Tasks-ROBOESPAS_flex.xml'));
+% Constraints
+rraTool.setConstraintsFileName(strcat(CD_rra,'\RRA_ControlConstraints_ROBOESPAS2.xml'));
+%  Low Pass Frequency
+rraTool.setLowpassCutoffFrequency(6);  %Se queja luego si no lo meto
+% Output model Name
+rraTool.setOutputModelFileName(strcat(CD_model,'\',strrep(MODELO, '.osim', '_adjusted.osim')));
+%Actuators
+%     rraTool.setForceSetFiles(strcat(CD_rra,'Reserve_Actuators_Roboespas.xml')); %%%%%%%
+
+rraTool.setAdjustedCOMBody('thorax');
+rraTool.setAdjustCOMToReduceResiduals(1);
+
+rraTool.print(strcat(CD_rra,'\setupActualRRA.xml'));
+
+rra = RRATool(strcat(CD_rra,'\setupActualRRA.xml'));
+rra.run; %Esto se hace por seguridad. Recomendaciï¿½n de OpenSim.
 % rraTool.run
-% disp('RRA done');
+disp('RRA done');
+
+MODELO = strrep(MODELO, '.osim', '_adjusted.osim');
 %% TASKS - Código de referencia para futuros usos
 % NOTA: Este archivo ya se suministra junto con el resto, el código sirve
 % para crear automáticamente el archivo xml en el caso de querer
