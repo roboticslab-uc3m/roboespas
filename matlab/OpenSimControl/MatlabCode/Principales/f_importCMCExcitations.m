@@ -7,7 +7,7 @@ function [cmcExcitations, others] = f_importCMCExcitations(sto)
         if i==1
             cmcExcitations.(varName) = results.data(:,1);
         else
-            if contains(sto, 'controls')
+            if contains(sto, 'controls') || contains(sto, 'force') || contains(sto, 'power') || contains(sto, 'speed') || contains(sto, 'pErr')
                 cmcExcitations.(varName) = results.data(:,i);
             else
                 if contains(varName, 'forceset') && contains(varName, 'activation')
