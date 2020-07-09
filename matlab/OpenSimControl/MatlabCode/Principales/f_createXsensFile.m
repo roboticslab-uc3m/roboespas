@@ -2,7 +2,7 @@ function f_createXsensFile(trial, IMUpath)
     %Create Xsens file for the biceps (arm) and FCR (forearm) sensors (1 and 4)
     t = trial.DelsysSensors.Trial.Sensor1.IMU.Timestamps;
     fs = 1/(t(2)-t(1));
-    for i = 1:3:4
+    for i = 1:length(fieldnames(trial.DelsysSensors.Trial))%1:3:4
         sensor = sprintf('Sensor%d', i);
         filename = sprintf('%s/%s%s.txt',IMUpath,trial.Conditions.NameData,sensor);
         fid = fopen(filename, 'wt');
