@@ -235,6 +235,11 @@ classdef DelsysCommunication < handle
             fopen(obj.CommObject);
             fprintf(obj.CommObject, sprintf('UPSAMPLE OFF\r\n\r'));
             fprintf(obj.CommObject, sprintf('SENSOR 1 SETMODE 23\r\n\r'));
+            fprintf(obj.CommObject, sprintf('SENSOR 2 SETMODE 23\r\n\r'));
+            fprintf(obj.CommObject, sprintf('SENSOR 3 SETMODE 23\r\n\r'));
+            fprintf(obj.CommObject, sprintf('SENSOR 4 SETMODE 23\r\n\r'));
+            fprintf(obj.CommObject, sprintf('SENSOR 5 SETMODE 23\r\n\r'));
+            fprintf(obj.CommObject, sprintf('SENSOR 6 SETMODE 23\r\n\r'));
             fopen(obj.InterfaceObjectEMG);
             fopen(obj.InterfaceObjectIMU);
             % Timer configuration
