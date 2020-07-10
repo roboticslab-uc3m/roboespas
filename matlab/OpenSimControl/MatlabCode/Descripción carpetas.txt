@@ -1,0 +1,11 @@
+Principales: incluye el código Main y todas las funciones a las que desde él se llaman. Todas verificadas.
+
+Extras: incluye códigos que pueden ser de utilidad pero que no entran dentro del flujo de 
+información (como representar las curvas de los músculos) y los programas de las funciones utilizadas en el Main,
+por si fuesen de utilidad.
+
+Erroneos: funciones creadas para la solución 1 de la memoria de Eduardo Sáenz Aldea.
+Funcionan pero no son adecuados para el flujo de trabajo de OpenSim. 
+Se incluyen por si fueran de interés de alguien en el futuro.
+
+Para cualquier consulta sobre el código: esaenzaldea@gmail.com
