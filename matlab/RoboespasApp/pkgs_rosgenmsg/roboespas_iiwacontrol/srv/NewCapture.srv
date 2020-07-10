@@ -1,0 +1,13 @@
+string name
+string folder
+float64[] t
+float64[] q
+float64[] x
+float64[] qdot
+float64[] xdot
+float64[] tKnot
+float64[] q_coefs
+float64[] qdot_coefs
+float64[] qdotdot_coefs
+---
+bool success

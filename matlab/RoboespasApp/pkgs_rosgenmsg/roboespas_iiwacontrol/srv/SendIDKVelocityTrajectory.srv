@@ -1,0 +1,11 @@
+string name
+string folder
+float64 k
+---
+bool success
+float64[] t
+float64[] q_commanded
+float64[] x_commanded
+float64[] xdot_commanded
+float64[] qdot_commanded
+float64[] error_xdot
