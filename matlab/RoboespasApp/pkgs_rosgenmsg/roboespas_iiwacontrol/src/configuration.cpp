@@ -76,7 +76,7 @@ int main(int argc, char **argv)
 	//SERVICES USED
 	//----------------------------------------------------------------------------------------------------------
 	//iiwa/configuration/ConfigureControlMode
-configServiceClient=n.serviceClient<iiwa_msgs::ConfigureSmartServo>("/iiwa/configuration/ConfigureControlMode");
+configServiceClient=n.serviceClient<iiwa_msgs::ConfigureSmartServo>("/iiwa/configuration/configureSmartServo");
 	//----------------------------------------------------------------------------------------------------------
 
 	//SERVICES OFFERED
