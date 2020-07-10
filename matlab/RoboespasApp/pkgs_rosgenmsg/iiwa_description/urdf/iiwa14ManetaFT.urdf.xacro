@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<robot name="iiwa14ManetaFT" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <!-- Import Rviz colors -->
+  <xacro:include filename="$(find iiwa_description)/urdf/materials.xacro" />
+  <!--Import the lbr iiwa macro -->
+  <xacro:include filename="$(find iiwa_description)/urdf/iiwa14.xacro"/>
+  
+  <xacro:arg name="hardware_interface" default="PositionJointInterface"/>
+  <xacro:arg name="robot_name" default="iiwa"/>
+  <xacro:arg name="origin_xyz" default="0 0 0"/>
+  <xacro:arg name="origin_rpy" default="0 0 0"/>
+  
+  <!-- Fix to world just for testing -->
+  <link name="world"/>
+  
+  <!--iiwa-->
+  <xacro:iiwa14 hardware_interface="$(arg hardware_interface)" robot_name="$(arg robot_name)" parent="world">
+    <origin xyz="$(arg origin_xyz)" rpy="$(arg origin_rpy)" />
+  </xacro:iiwa14>
+  
+  <!-- Tool properties *see https://github.com/SalvoVirga/iiwa_stack_examples/blob/master/iiwa_tool/iiwa_tool_description/urdf/iiwa_tool.urdf.xacro -->
+  <xacro:property name="ManetaFT_mass" value="2.0" />
+  <xacro:property name="ManetaFT_joint_offset" value="0.00 0.00 0.00" />
+  <xacro:property name="ManetaFT_link_offset" value="0.00 0.00 0.1275" />
+  
+  <!-- Define a dummy joint between the tip of the iiwa14 and the base of the tool. There is no offset between the two, that means the tool is attached at the robot flange. -->
+  <joint name="ManetaFT_joint" type="fixed">
+    <parent link="iiwa_link_ee"  />
+    <child link="ManetaFT_link" />
+    <origin xyz="${ManetaFT_joint_offset}" rpy="0 0 0" />
+  </joint>
+  
+  <!-- Define the geometry of the tool according to a mesh file that represents it. Else, one can define it using a geometric representation that approximate it, lyke a cylinder (see commented lines -->
+  <link name="ManetaFT_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+         <mesh filename="$(find iiwa_description)/meshes/ManetaFT/visual/ManetaFT.stl" scale="0.001 0.001 0.001"/>
+         <!-- <cylynder length="0.1275" radius="0.020" /> -->
+      </geometry>
+      <material name="Grey"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+         <mesh filename="$(find iiwa_description)/meshes/ManetaFT/collision/ManetaFT.stl"/>
+      </geometry>
+      <material name="Grey"/>
+    </collision>
+  </link>
+
+  <!-- Define another dummy joint placed at the end of the tool so we can attach a frame at its TCP for control -->
+  <joint name="ManetaFT_tip_joint" type="fixed">
+    <parent link="ManetaFT_link" />
+    <child link="ManetaFT_link_ee" />
+    <origin xyz="${ManetaFT_link_offset}" rpy="0 0 0" />
+  </joint>
+
+  <!-- Define the TCP frame -->
+  <link name="ManetaFT_link_ee"/>
+</robot>
