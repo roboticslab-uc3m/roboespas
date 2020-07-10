@@ -2,7 +2,7 @@ classdef IIWAControl < handle
     % Summary of this class goes here
     %   Detailed explanation goes here
     properties(Constant)
-        MasterIP  = '192.168.1.53';
+        MasterIP  = '160.69.69.100';
         MasterPort = '11311';
         
         InputIdentifier='cap';
@@ -105,7 +105,6 @@ classdef IIWAControl < handle
                 else
                     [~, result] = system('ipconfig');
                 end
-                result
                 dir = ['http://', obj.MasterIP, ':', obj.MasterPort];
                 rosinit(dir, 'NodeName', 'Matlab');
                 warning('off', 'MATLAB:MKDIR:DirectoryExists');
