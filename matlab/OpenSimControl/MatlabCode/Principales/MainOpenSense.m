@@ -262,6 +262,10 @@ rraTool.setLowpassCutoffFrequency(6);  %Se queja luego si no lo meto
 rraTool.setOutputModelFileName(strcat(CD_model,'\',strrep(MODELO, '_calibrated.osim', '_adjusted.osim')));
 %Actuators
 %     rraTool.setForceSetFiles(strcat(CD_rra,'Reserve_Actuators_Roboespas.xml')); %%%%%%%
+% Look ahead window time
+rraTool.setTimeWindow(0.001);
+
+rraTool.setUseFastTarget(false);
 
 rraTool.setAdjustedCOMBody('thorax');
 rraTool.setAdjustCOMToReduceResiduals(1);
