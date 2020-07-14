@@ -173,7 +173,11 @@ classdef DelsysCommunication < handle
         end
         function CloseSession(obj)
             if (obj.WithParallelWorkers)
-                send(obj.DataQueueClientToWorker, 'closeSession');
+                try
+                    send(obj.DataQueueClientToWorker, 'closeSession');
+                catch ex
+                    disp('Session not closed because no parallel pool running');
+                end
             else
                 obj.closeSession();
             end
