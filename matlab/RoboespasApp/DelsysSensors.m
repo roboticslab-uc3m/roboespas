@@ -274,7 +274,8 @@ classdef DelsysSensors < handle
                 
                 obj.DelsysReference.(str).EmgAll = double(obj.EMG.Values);
                 obj.DelsysReference.(str).EMG.Timestamps = obj.EMG.Timestamps;
-                obj.DelsysReference.(str).EMG.Data = double(obj.EMG.Values(sensorId,:));
+                obj.DelsysReference.(str).EMG.Raw = double(obj.EMG.Values(sensorId,:));
+                obj.DelsysReference.(str).EMG.Filtered = DelsysSensors.emgFiltering(obj.DelsysReference.(str).EMG);
             end
         end
         function SaveTrial(obj, i_trial)
@@ -297,8 +298,8 @@ classdef DelsysSensors < handle
                 obj.DelsysTrial{i_trial}.(str).EmgAll = double(obj.EMG.Values);
                 obj.DelsysTrial{i_trial}.(str).EMG.Timestamps = obj.EMG.Timestamps;
                 obj.DelsysTrial{i_trial}.(str).EMG.Raw = double(obj.EMG.Values(sensorId,:));
-                
-                obj.DelsysTrial{i_trial}.(str).EMG.Filtered = DelsysSensors.emgFiltering(obj.DelsysTrial{i_trial}.(str).EMG);
+                emgFiltered = DelsysSensors.emgFiltering(obj.DelsysTrial{i_trial}.(str).EMG);
+                obj.DelsysTrial{i_trial}.(str).EMG.Filtered = emgFiltered - mean(obj.DelsysReference.(str).EMG.Filtered);
             end
         end
         
