@@ -550,8 +550,8 @@ cmc.run; %Esto se hace por seguridad. Recomendaci�n de OpenSim.
 disp('CMC Completado');
 
 %% Representar excitaciones estimadas con CMC
-[cmcExcitations] = f_importCMCExcitations(strcat(CD_cmc, 'Results\CMCtool_controls.sto'));
-[cmcActivations,joints] = f_importCMCExcitations(strcat(CD_cmc, 'Results\CMCtool_states.sto'));
+[cmcExcitations] = f_importCMCResults(strcat(CD_cmc, 'Results\CMCtool_controls.sto'));
+[cmcActivations,joints] = f_importCMCResults(strcat(CD_cmc, 'Results\CMCtool_states.sto'));
 muscles = fieldnames(cmcExcitations);
 numMuscles = length(muscles)-1;
 f = figure('Name', 'Estimated EMG', 'WindowState', 'maximized');
