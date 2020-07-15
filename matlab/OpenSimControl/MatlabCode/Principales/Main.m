@@ -631,7 +631,7 @@ rraTool.setDesiredKinematicsFileName(motFilePath);
 % Tasks
 rraTool.setTaskSetFileName(strcat(CD_rra,'\RRA_Tasks-ROBOESPAS_flex.xml'));
 % Constraints
-rraTool.setConstraintsFileName(strcat(CD_rra,'\RRA_ControlConstraints_ROBOESPAS2.xml'));
+rraTool.setConstraintsFileName(strcat(CD_rra,'\RRA_ControlConstraints_ROBOESPAS.xml'));
 %  Low Pass Frequency
 rraTool.setLowpassCutoffFrequency(6);  %Se queja luego si no lo meto
 % Output model Name
