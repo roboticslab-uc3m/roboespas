@@ -25,14 +25,15 @@ class MoveJAction
     actionlib::SimpleActionServer<iiwa_command::MoveJAction> as;
     iiwa_command::MoveJFeedback as_feedback;
     iiwa_command::MoveJResult as_result;
-    //Iiwa gazebo state subscriber
+    //Joint state subscriber: Gazebo/FRI
     ros::Subscriber iiwa_state_sub;
     sensor_msgs::JointState joint_state;
-    //Iiwa gazebo/fri command publisher
+    //Joint trajectory point publisher: Gazebo/FRI
     ros::Publisher iiwa_command_pub;
-    //Iiwa_stack
-    ros::Publisher iiwa_command_position_pub;
+    //Publisher and subscriber for iiwa_stack
+    ros::Publisher iiwa_stack_command_position;
     ros::ServiceClient timeToDestClient;
+
     //Parameters
     double control_step_size;
     std::string robot_mode;
@@ -74,11 +75,16 @@ class MoveJAction
         if (strcmp(robot_mode.c_str(), "gazebo")==0)
         {
             iiwa_command_pub = nh.advertise<trajectory_msgs::JointTrajectoryPoint>("/iiwa_gazebo/joint_command", 1000, false);
-            iiwa_state_sub = nh.subscribe("/iiwa_gazebo/joint_state", 1000, &MoveJAction::callback_iiwa_gazebo_state, this);
+            iiwa_state_sub = nh.subscribe("/iiwa_gazebo/joint_state", 1000, &MoveJAction::callback_iiwa_state, this);
+        }
+        else if (strcmp(robot_mode.c_str(), "fri")==0)
+        {
+            iiwa_command_pub = nh.advertise<trajectory_msgs::JointTrajectoryPoint>("/iiwa_fri/joint_command", 1000, false);
+            iiwa_state_sub = nh.subscribe("/iiwa_fri/joint_state", 1000, &MoveJAction::callback_iiwa_state, this);
         }
         else if (strcmp(robot_mode.c_str(), "iiwa_stack")==0)
         {
-            iiwa_command_position_pub = nh.advertise<iiwa_msgs::JointPosition>("/iiwa/command/JointPosition", 0);
+            iiwa_stack_command_position = nh.advertise<iiwa_msgs::JointPosition>("/iiwa/command/JointPosition", 0);
 	        timeToDestClient=nh.serviceClient<iiwa_msgs::TimeToDestination>("/iiwa/state/timeToDestination");
         }
         else
@@ -86,9 +92,9 @@ class MoveJAction
             ROS_ERROR("Not implemented yet");
         }
     }
-    void callback_iiwa_gazebo_state(const sensor_msgs::JointState& iiwa_gazebo_state_msg)
+    void callback_iiwa_state(const sensor_msgs::JointState& iiwa_state_msg)
     {
-        joint_state=iiwa_gazebo_state_msg;
+        joint_state=iiwa_state_msg;
     }
     void callback_MoveJ(const iiwa_command::MoveJGoalConstPtr &goal)
     {
@@ -145,16 +151,23 @@ class MoveJAction
                 Eigen::VectorXd q_curr = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(freezed_joint_state.position.data(), freezed_joint_state.position.size());
                 //Calculate the difference in radians
                 Eigen::VectorXd q_diff = q_goal-q_curr;
+                //cout << "q_diff: " << q_diff.transpose() << endl;
+
                 //Check if it is far from the goal position
                 Eigen::VectorXd ratio_far = q_diff.array()/qinc_max.array();
+                //cout << "ratio_far: " << ratio_far.transpose() << endl;
                 double ratio_farest = ratio_far.array().abs().maxCoeff();
+                //cout << "ratio_farest: " << ratio_farest << endl;
                 if (ratio_farest>=1)
                 {
-                    q_diff = q_diff.array()/ratio_farest;
+                    q_diff = q_diff.array()*0.99/ratio_farest;
+                    //cout << "new_q_diff: " << q_diff.transpose() << endl;
                 } //else stay as it is
 
                 //Get the next joint position
                 Eigen::VectorXd q_next = q_curr + q_diff;
+                //cout << "q_curr: " << q_curr.transpose() << endl;
+                //cout << "q_next: " << q_next.transpose() << endl;
                 //Check its inside the workspace
                 for (int j=0; j<q_next.size(); j++)
                 {
@@ -201,7 +214,7 @@ class MoveJAction
 	        jPos.position.a5=q_goal[4];
 	        jPos.position.a6=q_goal[5];
 	        jPos.position.a7=q_goal[6];
-	        iiwa_command_position_pub.publish(jPos);
+	        iiwa_stack_command_position.publish(jPos);
 	        iiwa_msgs::TimeToDestination timeToDestService;
 	        //Wait until the remaining time to reach that joint position is under 0.1 seconds and higher than -0.1 to work around the problem that makes the service timeToDestination return a really low number the first few times called. The loop is exited if remainingTime=-999, which means there's an error, or the remainingTime is around 0.
 	        /*float remainingTime=1;

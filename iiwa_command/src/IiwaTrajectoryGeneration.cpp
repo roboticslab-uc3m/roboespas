@@ -27,9 +27,16 @@ namespace IiwaTrajectoryGeneration
             if ((ttotal*ttotal-4*dtotal/a_max) < 0.0)
             {
                 //The sqrt will return error
-                ROS_ERROR("Planning to calculate the sqrt of a negative number");
-                return;
+                //cout << "ttotal: " << ttotal << endl;
+                //cout << "dtotal: " << dtotal << endl;
+                //cout << "a_max: " << a_max << endl;
+                ROS_ERROR("Planning to calculate the sqrt of a negative number, changed total time to minimum time");
+                double min_time = sqrt(4*dtotal/a_max);
+                ttotal= min_time;
+                //cout << "min_time: " << ttotal << endl;
+                //return;
             }
+            ttotal = ceil(ttotal/step_size) * step_size;
             double vflat_1 = ttotal*a_max/2 + a_max*sqrt(ttotal*ttotal-4*dtotal/a_max)/2;
             double vflat_2 = ttotal*a_max/2 - a_max*sqrt(ttotal*ttotal-4*dtotal/a_max)/2;
             double tflat_1 = ttotal - 2*vflat_1/a_max;

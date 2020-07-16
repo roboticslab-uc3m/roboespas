@@ -81,7 +81,12 @@ class MoveLTrajectoryAction
         if (strcmp(robot_mode.c_str(), "gazebo")==0)
         {
             iiwa_command_pub = nh.advertise<trajectory_msgs::JointTrajectoryPoint>("/iiwa_gazebo/joint_command", 1000, false);
-            iiwa_state_sub = nh.subscribe("/iiwa_gazebo/joint_state", 1000, &MoveLTrajectoryAction::callback_iiwa_gazebo_state, this);
+            iiwa_state_sub = nh.subscribe("/iiwa_gazebo/joint_state", 1000, &MoveLTrajectoryAction::callback_iiwa_state, this);
+        }
+        else if (strcmp(robot_mode.c_str(), "fri")==0)
+        {
+            iiwa_command_pub = nh.advertise<trajectory_msgs::JointTrajectoryPoint>("/iiwa_fri/joint_command", 1000, false);
+            iiwa_state_sub = nh.subscribe("/iiwa_fri/joint_state", 1000, &MoveLTrajectoryAction::callback_iiwa_state, this);
         }
         else if (strcmp(robot_mode.c_str(), "iiwa_stack")==0)
         {
@@ -93,7 +98,7 @@ class MoveLTrajectoryAction
             ROS_ERROR("Not implemented yet");
         }
     }
-    void callback_iiwa_gazebo_state(const sensor_msgs::JointState& iiwa_gazebo_state_msg)
+    void callback_iiwa_state(const sensor_msgs::JointState& iiwa_gazebo_state_msg)
     {
         joint_state=iiwa_gazebo_state_msg;
     }

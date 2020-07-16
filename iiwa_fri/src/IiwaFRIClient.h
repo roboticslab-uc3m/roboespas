@@ -56,11 +56,23 @@ private:
 	int first_timestampNanosec;
 
 	// ROS Variables
+	ros::NodeHandle *nh;
 	ros::Publisher LBRState_pub;
 	ros::Publisher joint_state_pub;
+	ros::Publisher info_pub;
 	ros::Subscriber joint_command_sub;
+	//ROS Parameters
+	double control_step_size;
+	double qdot_max[7];
+	double qinc_max[7];
 	// PublishLBRState Function
 	void publishState();
+	// Saved joint positions for every instan
+	double last_q_command[7];
+	double q_command[7];
+	double q_read[7];
+	double q_command_read[7];
+
 	void JointCommandCallback(const trajectory_msgs::JointTrajectoryPoint::ConstPtr& msg);
 };
 

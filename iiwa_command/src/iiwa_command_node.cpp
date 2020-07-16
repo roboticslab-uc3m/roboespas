@@ -16,6 +16,7 @@
 #include "MoveLAction.cpp"
 #include "MoveLTrajectoryAction.cpp"
 #include "IiwaScrewTheory.cpp"
+#include "IiwaStatePublisher.cpp"
 #include <math.h>
 
 using namespace std;
@@ -51,6 +52,7 @@ int main(int argc, char **argv)
     MoveJAction movej("MoveJ");
     MoveLAction movel("MoveL");
 	MoveLTrajectoryAction moveltrajectory("MoveLTrajectory");
+	IiwaStatePublisher iiwastate("IiwaStatePublisher");
 
 	bool success = true;
 	while (ros::ok())
