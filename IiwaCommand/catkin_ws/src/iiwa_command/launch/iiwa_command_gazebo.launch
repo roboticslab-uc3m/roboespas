@@ -1,0 +1,14 @@
+<launch>
+
+    <!-- roslaunch iiwa_gazebo iiwa_world.launch-->
+    <include file="$(find iiwa_gazebo)/launch/iiwa_world.launch" />
+    
+    <!--Load parameters-->
+    <rosparam command="load" file="$(find iiwa_command)/config/params.yaml"/>
+    <rosparam command="load" file="$(find iiwa_command)/config/iiwa_robot_parameters.yaml"/>
+
+    <!-- Launch iiwa_command nodes -->
+    <node pkg="iiwa_command" name="iiwa_command" type="iiwa_command" respawn="true" output="screen" launch-prefix="xterm -e"/>
+    <node pkg="iiwa_command" name="msg_transform_helper" type="msg_transform_helper" respawn="true" output="screen" launch-prefix="xterm -e"/>
+    
+</launch>

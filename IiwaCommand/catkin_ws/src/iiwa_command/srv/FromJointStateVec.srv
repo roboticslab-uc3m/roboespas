@@ -1,0 +1,8 @@
+sensor_msgs/JointState[] joint_state_vec
+---
+string[] joint_names
+float64[] stamps
+float64[] positions
+float64[] velocities
+float64[] accelerations
+float64[] efforts
