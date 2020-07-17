@@ -2,7 +2,7 @@ classdef IIWAControl < handle
     % Summary of this class goes here
     %   Detailed explanation goes here
     properties(Constant)
-        MasterIP  = '192.168.1.53';
+        MasterIP  = '160.69.69.100';
         MasterPort = '11311';
         
         InputIdentifier='cap';
@@ -47,6 +47,8 @@ classdef IIWAControl < handle
 
         DataOutput={};
         DataOutputCaptured={};
+        DataReferenceCaptured;
+        DataReference;
 
         
         %Repeatibility properties
@@ -105,7 +107,6 @@ classdef IIWAControl < handle
                 else
                     [~, result] = system('ipconfig');
                 end
-                result
                 dir = ['http://', obj.MasterIP, ':', obj.MasterPort];
                 rosinit(dir, 'NodeName', 'Matlab');
                 warning('off', 'MATLAB:MKDIR:DirectoryExists');
@@ -182,12 +183,15 @@ classdef IIWAControl < handle
                 obj.FreeCartesianCoordinate('YZC');
             end
         end
-        function EndReference(obj)
+        % CONFIGURATION MODE FUNCTIONS
+        function SetGeneralVelocity(obj, v)
             if (obj.ROSConnected)
-                obj.Capture.Clear();
+                obj.SetGeneralVelocityMsg.JointRelativeAcceleration=v;
+                obj.SetGeneralVelocityMsg.JointRelativeVelocity=v;
+                obj.SetGeneralVelocityMsg.OverrideJointAcceleration=v;
+                obj.SetGeneralVelocityClient.call(obj.SetGeneralVelocityMsg, 'Timeout', 1);
             end
         end
-        % CONFIGURATION MODE FUNCTIONS
         function FreeJoints(obj)
             if (obj.ROSConnected)
                 obj.ConfigurationMsg.ControlMode=obj.ControlModeMsg.JOINTIMPEDANCE;
@@ -335,24 +339,44 @@ classdef IIWAControl < handle
                 obj.DataOutputCaptured{i_trial} = obj.Capture.SaveAndLoad(obj.NameDataCommanded, 'salida');
             end
         end
+        function SaveDataReference(obj)
+            if (obj.ROSConnected)
+                obj.DataReferenceCaptured = obj.Capture.SaveAndLoad(obj.NameDataCommanded, 'salida');
+                obj.DataReference = obj.SmoothData(obj.DataReferenceCaptured, obj.VelocityFactor, obj.OutputSmoothing);
+            end
+        end
         function Trajectory = GetStruct(obj, i_trial)
             if (obj.ROSConnected)
                 obj.DataOutput{i_trial} = obj.SmoothData(obj.DataOutputCaptured{i_trial}, obj.VelocityFactor, obj.OutputSmoothing);
                 Trajectory.CapturedDate = obj.CapturedDate;
-                Trajectory.Timestamps = obj.DataOutput{i_trial}.t;
-                Trajectory.JointTrajectory = obj.DataOutput{i_trial}.q;
-                Trajectory.CartesianTrajectory.Position = obj.DataOutput{i_trial}.x.pos;
-                Trajectory.CartesianTrajectory.Orientation = obj.DataOutput{i_trial}.x.ori;
-                Trajectory.JointVelocities = obj.DataOutput{i_trial}.qdot;
-                Trajectory.CartesianVelocities.Position = obj.DataOutput{i_trial}.xdot.pos;
-                Trajectory.CartesianVelocities.Orientation = obj.DataOutput{i_trial}.xdot.ori;
-                Trajectory.JointAccelerations = obj.DataOutput{i_trial}.qdotdot;
-                Trajectory.InterpolatorPolynomials.Breaks = obj.DataOutput{i_trial}.pp.breaks;
-                Trajectory.InterpolatorPolynomials.Coefficients.JointTrajectory = obj.DataOutput{i_trial}.pp.coefs.q;
-                Trajectory.InterpolatorPolynomials.Coefficients.JointVelocityTrajectory = obj.DataOutput{i_trial}.pp.coefs.qdot;
-                Trajectory.InterpolatorPolynomials.Coefficients.JointAccelerationTrajectory = obj.DataOutput{i_trial}.pp.coefs.qdotdot;
-                Trajectory.JointTorques.Timestamps = obj.DataOutput{i_trial}.t_torque;
-                Trajectory.JointTorques.Torques = obj.DataOutput{i_trial}.q_torque;
+                Trajectory.Reference.Timestamps = obj.DataReference.t;
+                Trajectory.Reference.JointTrajectory = obj.DataReference.q;
+                Trajectory.Reference.CartesianTrajectory.Position = obj.DataReference.x.pos;
+                Trajectory.Reference.CartesianTrajectory.Orientation = obj.DataReference.x.ori;
+                Trajectory.Reference.JointVelocities = obj.DataReference.qdot;
+                Trajectory.Reference.CartesianVelocities.Position = obj.DataReference.xdot.pos;
+                Trajectory.Reference.CartesianVelocities.Orientation = obj.DataReference.xdot.ori;
+                Trajectory.Reference.JointAccelerations = obj.DataReference.qdotdot;
+                Trajectory.Reference.InterpolatorPolynomials.Breaks = obj.DataReference.pp.breaks;
+                Trajectory.Reference.InterpolatorPolynomials.Coefficients.JointTrajectory = obj.DataReference.pp.coefs.q;
+                Trajectory.Reference.InterpolatorPolynomials.Coefficients.JointVelocityTrajectory = obj.DataReference.pp.coefs.qdot;
+                Trajectory.Reference.InterpolatorPolynomials.Coefficients.JointAccelerationTrajectory = obj.DataReference.pp.coefs.qdotdot;
+                Trajectory.Reference.JointTorques.Timestamps = obj.DataReference.t_torque;
+                Trajectory.Reference.JointTorques.Torques = obj.DataReference.q_torque;
+                Trajectory.Trial.Timestamps = obj.DataOutput{i_trial}.t;
+                Trajectory.Trial.JointTrajectory = obj.DataOutput{i_trial}.q;
+                Trajectory.Trial.CartesianTrajectory.Position = obj.DataOutput{i_trial}.x.pos;
+                Trajectory.Trial.CartesianTrajectory.Orientation = obj.DataOutput{i_trial}.x.ori;
+                Trajectory.Trial.JointVelocities = obj.DataOutput{i_trial}.qdot;
+                Trajectory.Trial.CartesianVelocities.Position = obj.DataOutput{i_trial}.xdot.pos;
+                Trajectory.Trial.CartesianVelocities.Orientation = obj.DataOutput{i_trial}.xdot.ori;
+                Trajectory.Trial.JointAccelerations = obj.DataOutput{i_trial}.qdotdot;
+                Trajectory.Trial.InterpolatorPolynomials.Breaks = obj.DataOutput{i_trial}.pp.breaks;
+                Trajectory.Trial.InterpolatorPolynomials.Coefficients.JointTrajectory = obj.DataOutput{i_trial}.pp.coefs.q;
+                Trajectory.Trial.InterpolatorPolynomials.Coefficients.JointVelocityTrajectory = obj.DataOutput{i_trial}.pp.coefs.qdot;
+                Trajectory.Trial.InterpolatorPolynomials.Coefficients.JointAccelerationTrajectory = obj.DataOutput{i_trial}.pp.coefs.qdotdot;
+                Trajectory.Trial.JointTorques.Timestamps = obj.DataOutput{i_trial}.t_torque;
+                Trajectory.Trial.JointTorques.Torques = obj.DataOutput{i_trial}.q_torque;
                 Trajectory.DataCommanded = obj.DataCommanded;
             else
                 Trajectory=[];
@@ -388,7 +412,7 @@ classdef IIWAControl < handle
                             legend(ax(end), 'Comandada', 'Ejecutada');
                         else
                             obj.CalculateMinMeanMax(trajectoryOutput);
-                            ax = obj.PlotJointPositionTrajectoryRepeatibility(trajectoryCommanded{1}, display);  
+                            ax = obj.PlotJointPositionTrajectoryRepeatibility(trajectoryCommanded, display);  
                             f = get(ax(end), 'Children');
                             legend([f(1), f(2)], 'Comandada', 'Ejecutada')
                         end
@@ -429,7 +453,7 @@ classdef IIWAControl < handle
                             legend(ax(end), 'Comandada', 'Ejecutada')
                         else
                             obj.CalculateMinMeanMax(trajectoryOutput);
-                            ax = obj.PlotJointVelocityTrajectoryRepeatibility(trajectoryCommanded{1}, display);
+                            ax = obj.PlotJointVelocityTrajectoryRepeatibility(trajectoryCommanded, display);
                             f = get(ax(end), 'Children');
                             legend([f(1), f(2)], 'Comandada', 'Ejecutada')
                         end 
@@ -470,7 +494,7 @@ classdef IIWAControl < handle
                             legend(ax(end), 'Comandada', 'Ejecutada')
                         else 
                             obj.CalculateMinMeanMax(trajectoryOutput);
-                            ax = obj.PlotJointAccelerationTrajectoryRepeatibility(trajectoryCommanded{1}, display);
+                            ax = obj.PlotJointAccelerationTrajectoryRepeatibility(trajectoryCommanded, display);
                             f = get(ax(end), 'Children');
                             legend([f(1), f(2)], 'Comandada', 'Ejecutada')
                         end
@@ -511,7 +535,7 @@ classdef IIWAControl < handle
                             legend(ax(end), 'Comandada', 'Ejecutada')
                         else
                             obj.CalculateMinMeanMax(trajectoryOutput);
-                            ax = obj.PlotCartesianPositionTrajectoryRepeatibility(trajectoryCommanded{1}, display);
+                            ax = obj.PlotCartesianPositionTrajectoryRepeatibility(trajectoryCommanded, display);
                             f = get(ax(end), 'Children');
                             legend([f(1), f(2)], 'Comandada', 'Ejecutada')
                         end
@@ -567,7 +591,7 @@ classdef IIWAControl < handle
                             for i = 1:max(size(obj.DataOutput))
                                 obj.Plot3DCartesianPositionTrajectory(obj.DataOutput{i},obj.ColorDataOutput, ax);
                             end
-                            obj.Plot3DCartesianPositionTrajectory(obj.DataCommanded{1}, obj.ColorDataCommanded, ax);
+                            obj.Plot3DCartesianPositionTrajectory(obj.DataCommanded, obj.ColorDataCommanded, ax);
                             view(ax, [-120, 30]);
                             axis(ax, 'equal');
                             f = get(ax, 'Children');
@@ -605,7 +629,7 @@ classdef IIWAControl < handle
                             for i = 1:max(size(trajectoryOutput))
                                 obj.Plot3DCartesianPositionTrajectory(trajectoryOutput{i},obj.ColorDataOutput, ax);
                             end
-                            obj.Plot3DCartesianPositionTrajectory(trajectoryCommanded{1}, obj.ColorDataCommanded, ax);
+                            obj.Plot3DCartesianPositionTrajectory(trajectoryCommanded, obj.ColorDataCommanded, ax);
                             view(ax, [-120, 30]);
                             axis(ax, 'equal');
                             f = get(ax, 'Children');
@@ -662,7 +686,7 @@ classdef IIWAControl < handle
                             legend(ax(end), 'Comandada', 'Ejecutada')
                         else
                             obj.CalculateMinMeanMax(trajectoryOutput);
-                            ax = obj.PlotCartesianVelocityTrajectoryRepeatibility(trajectoryCommanded{1}, display);
+                            ax = obj.PlotCartesianVelocityTrajectoryRepeatibility(trajectoryCommanded, display);
                             f = get(ax(end), 'Children');
                             legend([f(1), f(2)], 'Comandada', 'Ejecutada')
                         end
@@ -707,7 +731,7 @@ classdef IIWAControl < handle
                             obj.PlotJointPositionError_(trajectoryCommanded, trajectoryOutput, display);
                         else
                             obj.CalculateMinMeanMax(trajectoryOutput);
-                            obj.CalculateMinMeanMaxJointError(trajectoryCommanded{1}, trajectoryOutput);
+                            obj.CalculateMinMeanMaxJointError(trajectoryCommanded, trajectoryOutput);
                             sgtitle(display, 'Error de repetibilidad de posici�n articular ejecutada frente a comandada');
                             obj.PlotJointPositionRepeatibility(display);
                         end
@@ -742,7 +766,7 @@ classdef IIWAControl < handle
                             obj.PlotJointVelocityError_(trajectoryCommanded, trajectoryOutput, display);
                         else
                             obj.CalculateMinMeanMax(trajectoryOutput);
-                            obj.CalculateMinMeanMaxJointError(trajectoryCommanded{1}, trajectoryOutput);
+                            obj.CalculateMinMeanMaxJointError(trajectoryCommanded, trajectoryOutput);
                             sgtitle(display, 'Error de repetibilidad de velocidad articular ejecutada frente a comandada');
                             obj.PlotJointVelocityRepeatibility(display);
                         end
@@ -777,7 +801,7 @@ classdef IIWAControl < handle
                             obj.PlotJointAccelerationError_(trajectoryCommanded, trajectoryOutput, display);
                         else
                             obj.CalculateMinMeanMax(trajectoryOutput);
-                            obj.CalculateMinMeanMaxJointError(trajectoryCommanded{1}, trajectoryOutput);
+                            obj.CalculateMinMeanMaxJointError(trajectoryCommanded, trajectoryOutput);
                             sgtitle(display, 'Error de repetibilidad de aceleraci�n articular ejecutada frente a comandada');
                             obj.PlotJointAccelerationRepeatibility(display);
                         end
@@ -812,7 +836,7 @@ classdef IIWAControl < handle
                             obj.PlotCartesianPositionError_(trajectoryCommanded, trajectoryOutput, display);
                         else
                             obj.CalculateMinMeanMax(trajectoryOutput);
-                            obj.CalculateMinMeanMaxCartesianError(trajectoryCommanded{1}, trajectoryOutput);
+                            obj.CalculateMinMeanMaxCartesianError(trajectoryCommanded, trajectoryOutput);
                             sgtitle(display, 'Error de repetibilidad de posici�n cartesiana ejecutada frente a comandada');
                             obj.PlotCartesianPositionRepeatibility(display);
                         end
@@ -852,7 +876,7 @@ classdef IIWAControl < handle
                             obj.PlotCartesianVelocityError_(trajectoryCommanded, trajectoryOutput, display);
                         else
                             obj.CalculateMinMeanMax(trajectoryOutput);
-                            obj.CalculateMinMeanMaxCartesianError(trajectoryCommanded{1}, trajectoryOutput);
+                            obj.CalculateMinMeanMaxCartesianError(trajectoryCommanded, trajectoryOutput);
                             sgtitle(display, 'Error de repetibilidad de velocidad cartesiana ejecutada frente a comandada');
                             obj.PlotCartesianVelocityRepeatibility(display);
                         end
@@ -1064,6 +1088,7 @@ classdef IIWAControl < handle
                 [obj.SendTrajectoryClient, obj.SendTrajectoryMsg]=rossvcclient('roboespas/movement/send_joint_velocity_trajectory');
                 [obj.SendPositionClient, obj.SendPositionMsg]=rossvcclient('roboespas/movement/send_joint_position');
                 [obj.ConfigurationClient, obj.ConfigurationMsg]=rossvcclient('iiwa/configuration/configureSmartServo');
+                [obj.SetGeneralVelocityClient, obj.SetGeneralVelocityMsg] = rossvcclient('iiwa/configuration/pathParameters');
                 obj.ControlModeMsg=rosmessage('iiwa_msgs/ControlMode');
             end
         end
