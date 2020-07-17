@@ -1,0 +1,9 @@
+File call tree
+--------------
+iiwa_gazebo/launch/iiwa14_upload.launch
+└── iiwa14.urdf.xacro                        --> iiwa14.urdf
+    ├── iiwa14.xacro
+    │   ├── iiwa_gazebo/meshes folder
+    │   ├── iiwa.gazebo.xacro
+    │   └── utilities.xacro
+    └── materials.xacro
