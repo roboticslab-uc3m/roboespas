@@ -59,6 +59,9 @@ matlab_gen/
 matlab/ModelCalibration/*.mat
 matlab/TestIiwaCommand/old
 matlab/trials_ERF2020.mat
+matlab/RoboespasApp/catkin_ws/devel/
+matlab/RoboespasApp/catkin_ws/build
+matlab/RoboespasApp/catkin_ws/src/roboespas_iiwacontrol/data/
 
 *.log
 *.mat
