@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<launch>
+
+    <arg name="hardware_interface" default="PositionJointInterface"/>
+    <arg name="robot_name" default="iiwa"/>
+    <arg name="model" default="iiwa14ManetaFT"/>
+    <!-- Tool ManetaFT-->
+    <arg name="tool_name" default="ManetaFT"/>
+    <param name="/iiwa/toolName" type="string" value="$(arg tool_name)"/>
+
+    <!-- IiwaDescription -->
+    <include file="$(find iiwa_description)/launch/$(arg model)_upload.launch">
+        <arg name="hardware_interface" value="$(arg hardware_interface)"/>
+        <arg name="robot_name" value="$(arg robot_name)"/>
+    </include>
+    
+    <rosparam command="load" file="$(find roboespas_iiwacontrol)/config/params.yaml"/>
+
+    <node pkg="roboespas_iiwacontrol" name="capture" type="capture" respawn="true" output="screen" launch-prefix="xterm -e"/>
+    <node pkg="roboespas_iiwacontrol" name="configuration" type="configuration" respawn="true" output="screen" launch-prefix="xterm -e"/>
+    <node pkg="roboespas_iiwacontrol" name="movement" type="movement" respawn="true" output="screen" launch-prefix="xterm -e"/>
+    <node pkg="roboespas_iiwacontrol" name="simulation" type="simulation" respawn="true" output="screen" launch-prefix="xterm -e"/>
+
+</launch>

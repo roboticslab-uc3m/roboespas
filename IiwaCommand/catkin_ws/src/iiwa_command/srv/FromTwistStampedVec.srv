@@ -1,0 +1,4 @@
+geometry_msgs/TwistStamped[] twist_stamped_vec
+---
+float64[] stamps
+float64[] values

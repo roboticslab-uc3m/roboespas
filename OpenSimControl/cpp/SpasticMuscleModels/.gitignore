@@ -1,0 +1,4 @@
+*.dll
+*/build/
+/*/.vs/
+*FiberVelocities.txt
