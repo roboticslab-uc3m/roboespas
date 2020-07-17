@@ -52,9 +52,8 @@ CATKIN_IGNORE
 
 #Added
 .catkin_workspace
-src/matlab_gen/
 src_other/
-matlab/RoboespasApp/trials.mat
+RoboespasApp/trials.mat
 matlab_gen/
 matlab/ModelCalibration/*.mat
 matlab/TestIiwaCommand/old
@@ -64,4 +63,5 @@ matlab/RoboespasApp/catkin_ws/build
 matlab/RoboespasApp/catkin_ws/src/roboespas_iiwacontrol/data/
 
 *.log
+*.asv
 *.mat
