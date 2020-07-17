@@ -52,9 +52,8 @@ CATKIN_IGNORE
 
 #Added
 .catkin_workspace
-src/matlab_gen/
 src_other/
-matlab/RoboespasApp/trials.mat
+RoboespasApp/trials.mat
 matlab_gen/
 
 *.log
