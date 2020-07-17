@@ -95,6 +95,22 @@ classdef IiwaPlotter < handle
                 grid on;
             end
         end
+        function joint_efforts_mat(efforts, t, color)
+            for j = 1:IiwaRobot.n_joints
+                subplot(IiwaRobot.n_joints,1,j);
+                plot(t, efforts(:,j), color);
+                hold on;
+                if j == 1
+                    title('Joint effort (Nm)')
+                end
+                if j == IiwaRobot.n_joints
+                    xlabel('time (s)');
+                end
+                s = sprintf('j%d',j);
+                ylabel(s);
+                grid on;
+            end
+        end
         function joint_efforts_compare(traj_comm, traj_output)
             figure;
             for j=1:IiwaRobot.n_joints
