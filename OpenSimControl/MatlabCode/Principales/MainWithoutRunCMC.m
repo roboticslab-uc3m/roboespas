@@ -28,11 +28,11 @@ mass = masaTotal*0.55; % la masa del tronco superior es aproximadamente el 55% d
 escalarModelo=false;
 trayAnalisis='completa'; %'bajada' %'completa' %'subida' %
 methodIIWA_FD= 'Screw Theory'; %'Matlab toolbox' %'Screw Theory' %
-modeladoMuscular='Sano_Millard'; %'Spastic_Millard' %'Sano_Thelen' %'Spastic_Thelen' %'Sano_Millard' %
+modeladoMuscular='Spastic_Millard'; %'Spastic_Millard' %'Sano_Thelen' %'Spastic_Thelen' %'Sano_Millard' %
 dataUsed='IIWA_Kinect'; %'Kinect' % 'IIWA' %
 oposicionMov='Sin fuerza'; % 'Con fuerza' % 'Sin fuerza' %
 grado=4; % Grado de la regresión fuerzas Screw Theory
-version='V2'; % V2 %'V1' para usar el modelo de Eduardo, 'V2' para usar el modelo de Anaelle
+version='V1'; % V2 %'V1' para usar el modelo de Eduardo, 'V2' para usar el modelo de Anaelle
 
 %% Configuración de paths
 % Path OpenSimControl folder
@@ -577,83 +577,20 @@ end
 % clear External_Force_FT External_Loads_FT
 
 %% RRA - PENDIENTE DE VALIDAR
-import org.opensim.modeling.*
-CD_rra=strcat(CD_model,'\RRA');
-%Coordenadas (todas)
-CoordSet= model.getCoordinateSet();
-elv_angle=CoordSet.get('elv_angle');
-shoulder_elv=CoordSet.get('shoulder_elv');
-shoulder_rot=CoordSet.get('shoulder_rot');
-elbow_flexion=CoordSet.get('elbow_flexion');
-pro_sup=CoordSet.get('pro_sup');
-deviation=CoordSet.get('deviation');
-flexion=CoordSet.get('flexion');
-%Bloqueos:
-elv_angle.set_locked(0);
-shoulder_elv.set_locked(0);
-shoulder_rot.set_locked(0);
-elbow_flexion.set_locked(0);
-pro_sup.set_locked(1);
-deviation.set_locked(1);
-flexion.set_locked(1);
-model.print([CD_model,'\',MODELO]);
-
-sto=org.opensim.modeling.Storage(motFilePath);
-% Tiempos:
-StartTime=sto.getFirstTime;
-LastTime=sto.getLastTime;
-
-rraTool=RRATool();
-rraTool.setName('RRATool');
-% Model
-rraTool.setModel(model);
-rraTool.setModelFilename(strcat(CD_model,'\',MODELO));
-% Replace Force Set
-rraTool.setReplaceForceSet(true);
-% Set Force Set
-actuatorsFile = [CD_rra, '\RRA_Actuators.xml'];
-forceSetFile = org.opensim.modeling.ArrayStr();
-forceSetFile.append(actuatorsFile);
-rraTool.setForceSetFiles(forceSetFile);
-% Results
-rraTool.setResultsDir(strcat(CD_model,'\RRAResults'));
-% Output precision
-rraTool.setOutputPrecision(20);
-% Time Range
-rraTool.setStartTime(StartTime);
-rraTool.setFinalTime(LastTime);
-% Solve For Equilibrium
-rraTool.setSolveForEquilibrium(false);
-% External Loads File
-rraTool.setExternalLoadsFileName(xmlExternalLoadsFileName_FT);
-% Filtered Motion
-rraTool.setDesiredKinematicsFileName(motFilePath);
-% Tasks
-rraTool.setTaskSetFileName(strcat(CD_rra,'\RRA_Tasks-ROBOESPAS_flex.xml'));
-% Constraints
-rraTool.setConstraintsFileName(strcat(CD_rra,'\RRA_ControlConstraints_ROBOESPAS.xml'));
-%  Low Pass Frequency
-rraTool.setLowpassCutoffFrequency(6);  %Se queja luego si no lo meto
-% Output model Name
-rraTool.setOutputModelFileName(strcat(CD_model,'\',strrep(MODELO, '.osim', '_adjusted.osim')));
-%Actuators
-%     rraTool.setForceSetFiles(strcat(CD_rra,'Reserve_Actuators_Roboespas.xml')); %%%%%%%
-% Look ahead window time
-rraTool.setTimeWindow(0.001);
-
-rraTool.setUseFastTarget(false);
-
-rraTool.setAdjustedCOMBody('thorax');
-rraTool.setAdjustCOMToReduceResiduals(1);
-
-rraTool.print(strcat(CD_rra,'\setupActualRRA.xml'));
-
-rra = RRATool(strcat(CD_rra,'\setupActualRRA.xml'));
-rra.run; %Esto se hace por seguridad. Recomendaciï¿½n de OpenSim.
+% import org.opensim.modeling.*
+% CD_rra=strcat(CD_model,'\RRA');
+%     rraTool=RRATool();
+%
+%     rraTool.setDesiredKinematicsFileName(motFilePath);
+%     rraTool.setTaskSetFileName(strcat(CD_rra,'\RRA_Tasks_Roboespas_flex.xml'));
+% %     rraTool.setExternalLoads(External_Loads);
+%     rraTool.setExternalLoadsFileName(xmlExternalLoadsFileName_FT);  %Se queja luego si no lo meto
+%     rraTool.setModel(model);
+%     %Actuators
+% %     rraTool.setForceSetFiles(strcat(CD_rra,'Reserve_Actuators_Roboespas.xml')); %%%%%%%
+%     rraTool.setResultsDir(CD_rra);
 % rraTool.run
-disp('RRA done');
-
-MODELO = strrep(MODELO, '.osim', '_adjusted.osim');
+% disp('RRA done');
 %% TASKS - Código de referencia para futuros usos
 % NOTA: Este archivo ya se suministra junto con el resto, el código sirve
 % para crear automáticamente el archivo xml en el caso de querer
@@ -695,18 +632,6 @@ sto=org.opensim.modeling.Storage(motFilePath);
 % Tiempos:
 StartTime=sto.getFirstTime;
 LastTime=sto.getLastTime;
-
-% add reserve actuators and residuals
-import org.opensim.modeling.*;
-reserve_actuators = [CD_cmc, '\CMC_Actuators.xml'];
-% reserve_actuators = [CD_model, '\Arm_Flexion_Millard_V2_Actuators.xml'];
-force_set = org.opensim.modeling.ForceSet(reserve_actuators, true);
-force_set.setMemoryOwner(false);  % model will be the owner
-for i = 1:force_set.getSize()-1
-    model.updForceSet().append(force_set.get(i));
-end
-model.print([CD_model,'\',MODELO]);
-
 % cmcTool=CMCTool(strcat(CD_cmc,"\CMC_Setup_Roboespas_Flex.xml"));
 cmcTool=CMCTool();
 % Name
@@ -740,7 +665,7 @@ cmcTool.setDesiredKinematicsFileName(motFilePath);
 % Tasks
 cmcTool.setTaskSetFileName(strcat(CD_cmc,'\CMC_Tasks-ROBOESPAS_flex.xml'));
 % Actuator Constraints
-cmcTool.setConstraintsFileName(strcat(CD_cmc,'\CMC_ControlConstraints_ROBOESPAS2.xml'));
+cmcTool.setConstraintsFileName(strcat(CD_cmc,'\CMC_ControlConstraints_ROBOESPAS.xml'));
 %  Low Pass Frequency
 cmcTool.setLowpassCutoffFrequency(6);
 % Look ahead window time
@@ -754,379 +679,5 @@ cmcTool.setTimeWindow(0.01);
 cmcTool.setUseFastTarget(false);
 % % Points: No es necesario
 % %   cmcTool.setDesiredPointsFileName(motFilePath);
-%% Lanzar el CMC
+%% Guardar el CMC
 cmcTool.print(strcat(CD_cmc,'\setupActualCMC.xml'));
-cmc = CMCTool(strcat(CD_cmc,'\setupActualCMC.xml'));
-cmc.run; %Esto se hace por seguridad. Recomendación de OpenSim.
-% cmcTool.run;
-disp('CMC Completado');
-
-%% Representar excitaciones estimadas con CMC
-[cmcExcitations] = f_importCMCResults(strcat(CD_cmc, 'Results\CMCtool_controls.sto'));
-[cmcActivations] = f_importCMCResults(strcat(CD_cmc, 'Results\CMCtool_states.sto'));
-muscles = fieldnames(cmcExcitations);
-numMuscles = length(muscles)-1;
-f = figure('Name', 'Estimated EMG', 'WindowState', 'maximized');
-for i = 1:numMuscles
-    subplot(numMuscles,1,i, 'Parent',f);
-    hold on
-    plot(cmcExcitations.time, cmcExcitations.(muscles{i+1}))
-    plot(cmcActivations.time, cmcActivations.(muscles{i+1}), 'Color', 'r')
-    title(muscles{i+1})
-    legend('Excitación', 'Activación')
-    ylim([0 1])
-    drawnow
-end
-%% Dinámica directa a partir de las external loads
-[FDOutputPath] = f_FD(model,ExternalForcesTorquesStorage,'',CD_model,External_Loads_FT);
-
-% -------------------------------------------------------------------
-% OPCIONALES: FUNCIONAN, SIMPLEMENTE DESCOMENTAR
-% -------------------------------------------------------------------
-%% REPRODUCCION DEL MOVIMIENTO
-Motion="Movimiento.mot";
-% f_PlayVisualizer(CD_CArticulares,model,Motion)
-
-%% Realizo un MUSCLE ANALYSIS sobre el .mot para obtener velocidades
-% cd(CD_model)
-% motPath=strcat(CD_CArticulares,'\',OutputMotionStr); %Path del .mot
-% ARPath=strcat(CD_model,'\AnalizeResults');
-% MAResults=f_AnalyzeTool(CD_model,model,motPath,ARPath);
-%
-% %% DINAMICA INVERSA
-% OutputIDStr = 'IDoutput.sto';
-%
-% % EndTime = length(x);
-% CD_IDOutput=strcat(CD_model,'\ID_Output');
-% % f_ID(CD_IDOutput,model,strcat(CD_CArticulares,'\',OutputMotionStr),OutputIDStr,StartTime,LastTime);
-
-%% AJUSTE ESTÁTICO DE LOS PARAMETROS MUSCULARES
-% [model] = f_MuscleModelChanges(CD_model,MODELO);
-% EN TRABAJOS FUTUROS ESTA FUNCIÓN SE PUEDE UTILIZAR PARA DEFINIR LOS
-% VALORES DE LOS PARÁMETROS DE UN MODELO THELEN
-
-%% ELIJO ENTRE EL MODELO DE VELOCIDADES O EL DE FUERZAS - NO FUNCIONA
-% ESTE CÓDIGO ÚNICAMENTE SE DEJA POR SI ALGUNA INSTRUCCIÓN PUDIERA SERVIR
-% DE AYUDA, PERO NO ES FUNCIONAL. CORRESPONDE A LA SOLUCIÓN 1 DE LA
-% MEMORIA DE EDUARDO SÁENZ
-% ELECCION = 4; % 1-> VELOCIDAD    2-> FUERZA    3 -> pruebas fd  4-> LONGITUD DE FIBRA
-%
-% %% PRUEBA: FD CON LONGITUD DE FIBRA
-% if ELECCION == 4
-%
-% %     INPUTS:
-% %     NormFiberLength_Path="D:\User\escrit\Universidad\Master\2\TFM\MODELO\Arm_THELEN_4M - OS40\AnalizeResults\AnalyzeResults_MuscleAnalysis_NormalizedFiberLength.sto";
-%     NormFiberLength_Path="D:\User\escrit\Universidad\Master\2\TFM\MODELO\Arm_THELEN_4M - OS40\AnalizeResults\AnalyzeResults_MuscleAnalysis_NormalizedFiberLength.sto";
-%     MAsto=org.opensim.modeling.Storage(NormFiberLength_Path);
-%
-% % Tiempos:
-%     StartTime=MAsto.getFirstTime;
-%     LastTime=MAsto.getLastTime;
-%
-%
-% %   Analisis:
-%     Kin=Kinematics();
-%     Kin.set_model(model);
-%     Kin.set_statesStore(MAsto);
-% %     Kin.setStepInterval(0.001);%?
-%     Kin.setStartTime(StartTime);
-%     Kin.setEndTime(LastTime);
-% %     Kin.setInDegrees(true);
-%         model.addAnalysis(Kin)
-%
-%
-% % Initialize the underlying computational system
-% state = model.initSystem();
-%
-% % Create the Forward Tool
-% tool = ForwardTool();
-%
-% % Set the model for the forward tool
-% tool.setModel(model);
-%
-% % Define the start and finish times
-% tool.setStartTime(StartTime);
-% tool.setFinalTime(LastTime);
-%
-% % Define the prefix for the result files
-% tool.setName('NewFD');
-%
-% % Set Input States File
-% % tool.setStatesFileName("D:\User\escrit\Universidad\Master\2\TFM\MODELO\Arm_THELEN_4M - OS40\AnalizeResults\AnalyzeResults_MuscleAnalysis_FiberForce.sto");
-% tool.setStatesFileName(NormFiberLength_Path);
-% % Set Results Directory (will create without prompt)
-% tool.setResultsDir('D:\User\escrit\Universidad\Master\2\TFM\MODELO\Arm_THELEN_4M - OS40\FD_Output');
-%
-% % Run the simulation
-% statusVal = tool.run();
-%
-% FDOutputPath='D:\User\escrit\Universidad\Master\2\TFM\MODELO\Arm_THELEN_4M - OS40\FD_Output\NewFD_states_degrees.mot';
-%
-% % Cleanup
-% % clearvars walkerModel forceReporter tool state statusVal
-% display('Forward Tool Finished.');
-% end
-%
-% %% Aplico la espasticidad
-% if ELECCION == 1 || ELECCION == 3
-% %INPUTS
-% LimSup=1;
-% LimInf=-1;
-% THRESHOLD = 0.1;%REVISAR!!!!
-% G=2; %GAIN
-% Td=0.020; % Time delay REVISAR!!!!
-% NormFVPath=strcat(MAResults,'NormFiberVelocity.sto');
-%
-% %MAIN
-% [New_NFVelocity_Storage,New_NFV_Path]=f_Espasticidad(fsample,LimSup,LimInf,THRESHOLD,G,Td,NormFVPath);
-%
-% % AHORA HABRIA QUE INTRODUCIR ESTOS NUEVOS DATOS EN EL MODELO PARA CERRAR
-% % EL BUCLE
-% disp('terminado');
-% end
-%
-% %% Aplico la espasticidad (MODELO DE FUERZA)
-% if ELECCION == 2
-% %INPUTS
-% LimSup_F=inf;
-% LimInf_F=0;
-% THRESHOLD_F = 0;%REVISAR!!!!
-% G_F=2; %GAIN
-% Td_F=0.010; % Time delay REVISAR!!!!
-% FFPath=strcat(MAResults,'FiberForce.sto');
-%
-% %MAIN
-% [New_FForce_Storage,New_FF_Path]=f_Espasticidad_Fuerza(fsample,LimSup_F,LimInf_F,THRESHOLD_F,G_F,Td_F,FFPath);
-%
-% % AHORA HABRIA QUE INTRODUCIR ESTOS NUEVOS DATOS EN EL MODELO PARA CERRAR
-% % EL BUCLE
-% disp('terminado');
-% end
-%
-% %% PRUEBA: CERRAR EL BUCLE CON MUSCLE ANALYSIS (MODELO  DE FUERZAS)
-% % import org.opensim.modeling.*
-% % results_folder = "D:\User\escrit\Universidad\Master\2\TFM\MODELO\Arm_THELEN_4M - OS40\PRUEBAS";
-% % cd(CD_model);
-% % %xml
-% % genericSetupForAn = fullfile('AT_4M_Setup_Analyze_MuscleAn.xml');
-% % % analyzeTool = AnalyzeTool(genericSetupForAn);
-% % analyzeTool = AnalyzeTool();
-% % name='CIERRE';
-% % %STO
-% % StoFile = "D:\User\escrit\Universidad\Master\2\TFM\MODELO\Arm_THELEN_4M - OS40\AnalizeResults\Resultados_MuscleAnalysis_NormFiberVelocity_Spastic.sto";
-% % StoData = Storage(StoFile);
-% %     initial_time = StoData.getFirstTime();
-% %     final_time = StoData.getLastTime();
-% %
-% %
-% %     % Si quiero añadir un analisis:
-% %         % Kinematics
-% %         Kin=Kinematics();
-% %         Kin.setModel(model);
-% %         Kin.set_model(model);
-% %         Kin.setStatesStore(StoData);
-% %         Kin.set_statesStore(StoData);
-% %         Kin.setStepInterval(0.001);
-% %
-% %         Kin.setStartTime(initial_time);
-% %         Kin.setEndTime(final_time);
-% %         Kin.setInDegrees(true);
-% %
-% %         model.addAnalysis(Kin)
-% %
-% %
-% % %Tool
-% % analyzeTool.setModel(model);
-% % analyzeTool.setName(name);
-% % analyzeTool.setResultsDir(results_folder);
-% % % analyzeTool.setSoveForEquilibrium(false);%
-% % analyzeTool.setStatesFileName("D:\User\escrit\Universidad\Master\2\TFM\MODELO\Arm_THELEN_4M - OS40\AnalizeResults\Resultados_MuscleAnalysis_FiberForce_Spastic.sto");
-% % % analyzeTool.setCoordinatesFileName(motIKCoordsFile);
-% % analyzeTool.setStatesStorage(StoData);
-% % analyzeTool.setInitialTime(initial_time);
-% % analyzeTool.setFinalTime(final_time);
-% % analyzeTool.setPrintResultFiles(true);
-% % analyzeTool.setLoadModelAndInput(true);
-% % outfile = ['Setup_Analyze_' name '.xml'];
-% % analyzeTool.print(fullfile(CD_model, outfile));
-% %
-% %     %Ejecuto solo un análisis cinematico
-% %     MuscleAnalysis=model.getAnalysisSet.get(2);
-% %     model.removeAnalysis(MuscleAnalysis);
-% % %     MuscleAnalysis=model.getAnalysisSet.get(0)
-% % %     model.removeAnalysis(MuscleAnalysis);
-% %
-% %     if model.getNumAnalyses == 1
-% % analyzeTool.run();
-% %     end
-% % disp(strcat('Analisis realizado correctamente y guardado en: ', results_folder));
-% % disp(strcat(' XML del análisis -> ',outfile));
-%
-% %% NUEVA FD
-% if ELECCION == 3
-%
-% %     INPUTS:
-%     MAsto=org.opensim.modeling.Storage(New_NFV_Path);
-%
-% % Tiempos:
-%     StartTime=MAsto.getFirstTime;
-%     LastTime=MAsto.getLastTime;
-%
-%
-% %   Analisis:
-%     Kin=Kinematics();
-%     Kin.set_model(model);
-%     Kin.set_statesStore(MAsto);
-% %     Kin.setStepInterval(0.001);%?
-%     Kin.setStartTime(StartTime);
-%     Kin.setEndTime(LastTime);
-% %     Kin.setInDegrees(true);
-%         model.addAnalysis(Kin)
-%
-%
-% % Initialize the underlying computational system
-% state = model.initSystem();
-%
-% % Create the Forward Tool
-% tool = ForwardTool();
-%
-% % Set the model for the forward tool
-% tool.setModel(model);
-%
-% % Define the start and finish times
-% tool.setStartTime(StartTime);
-% tool.setFinalTime(LastTime);
-%
-% % Define the prefix for the result files
-% tool.setName('NewFD');
-%
-% % Set Input States File
-% % tool.setStatesFileName("D:\User\escrit\Universidad\Master\2\TFM\MODELO\Arm_THELEN_4M - OS40\AnalizeResults\AnalyzeResults_MuscleAnalysis_FiberForce.sto");
-% tool.setStatesFileName(New_NFV_Path);
-% % Set Results Directory (will create without prompt)
-% tool.setResultsDir('D:\User\escrit\Universidad\Master\2\TFM\MODELO\Arm_THELEN_4M - OS40\FD_Output');
-%
-% % Run the simulation
-% statusVal = tool.run();
-%
-% FDOutputPath='D:\User\escrit\Universidad\Master\2\TFM\MODELO\Arm_THELEN_4M - OS40\FD_Output\NewFD_states_degrees.mot';
-%
-% % Cleanup
-% % clearvars walkerModel forceReporter tool state statusVal
-% display('Forward Tool Finished.');
-%
-% end
-%
-%
-%
-% %% DINAMICA DIRECTA FD
-% if ELECCION == 1
-% [FDOutputPath] = f_FD(model,New_NFVelocity_Storage,New_NFV_Path,CD_model);
-%
-% end
-% %% DINAMICA DIRECTA FD (MODELO DE FUERZA)
-% if ELECCION == 2
-%     [FDOutputPath] = f_FD(model,New_FForce_Storage,New_FF_Path,CD_model);
-% end
-% % Devuelve las velocidades y valores de las COORDENADAS ARTICULARES
-% % (_states.sto)
-% % es posible que si cojo solo los valores sea como Movimiento.mot pero ya
-% % modificado, y me deje trabajar con el.
-% %% Adapto la salida de FD a un motion cogiendo solo los valores y no las velocidades
-%
-% %   2 opciones: 1- _states.sto -> ya esta en radianes y creo que se puede
-% %   trabajar con el .sto igual que con el .mot
-% %               2- states_degrees.mot -> habría que pasarlo a radianes pero
-% %               ya es un .mot
-%
-% % OPCIÓN 1:
-% %Copio los datos de _states.sto
-% %Copio la estructura del archivo de Movimiento.mot
-%
-% VelAndValuesSTO=org.opensim.modeling.Storage(strcat(FDOutputPath,'FDOutput_states.sto'));
-%
-% % DATOS
-%     VelAndValues=importdata(strcat(FDOutputPath,'FDOutput_states.sto'));
-%         Values=VelAndValues.data(:,2:2:40);
-%         Time=VelAndValues.data(:,1);
-%             TimeAndValues=[Time,Values];
-% % ESTRUCTURA
-%     OldSto=org.opensim.modeling.Storage(strcat(CD_CArticulares,"\Movimiento.mot"));
-%     %Lo vacio
-%     OldSto.reset(int16(0));
-%     % Modifico la descripcion
-%     OldSto.setInDegrees(true);
-%
-%
-%     %Meto los valores COMO STATEVECTORS
-%     for i=1:length(TimeAndValues(:,1))
-%         fila=org.opensim.modeling.StateVector();
-%         v=org.opensim.modeling.Vector();
-%         v.resize(int16(length(Values(1,:))));
-%         for j = 1:length(Values(1,:))
-%                 v.set(int16(j-1),Values(i,j)); %Vector empieza desde 0
-%             fila.setStates(1,v);
-%             fila.setTime(Time(i));
-%             size=fila.getSize;
-%         end
-%         OldSto.append(fila);
-%     end
-%
-%
-% OldSto.print(strcat(FDOutputPath,'FDOutput_ValuesFDSto.sto'));
-%
-% % OPCIÓN 2:
-% %Copio la estructura y los datos del archivo de Movimiento.mot y lo dejo en
-% %grados
-%
-% % VelAndValuesSTO=org.opensim.modeling.Storage(strcat(FDOutputPath,'\_states_degrees.mot'));
-%
-% % DATOS
-%     VelAndValues=importdata(strcat(FDOutputPath,'FDOutput_states_degrees.mot'));
-%         Values=VelAndValues.data(:,2:2:40);
-%         Time=VelAndValues.data(:,1);
-%             TimeAndValues=[Time,Values];
-% % ESTRUCTURA
-%     OldMot=org.opensim.modeling.Storage(strcat(CD_CArticulares,"\Movimiento.mot"));
-%         CL=OldMot.getColumnLabels;
-%     NewMot=org.opensim.modeling.Storage(strcat(FDOutputPath,'FDOutput_states_degrees.mot'));
-%     %Lo vacio
-%     NewMot.reset(int16(0));
-%         NewMot.setColumnLabels(CL);
-%     % Modifico la descripcion
-% %     OldSto.setInDegrees(true);
-%
-%
-%     %Meto los valores COMO STATEVECTORS
-%     for i=1:length(TimeAndValues(:,1))
-%         fila=org.opensim.modeling.StateVector();
-%         v=org.opensim.modeling.Vector();
-%         v.resize(int16(length(Values(1,:))));
-%         for j = 1:length(Values(1,:))
-%                 v.set(int16(j-1),Values(i,j)); %Vector empieza desde 0
-%             fila.setStates(1,v);
-%             fila.setTime(Time(i));
-%             size=fila.getSize;
-%         end
-%         NewMot.append(fila);
-%     end
-%
-%
-% NewMot.print(strcat(FDOutputPath,'FDOutput_ValuesFDMot.mot'));
-%
-% disp('ACABADO');
-
-
-% ----------------------------------------------------
-% REPRODUZCO EL MOVIMIENTO MODIFICADO
-% % CD_FDOutput='D:\User\escrit\Universidad\Master\2\TFM\MODELO\Arm_THELEN_4M - OS40\FD_Output';
-% Motion="FDOutput_ValuesFDMot.mot";
-% % Motion="FDOutput_ValuesFDSto.sto";
-% f_PlayVisualizer(FDOutputPath,model,Motion)
-%
-%
-%
-% %  f_PlayVisualizer("D:\User\escrit\Universidad\Master\2\TFM\MODELO\Arm_THELEN_4M - OS40\PRUEBAS\",model,"prueba4_states_degrees.mot")
-%
-%
-% disp('REPRODUCCIÓN ACABADA');
