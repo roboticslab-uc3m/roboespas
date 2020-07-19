@@ -76,6 +76,12 @@ load(strcat(IMUpath, '\trialOpenSense.mat'));
 % dataSize = length(Datos.stamps)-1;
 % Datos = {Datos};
 % DatosVacio = {DatosVacio};
+
+%% Modificaciones en el modelo previas a su uso (posición por defecto, coords. bloqueadas, rango de mvto...)
+
+model = f_ModelCoordChanges(CD_model,MODELO);
+model.print(strcat(CD_model,'\',MODELO))
+
 %% Create Xsens file from trial
 f_createXsensFile(trial, IMUpath);
 
