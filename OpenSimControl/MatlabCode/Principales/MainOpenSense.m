@@ -64,23 +64,39 @@ switch modeladoMuscular
     case 'Sano_Millard'
         MODELO = ['Arm_Flexion_Millard_', version, '.osim'];
 end
+
+% Modificaciones en el modelo previas a su uso (posición por defecto, coords. bloqueadas, rango de mvto...)
+model = f_ModelCoordChanges(CD_model,MODELO);
+model.print(strcat(CD_model,'\',MODELO))
+
 % createActuatorsFile([CD_model, '\', MODELO]);
 % Load trial
 IMUpath = strcat(CD_model, '\IMUData');
 load(strcat(IMUpath, '\trialOpenSense.mat'));
    
 % Load IIWA-FT data
-% load(strcat(pathOpenSimControl, 'TrayectoriasGrabadas\pruebaIIWA_FT.mat'));
-% t = Datos.stamps;
-% tsample = t(2) - t(1);
-% dataSize = length(Datos.stamps)-1;
-% Datos = {Datos};
-% DatosVacio = {DatosVacio};
+load(strcat(pathOpenSimControl, 'TrayectoriasGrabadas\pruebaIIWA_FT.mat'));
+t = Datos.stamps;
+tsample = t(2) - t(1);
+dataSize = length(t)-1;
 
-%% Modificaciones en el modelo previas a su uso (posición por defecto, coords. bloqueadas, rango de mvto...)
+%% Obtain Handle trajectory from robot TCP
+FKHandle = FK(Datos{1}.trayectoria)';
+CMarkers.Handle = f_HandleCoordModifications(FKHandle(:,1:3), model);
+V_IIWA = CMarkers.Handle;
 
-model = f_ModelCoordChanges(CD_model,MODELO);
-model.print(strcat(CD_model,'\',MODELO))
+% Creo una trcTable nueva
+[TrcTableCreada] = f_CreateTRCTable(t,CMarkers,'IIWA');
+
+% Lo imprimo en un archivo .trc (Coordenadas cartesianas espaciales)
+
+%cd(CD_trc)
+CD_trc=strcat(CD_model,'\CCartesianas');
+org.opensim.modeling.TRCFileAdapter.write(TrcTableCreada,[CD_trc, '\Lab.trc']);
+pause(0.2);
+
+%Variables para compensar los valores de los momentos:
+V_OpenSim=CMarkers.Handle;
 
 %% Create Xsens file from trial
 f_createXsensFile(trial, IMUpath);
