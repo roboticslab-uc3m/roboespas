@@ -14,13 +14,13 @@ model = Model(MODELO);
         deviation=CoordSet.get('deviation');
         flexion=CoordSet.get('flexion');
     %Coordenadas Iniciales:
-        elv_angle.setDefaultValue(deg2rad(70));
-        shoulder_elv.setDefaultValue(deg2rad(10));
-        shoulder_rot.setDefaultValue(deg2rad(-5.3));
-        pro_sup.setDefaultValue(deg2rad(-90));
-        elbow_flexion.setDefaultValue(deg2rad(0));
-        deviation.setDefaultValue(deg2rad(0));
-        flexion.setDefaultValue(deg2rad(0));
+%         elv_angle.setDefaultValue(deg2rad(90.75));
+%         shoulder_elv.setDefaultValue(deg2rad(10));
+%         shoulder_rot.setDefaultValue(deg2rad(20));
+%         pro_sup.setDefaultValue(deg2rad(-90));
+%         elbow_flexion.setDefaultValue(deg2rad(0));
+%         deviation.setDefaultValue(deg2rad(0));
+%         flexion.setDefaultValue(deg2rad(0));
         
      %Prescribed:
 %         "Flag indicating whether or not the values of the coordinates should "
@@ -45,6 +45,15 @@ model = Model(MODELO);
 %         elbow_flexion.set_is_free_to_satisfy_constraints(FtSC);
 %         deviation.set_is_free_to_satisfy_constraints(FtSC);
 %         flexion.set_is_free_to_satisfy_constraints(FtSC);
+
+    % Set motion range
+%         elv_angle.setRange(deg2rad([-90 130]));
+%         shoulder_elv.setRange(deg2rad([0 180]));
+%         shoulder_rot.setRange(deg2rad([-90 20]));
+        elbow_flexion.setRange(deg2rad([0 160]));
+%         pro_sup.setRange(deg2rad([-90 90]));
+%         deviation.setRange(deg2rad([-0.175 0.435]));
+%         flexion.setRange(deg2rad([-1.222 1.221]));
         
     % Clamped: si se tienen que mantener dentro de los limites:
         elv_angle.set_clamped(true);
@@ -55,9 +64,9 @@ model = Model(MODELO);
         deviation.set_clamped(true);
         flexion.set_clamped(true);
     %Bloqueos:
-        elv_angle.set_locked(0);
+        elv_angle.set_locked(1);
         shoulder_elv.set_locked(0);
-        shoulder_rot.set_locked(0);
+        shoulder_rot.set_locked(1);
         elbow_flexion.set_locked(0);
         pro_sup.set_locked(1);
         deviation.set_locked(1);
