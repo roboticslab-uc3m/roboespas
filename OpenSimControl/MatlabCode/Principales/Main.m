@@ -425,7 +425,8 @@ V_OpenSim=CMarkers.Handle;
 % clear AcotadoInferior AcotadoSuperior tI tk TrcTableCreada
 clear Dsalida CMarkers jp_Handle KinectData
 % clear finalValueX finalValueY finalValueX initialValueX initialValueY initialValueZ
-%% Modificaciones en el modelo previas a su uso
+%% Modificaciones en el modelo previas a su uso (posición por defecto, coords. bloqueadas, rango de mvto...)
+
 model = f_ModelCoordChanges(CD_model,MODELO);
 model.print(strcat(CD_model,'\',MODELO))
 
