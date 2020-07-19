@@ -69,6 +69,9 @@ switch modeladoMuscular
         MODELO = ['Arm_Flexion_Millard_', version, '.osim'];
 end
 
+model = f_ModelCoordChanges(CD_model,MODELO);
+model.print(strcat(CD_model,'\',MODELO))
+
 % Load Iiwa trajectory
 if isequal(oposicionMov,'Con fuerza')
     Dsalida = load ([IIWADataPath, '\confuerza.mat']);
@@ -89,11 +92,11 @@ dataSize = length(t)-1;
 %% Introduccion y adecuacion de los datos del laboratorio
 % Obtenci�n de la trayectoria del Handle del IIWA a trav�s de FK
 FKHandle = FK(Datos{1}.trayectoria)';
-CMarkers.Handle = FKHandle(:,1:3);
+CMarkers.Handle = f_HandleCoordModifications(FKHandle(:,1:3), model);
 V_IIWA = CMarkers.Handle;
-t = Datos{1}.stamps;
-tsample = t(2) - t(1);
-dataSize = length(Datos{1}.stamps)-1;
+% t = Datos{1}.stamps;
+% tsample = t(2) - t(1);
+% dataSize = length(Datos{1}.stamps)-1;
 
 % Una vez cortados y equidistanciados, corregimos el sistema de
 % coordenadas del IIWA
