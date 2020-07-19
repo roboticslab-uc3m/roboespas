@@ -87,6 +87,11 @@ switch modeladoMuscular
         MODELO = ['Arm_Flexion_Millard_', version, '.osim'];
 end
 
+% Modificaciones en el modelo previas a su uso (posición por defecto, coords. bloqueadas, rango de mvto...)
+model = f_ModelCoordChanges(CD_model,MODELO);
+model.print(strcat(CD_model,'\',MODELO))
+
+
 % Load Iiwa trajectory
 if isequal(oposicionMov,'Con fuerza')
     Dsalida = load ([IIWADataPath, '\confuerza.mat']);
@@ -109,7 +114,12 @@ switch dataUsed
     case 'IIWA'
         % Modificaciones del sistema de coordenadas
         % requeridas para adaptar el sistema de coordenadas del laboratorio al del entorno SimTK
-        [Handle] = f_CoordModifications(Datos, dataUsed);
+        FKHandle = FK(Datos{1}.trayectoria)';
+        CMarkers.Handle = f_HandleCoordModifications(FKHandle(:,1:3), model);
+        V_IIWA = CMarkers.Handle;
+        t = Datos{1}.stamps;
+        tsample = t(2) - t(1);
+        dataSize = length(t)-1;
     case 'Kinect'
         % Datos recogidos por la Kinect
         CMarkers = f_CSVreader(KinectFilepath,KinectFilename,KinectStartRow,KinectEndRow);
@@ -425,10 +435,7 @@ V_OpenSim=CMarkers.Handle;
 % clear AcotadoInferior AcotadoSuperior tI tk TrcTableCreada
 clear Dsalida CMarkers jp_Handle KinectData
 % clear finalValueX finalValueY finalValueX initialValueX initialValueY initialValueZ
-%% Modificaciones en el modelo previas a su uso (posición por defecto, coords. bloqueadas, rango de mvto...)
 
-model = f_ModelCoordChanges(CD_model,MODELO);
-model.print(strcat(CD_model,'\',MODELO))
 
 %% Cinemática inversa del brazo humano dadas las c.cartesianas del TCP del iiwa y de otros puntos característicos
 OutputMotionStr = 'Movimiento.mot';
