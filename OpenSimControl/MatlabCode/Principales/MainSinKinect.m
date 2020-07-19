@@ -79,6 +79,13 @@ else
 end
 DatosVacio=Dsalida.vacio;
 
+% Load IIWA-FT data
+load(strcat(pathOpenSimControl, 'TrayectoriasGrabadas\pruebaIIWA_FT.mat'));
+t = Datos{1}.stamps;
+tsample = t(2) - t(1);
+dataSize = length(t)-1;
+% Datos = {Datos};
+% DatosVacio = {DatosVacio};
 %% Introduccion y adecuacion de los datos del laboratorio
 % Obtenciï¿½n de la trayectoria del Handle del IIWA a travï¿½s de FK
 FKHandle = FK(Datos{1}.trayectoria)';
@@ -110,7 +117,7 @@ V_OpenSim=CMarkers.Handle;
 
 clear Dsalida CMarkers jp_Handle KinectData
 
-%% Modificaciones en el modelo previas a su uso
+%% Modificaciones en el modelo previas a su uso (posición por defecto, coords. bloqueadas, rango de mvto...)
 
 model = f_ModelCoordChanges(CD_model,MODELO);
 model.print(strcat(CD_model,'\',MODELO))
