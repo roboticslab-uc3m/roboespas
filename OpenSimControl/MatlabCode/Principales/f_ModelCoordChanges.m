@@ -15,7 +15,7 @@ model = Model(MODELO);
         flexion=CoordSet.get('flexion');
     %Coordenadas Iniciales:
 %         elv_angle.setDefaultValue(deg2rad(90.75));
-%         shoulder_elv.setDefaultValue(deg2rad(10));
+%         shoulder_elv.setDefaultValue(deg2rad(63));
 %         shoulder_rot.setDefaultValue(deg2rad(20));
 %         pro_sup.setDefaultValue(deg2rad(-90));
 %         elbow_flexion.setDefaultValue(deg2rad(0));
