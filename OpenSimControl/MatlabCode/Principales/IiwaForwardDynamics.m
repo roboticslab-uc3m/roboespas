@@ -11,7 +11,11 @@ function [FT, t] = IiwaForwardDynamics(Trial)
     ts_ref = timeseries(q_torque_ref, t_torque_ref);
     ts_trial = timeseries(q_torque_trial, t_torque_trial);
 
-    [ts_ref_sincro, ts_trial_sincro] = synchronize(ts_ref, ts_trial, 'Intersection');
+    dt_ref = mean(ts_ref.Time(2:end) - ts_ref.Time(1:end-1));
+    dt_trial = mean(ts_trial.Time(2:end) - ts_trial.Time(1:end-1));
+    dt = min(dt_ref, dt_trial);
+    
+    [ts_ref_sincro, ts_trial_sincro] = synchronize(ts_ref, ts_trial, 'Uniform', 'Interval', dt);
 
     torquesRef = reshape(ts_ref_sincro.Data, 7, size(ts_ref_sincro.Data,3));
     torquesTrial = reshape(ts_trial_sincro.Data, 7, size(ts_trial_sincro.Data,3));
