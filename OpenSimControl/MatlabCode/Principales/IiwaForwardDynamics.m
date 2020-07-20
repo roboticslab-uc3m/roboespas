@@ -1,4 +1,4 @@
-function [FT, t_i] = IiwaForwardDynamics(Trial)
+function [FT, t] = IiwaForwardDynamics(Trial)
     % Función implementada para calcular la dinámica directa del IIWA. Para ello se comparan las fuerzas realizadas por
     % cada articulación del robot de referencia y durante el trial.
 
