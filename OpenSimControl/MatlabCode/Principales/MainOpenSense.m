@@ -75,13 +75,11 @@ IMUpath = strcat(CD_model, '\IMUData');
 load(strcat(IMUpath, '\trialLab.mat'));
    
 % Load IIWA-FT data
-load(strcat(pathOpenSimControl, 'TrayectoriasGrabadas\pruebaIIWA_FT.mat'));
-t = Datos.stamps;
-tsample = t(2) - t(1);
-dataSize = length(t)-1;
+% load(strcat(pathOpenSimControl, 'TrayectoriasGrabadas\pruebaIIWA_FT.mat'));
 
 %% Obtain Handle trajectory from robot TCP
-FKHandle = FK(Datos{1}.trayectoria)';
+% FKHandle = FK(Datos{1}.trayectoria)';
+FKHandle = FK(trial.Trajectory.Trial.JointTrajectory)';
 CMarkers.Handle = f_HandleCoordModifications(FKHandle(:,1:3), model);
 V_IIWA = CMarkers.Handle;
 
@@ -240,7 +238,7 @@ motFilePath=strcat(CD_model,'\IKResults\',OutputMotionStr);
 %% Obtención de las fuerzas y momentos en el TCP
 cd(CD_model);
 if isequal(methodIIWA_FD,'Screw Theory')
-   [ForceAndTorque,stampsST] = f_IIWA_FD(Datos,DatosVacio,tsample); % SCREW THEORY
+   [ForceAndTorque,stampsST] = IiwaForwardDynamics(trial); % SCREW THEORY
 
    % Limpio la grï¿½fica por minimos cuadrados
    % Fuerza en X
