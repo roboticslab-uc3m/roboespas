@@ -72,7 +72,7 @@ model.print(strcat(CD_model,'\',MODELO))
 % createActuatorsFile([CD_model, '\', MODELO]);
 % Load trial
 IMUpath = strcat(CD_model, '\IMUData');
-load(strcat(IMUpath, '\trialOpenSense.mat'));
+load(strcat(IMUpath, '\trialLab.mat'));
    
 % Load IIWA-FT data
 load(strcat(pathOpenSimControl, 'TrayectoriasGrabadas\pruebaIIWA_FT.mat'));
@@ -104,7 +104,7 @@ f_createXsensFile(trial, IMUpath);
 %% Convert IMU data to OpenSim format
 % Build an Xsens Settings Object. 
 % Instantiate the Reader Settings Class
-xsensSettings = XsensDataReaderSettings(strcat(IMUpath, '\myIMUMappings2.xml'));
+xsensSettings = XsensDataReaderSettings(strcat(IMUpath, '\myIMUMappings.xml'));
 % Instantiate an XsensDataReader
 xsens = XsensDataReader(xsensSettings);
 % Get a table reference for the data
@@ -120,8 +120,8 @@ STOFileAdapterQuaternion.write(quatTable,  [IMUpath, '\', trialName 'orientation
 %% Calibrate OpenSim model
 % Set variables to use
 modeloPath = [CD_model, '\', MODELO];
-orientationsFileName = [IMUpath,'/',trialName,'orientations.sto'];%'MT_012005D6_009-001_orientations.sto';   % The path to orientation data for calibration 
-sensor_to_opensim_rotation = Vec3(0, pi/2, 0);% The rotation of IMU data to the OpenSim world frame 
+orientationsFileName = [IMUpath,'/',trialName,'orientations.sto']; % The path to orientation data for calibration 
+sensor_to_opensim_rotation = Vec3(0, -pi/2, 0);% The rotation of IMU data to the OpenSim world frame 
 % baseIMUName = 'humerus_imu';                     % The base IMU is the IMU on the base body of the model that dictates the heading (forward) direction of the model.
 % baseIMUHeading = 'y';                           % The Coordinate Axis of the base IMU that points in the heading direction. 
 visulizeCalibration = false;                     % Boolean to Visualize the Output model
@@ -130,6 +130,7 @@ visulizeCalibration = false;                     % Boolean to Visualize the Outp
 imuPlacer = IMUPlacer();
 
 % Set properties for the IMUPlacer
+imuPlacer.setModel(model);
 imuPlacer.set_model_file(modeloPath);
 imuPlacer.set_orientation_file_for_calibration(orientationsFileName);
 imuPlacer.set_sensor_to_opensim_rotations(sensor_to_opensim_rotation);
@@ -157,244 +158,251 @@ resultsDirectory = [CD_model,'\IKResults'];
 imuIK = IMUInverseKinematicsTool();
  
 % Set the model path to be used for tracking
+imuIK.setModel(model);
 imuIK.set_model_file([CD_model, '\', MODELO]);
 imuIK.set_orientations_file(orientationsFileName);
 imuIK.set_sensor_to_opensim_rotations(sensor_to_opensim_rotation)
+% Set marker file
+imuIK.loadMarkersFile(strcat(CD_model, 'CCartesianas\Lab.trc'));
+imuIK.set_marker_file(strcat(CD_model, 'CCartesianas\Lab.trc'));
 % Set time range in seconds
 imuIK.set_time_range(0, startTime); 
 imuIK.set_time_range(1, endTime);   
 % Set a directory for the results to be written to
 imuIK.set_results_directory(resultsDirectory)
+% Set output accuracy
+imuIK.set_accuracy(20);
 % Run IK
 imuIK.run(visualizeTracking);
+
 
 OutputMotionStr = strcat('ik_', trialName, 'orientations.mot');
 motFilePath=strcat(CD_model,'\IKResults\',OutputMotionStr);
 
 %% Create External Loads
-t = trial.DelsysSensors.Trial.Sensor1.IMU.Timestamps;
-ForceAndTorque = zeros(length(t),9);
-ForceAndTorque(:,2) = ones(length(ForceAndTorque),1).*(-2.0);
-ForceAndTorque(:,4)= 0;
-ForceAndTorque(:,5)= -0.08; %posicion de donde se aplica la fuerza respecto al s.c de la mano
-ForceAndTorque(:,6)= 0;
-% Guardar las ExternalLoads en una variable de OpenSim    
-%Guardo todos los datos en un Storage -> ExternalForcesStorage
-ExternalForcesTorquesStorage=org.opensim.modeling.Storage();
-ExternalForcesTorquesStorage.setName('ExternalLoads.mot');   %
-ExternalForcesTorquesStorage.setInDegrees(true); %Igual que en Gait2354
-% Time=TrcTableCreada.getIndependentColumn;
-%     Force=ForceAndTorque(:,1:3);
-%     Torque=ForceAndTorque(:,7:9);
-ColumnLabels=org.opensim.modeling.ArrayStr();
-ColumnLabels.append('time');
-ColumnLabels.append('hand_force_vx');
-ColumnLabels.append('hand_force_vy');
-ColumnLabels.append('hand_force_vz');
-ColumnLabels.append('hand_force_px');
-ColumnLabels.append('hand_force_py');
-ColumnLabels.append('hand_force_pz');
-ColumnLabels.append('hand_torque_x');
-ColumnLabels.append('hand_torque_y');
-ColumnLabels.append('hand_torque_z');
-ExternalForcesTorquesStorage.setColumnLabels(ColumnLabels);
-%Meto los valores COMO STATEVECTORS
-for i=1:length(t(1,:))
-    fila=org.opensim.modeling.StateVector();
-    v=org.opensim.modeling.Vector();
-    v.resize(int16(length(ForceAndTorque(1,:))));
-    for j = 1:length(ForceAndTorque(1,:))
-        v.set(int16(j-1),ForceAndTorque(i,j)); %Vector empieza desde 0
-        fila.setStates(1,v);
-        fila.setTime(t(i));
-        %             size=fila.getSize;
-    end
-    ExternalForcesTorquesStorage.append(fila);
-end
-ExternalForcesTorquesStorage.print(strcat(CD_model,'\ForcesAndTorques\ExternalLoads.mot'));
-External_Force_FT=org.opensim.modeling.ExternalForce(ExternalForcesTorquesStorage,'hand_force_v','hand_force_p','hand_torque_','hand','ground','hand'); 
-External_Force_FT.setName('TCP_ExternalForce');
-External_Force_FT.setAppliedToBodyName('hand');        %%%%%
-% External_Force.setForceExpressedInBodyName('hand');  % No aplica en
-% el caso de que la fuerza se aplique sobre un body (Instrucciones de
-% OpenSim)
-External_Force_FT.print(strcat(CD_model,'\ForcesAndTorques\ExternalForce.xml'));
-clear ColumnLabels fila v
-External_Loads_FT=org.opensim.modeling.ExternalLoads();
-External_Loads_FT.adoptAndAppend(External_Force_FT);
-External_Loads_FT.setLowpassCutoffFrequencyForLoadKinematics(6);
-External_Loads_FT.setDataFileName('ExternalLoads.mot');
-% External_Loads_FT.setExternalLoadsModelKinematicsFileName(motFilePath); NO ES NECESARIO
-xmlExternalLoadsFileName_FT=strcat(CD_model,'\ForcesAndTorques\ExternalLoads.xml');
-External_Loads_FT.print(xmlExternalLoadsFileName_FT);
-motExternalLoadsFileName_FT=strcat(CD_model,'\ForcesAndTorques\ExternalLoads.mot');
+% t = trial.DelsysSensors.Trial.Sensor1.IMU.Timestamps;
+% ForceAndTorque = zeros(length(t),9);
+% ForceAndTorque(:,2) = ones(length(ForceAndTorque),1).*(-2.0);
+% ForceAndTorque(:,4)= 0;
+% ForceAndTorque(:,5)= -0.08; %posicion de donde se aplica la fuerza respecto al s.c de la mano
+% ForceAndTorque(:,6)= 0;
+% % Guardar las ExternalLoads en una variable de OpenSim    
+% %Guardo todos los datos en un Storage -> ExternalForcesStorage
+% ExternalForcesTorquesStorage=org.opensim.modeling.Storage();
+% ExternalForcesTorquesStorage.setName('ExternalLoads.mot');   %
+% ExternalForcesTorquesStorage.setInDegrees(true); %Igual que en Gait2354
+% % Time=TrcTableCreada.getIndependentColumn;
+% %     Force=ForceAndTorque(:,1:3);
+% %     Torque=ForceAndTorque(:,7:9);
+% ColumnLabels=org.opensim.modeling.ArrayStr();
+% ColumnLabels.append('time');
+% ColumnLabels.append('hand_force_vx');
+% ColumnLabels.append('hand_force_vy');
+% ColumnLabels.append('hand_force_vz');
+% ColumnLabels.append('hand_force_px');
+% ColumnLabels.append('hand_force_py');
+% ColumnLabels.append('hand_force_pz');
+% ColumnLabels.append('hand_torque_x');
+% ColumnLabels.append('hand_torque_y');
+% ColumnLabels.append('hand_torque_z');
+% ExternalForcesTorquesStorage.setColumnLabels(ColumnLabels);
+% %Meto los valores COMO STATEVECTORS
+% for i=1:length(t(1,:))
+%     fila=org.opensim.modeling.StateVector();
+%     v=org.opensim.modeling.Vector();
+%     v.resize(int16(length(ForceAndTorque(1,:))));
+%     for j = 1:length(ForceAndTorque(1,:))
+%         v.set(int16(j-1),ForceAndTorque(i,j)); %Vector empieza desde 0
+%         fila.setStates(1,v);
+%         fila.setTime(t(i));
+%         %             size=fila.getSize;
+%     end
+%     ExternalForcesTorquesStorage.append(fila);
+% end
+% ExternalForcesTorquesStorage.print(strcat(CD_model,'\ForcesAndTorques\ExternalLoads.mot'));
+% External_Force_FT=org.opensim.modeling.ExternalForce(ExternalForcesTorquesStorage,'hand_force_v','hand_force_p','hand_torque_','hand','ground','hand'); 
+% External_Force_FT.setName('TCP_ExternalForce');
+% External_Force_FT.setAppliedToBodyName('hand');        %%%%%
+% % External_Force.setForceExpressedInBodyName('hand');  % No aplica en
+% % el caso de que la fuerza se aplique sobre un body (Instrucciones de
+% % OpenSim)
+% External_Force_FT.print(strcat(CD_model,'\ForcesAndTorques\ExternalForce.xml'));
+% clear ColumnLabels fila v
+% External_Loads_FT=org.opensim.modeling.ExternalLoads();
+% External_Loads_FT.adoptAndAppend(External_Force_FT);
+% External_Loads_FT.setLowpassCutoffFrequencyForLoadKinematics(6);
+% External_Loads_FT.setDataFileName('ExternalLoads.mot');
+% % External_Loads_FT.setExternalLoadsModelKinematicsFileName(motFilePath); NO ES NECESARIO
+% xmlExternalLoadsFileName_FT=strcat(CD_model,'\ForcesAndTorques\ExternalLoads.xml');
+% External_Loads_FT.print(xmlExternalLoadsFileName_FT);
+% motExternalLoadsFileName_FT=strcat(CD_model,'\ForcesAndTorques\ExternalLoads.mot');
 
 %% Obtención de las fuerzas y momentos en el TCP
-%cd(CD_model);
-% if isequal(methodIIWA_FD,'Screw Theory')
-%    [ForceAndTorque,stampsST] = f_IIWA_FD(Datos,DatosVacio,tsample); % SCREW THEORY
-% 
-%    % Limpio la grï¿½fica por minimos cuadrados
-%    % Fuerza en X
-%     x=stampsST(1:end-1);
-%     y=ForceAndTorque(:,1)';
-%     px = polyfit(x,y,grado);
-%     ForceAndTorqueLimpio(:,1) = polyval(px,x)';
-%     % Fuerza en Y
-%     y=ForceAndTorque(:,2)';
-%     py = polyfit(x,y,grado);
-%     ForceAndTorqueLimpio(:,2) = polyval(py,x)';
-%     % Fuerza en Z
-%     y=ForceAndTorque(:,3)';
-%     pz = polyfit(x,y,grado);
-%     ForceAndTorqueLimpio(:,3) = polyval(pz,x)';
-%     % Momento en X
-%     x=stampsST(1:end-1);
-%     y=ForceAndTorque(:,7)';
-%     px = polyfit(x,y,grado);
-%     ForceAndTorqueLimpio(:,7) = polyval(px,x)';
-%     % Momento en Y
-%     y=ForceAndTorque(:,8)';
-%     py = polyfit(x,y,grado);
-%     ForceAndTorqueLimpio(:,8) = polyval(py,x)';
-%     % Momento en Z
-%     y=ForceAndTorque(:,9)';
-%     pz = polyfit(x,y,grado);
-%     ForceAndTorqueLimpio(:,9) = polyval(pz,x)';
-%     ForceAndTorque=ForceAndTorqueLimpio;
-%     clear x y px py pz ForceAndTorqueLimpio
-% 
-%     % Cambio el sentido de todos los vectores para que actuen sobre el brazo
-%     % del paciente
-%     Fx=-ForceAndTorque(:,1);
-%     Fy=-ForceAndTorque(:,2);
-%     Fz=-ForceAndTorque(:,3);
-% 
-%     Tx=ForceAndTorque(:,7); % El sentido de los torques se trabaja a posteriori
-%     Ty=ForceAndTorque(:,8);
-%     Tz=ForceAndTorque(:,9);
-% 
-%     ForceAndTorque(:,1)= -Fy;
-%     ForceAndTorque(:,2)= Fz;
-%     ForceAndTorque(:,3)= -Fx;
-% 
-%     ForceAndTorque(:,4)= 0;
-%     ForceAndTorque(:,5)= -0.08;
-%     ForceAndTorque(:,6)= 0;
-% 
-%     % Compensar longitudes (brazos) de los momentos
-%     for i=1:dataSize
-%     M_OpenSim(i,1)=(norm(V_OpenSim(i,2:3))/norm(V_IIWA(i,2:3)))*Tx(i);
-%     M_OpenSim(i,2)=(norm(V_OpenSim(i,1:2:3))/norm(V_IIWA(i,1:2)))*Tz(i);
-%     M_OpenSim(i,3)=(norm(V_OpenSim(i,1:2))/norm(V_IIWA(i,1:2:3)))*Ty(i);
-%     end
-% 
-%     ForceAndTorque(:,7)=M_OpenSim(:,1);
-%     ForceAndTorque(:,8)=M_OpenSim(:,2);
-%     ForceAndTorque(:,9)=M_OpenSim(:,3);
-% 
-% else
-%     % Calculo FD haciendo uso de la toolbox de Matlab, EN EL SIST COORD DEL ROBOT
-%     [ForceAndTorque] = f_TCPForces(Datos,DatosVacio,tsample);
-% 
-%     % Cambio el sentido de todos los vectores para que actuen sobre el brazo
-%     % del paciente
-%     Fx=-ForceAndTorque(:,1);
-%     Fy=-ForceAndTorque(:,2);
-%     Fz=-ForceAndTorque(:,3);
-% 
-%     Tx=ForceAndTorque(:,7); % El sentido de los torques se trabaja a posteriori
-%     Ty=ForceAndTorque(:,8);
-%     Tz=ForceAndTorque(:,9);
-% 
-%     % salen con la siguiente orientaciï¿½n de la Toolbox:
-%     %
-%     %               |----->z
-%     %              /|
-%     %             /x|y
-%     % orientacion de OpenSim
-%     %                           Quedando:
-%     %                  |y                Xos=-Z
-%     %                  | /z              Yos=-y
-%     %           x<-----|/                Zos=-x
-% 
-%     ForceAndTorque(:,1)= -1.*(Fz);%-Fy(1));
-%     ForceAndTorque(:,2)=-1.*(Fy);%-Fz(1));
-%     ForceAndTorque(:,3)= -1.*(Fx);%-Fx(1));
-% 
-%     ForceAndTorque(:,4)= 0;
-%     ForceAndTorque(:,5)= -0.08;
-%     ForceAndTorque(:,6)= 0;
-% 
-%     ForceAndTorque(:,7)= -0.001.*(Tz);%-Ty(1));
-%     ForceAndTorque(:,8)= -0.001.*(Ty);%-Tz(1));
-%     ForceAndTorque(:,9)= 0.*-1.*(Tx);%-Tx(1)); % la componente z me da igual porque el propio mango ya resbala
-% end
-% 
-%     clear Fx Fy Fz Tx Ty Tz
-%     %% Creo variable External Forces (FORCES AND TORQUES)
-% 
-%     %Guardo todos los datos en un Storage -> ExternalForcesStorage
-%     ExternalForcesTorquesStorage=org.opensim.modeling.Storage();
-%     ExternalForcesTorquesStorage.setName('ExternalLoads.mot');   %
-%     ExternalForcesTorquesStorage.setInDegrees(true); %Igual que en Gait2354
-%     % Time=TrcTableCreada.getIndependentColumn;
-%     %     Force=ForceAndTorque(:,1:3);
-%     %     Torque=ForceAndTorque(:,7:9);
-%     ColumnLabels=org.opensim.modeling.ArrayStr();
-%     ColumnLabels.append('time');
-%     ColumnLabels.append('hand_force_vx');
-%     ColumnLabels.append('hand_force_vy');
-%     ColumnLabels.append('hand_force_vz');
-%     ColumnLabels.append('hand_force_px');
-%     ColumnLabels.append('hand_force_py');
-%     ColumnLabels.append('hand_force_pz');
-%     ColumnLabels.append('hand_torque_x');
-%     ColumnLabels.append('hand_torque_y');
-%     ColumnLabels.append('hand_torque_z');
-% 
-%     ExternalForcesTorquesStorage.setColumnLabels(ColumnLabels);
-%     %Meto los valores COMO STATEVECTORS
-%     for i=1:length(t(1,:))-1
-%         fila=org.opensim.modeling.StateVector();
-%         v=org.opensim.modeling.Vector();
-%         v.resize(int16(length(ForceAndTorque(1,:))));
-%         for j = 1:length(ForceAndTorque(1,:))
-%             v.set(int16(j-1),ForceAndTorque(i,j)); %Vector empieza desde 0
-%             fila.setStates(1,v);
-%             fila.setTime(t(i));
-%             %             size=fila.getSize;
-%         end
-%         ExternalForcesTorquesStorage.append(fila);
-%     end
-% 
-%     ExternalForcesTorquesStorage.print(strcat(CD_model,'\ForcesAndTorques\ExternalLoads.mot'));
-% 
-%     External_Force_FT=org.opensim.modeling.ExternalForce(ExternalForcesTorquesStorage,'hand_force_v','hand_force_p','hand_torque_','hand','ground','hand');
-% 
-%     External_Force_FT.setName('TCP_ExternalForce');
-%     External_Force_FT.setAppliedToBodyName('hand');        %%%%%
-%     % External_Force.setForceExpressedInBodyName('hand');  % No aplica en
-%     % el caso de que la fuerza se aplique sobre un body (Instrucciones de
-%     % OpenSim)
-%     External_Force_FT.print(strcat(CD_model,'\ForcesAndTorques\ExternalForce.xml'));
-% 
-%     clear ColumnLabels fila v
-%     %% Aplico las fuerzas en External Loads (FORCES AND TORQUES)
-% 
-%     External_Loads_FT=org.opensim.modeling.ExternalLoads();
-%     External_Loads_FT.adoptAndAppend(External_Force_FT);
-%     External_Loads_FT.setLowpassCutoffFrequencyForLoadKinematics(6);
-%     External_Loads_FT.setDataFileName('ExternalLoads.mot');
-%     % External_Loads_FT.setExternalLoadsModelKinematicsFileName(motFilePath); NO ES NECESARIO
-% 
-%     xmlExternalLoadsFileName_FT=strcat(CD_model,'\ForcesAndTorques\ExternalLoads.xml');
-%     External_Loads_FT.print(xmlExternalLoadsFileName_FT);
-%     motExternalLoadsFileName_FT=strcat(CD_model,'\ForcesAndTorques\ExternalLoads.mot');
-% 
-% 
-% % clear External_Force_FT External_Loads_FT
-% pause(1);
+cd(CD_model);
+if isequal(methodIIWA_FD,'Screw Theory')
+   [ForceAndTorque,stampsST] = f_IIWA_FD(Datos,DatosVacio,tsample); % SCREW THEORY
+
+   % Limpio la grï¿½fica por minimos cuadrados
+   % Fuerza en X
+    x=stampsST(1:end-1);
+    y=ForceAndTorque(:,1)';
+    px = polyfit(x,y,grado);
+    ForceAndTorqueLimpio(:,1) = polyval(px,x)';
+    % Fuerza en Y
+    y=ForceAndTorque(:,2)';
+    py = polyfit(x,y,grado);
+    ForceAndTorqueLimpio(:,2) = polyval(py,x)';
+    % Fuerza en Z
+    y=ForceAndTorque(:,3)';
+    pz = polyfit(x,y,grado);
+    ForceAndTorqueLimpio(:,3) = polyval(pz,x)';
+    % Momento en X
+    x=stampsST(1:end-1);
+    y=ForceAndTorque(:,7)';
+    px = polyfit(x,y,grado);
+    ForceAndTorqueLimpio(:,7) = polyval(px,x)';
+    % Momento en Y
+    y=ForceAndTorque(:,8)';
+    py = polyfit(x,y,grado);
+    ForceAndTorqueLimpio(:,8) = polyval(py,x)';
+    % Momento en Z
+    y=ForceAndTorque(:,9)';
+    pz = polyfit(x,y,grado);
+    ForceAndTorqueLimpio(:,9) = polyval(pz,x)';
+    ForceAndTorque=ForceAndTorqueLimpio;
+    clear x y px py pz ForceAndTorqueLimpio
+
+    % Cambio el sentido de todos los vectores para que actuen sobre el brazo
+    % del paciente
+    Fx=-ForceAndTorque(:,1);
+    Fy=-ForceAndTorque(:,2);
+    Fz=-ForceAndTorque(:,3);
+
+    Tx=ForceAndTorque(:,7); % El sentido de los torques se trabaja a posteriori
+    Ty=ForceAndTorque(:,8);
+    Tz=ForceAndTorque(:,9);
+
+    ForceAndTorque(:,1)= -Fy;
+    ForceAndTorque(:,2)= Fz;
+    ForceAndTorque(:,3)= -Fx;
+
+    ForceAndTorque(:,4)= 0;
+    ForceAndTorque(:,5)= -0.08;
+    ForceAndTorque(:,6)= 0;
+
+    % Compensar longitudes (brazos) de los momentos
+    for i=1:dataSize
+    M_OpenSim(i,1)=(norm(V_OpenSim(i,2:3))/norm(V_IIWA(i,2:3)))*Tx(i);
+    M_OpenSim(i,2)=(norm(V_OpenSim(i,1:2:3))/norm(V_IIWA(i,1:2)))*Tz(i);
+    M_OpenSim(i,3)=(norm(V_OpenSim(i,1:2))/norm(V_IIWA(i,1:2:3)))*Ty(i);
+    end
+
+    ForceAndTorque(:,7)=M_OpenSim(:,1);
+    ForceAndTorque(:,8)=M_OpenSim(:,2);
+    ForceAndTorque(:,9)=M_OpenSim(:,3);
+
+else
+    % Calculo FD haciendo uso de la toolbox de Matlab, EN EL SIST COORD DEL ROBOT
+    [ForceAndTorque] = f_TCPForces(Datos,DatosVacio,tsample);
+
+    % Cambio el sentido de todos los vectores para que actuen sobre el brazo
+    % del paciente
+    Fx=-ForceAndTorque(:,1);
+    Fy=-ForceAndTorque(:,2);
+    Fz=-ForceAndTorque(:,3);
+
+    Tx=ForceAndTorque(:,7); % El sentido de los torques se trabaja a posteriori
+    Ty=ForceAndTorque(:,8);
+    Tz=ForceAndTorque(:,9);
+
+    % salen con la siguiente orientaciï¿½n de la Toolbox:
+    %
+    %               |----->z
+    %              /|
+    %             /x|y
+    % orientacion de OpenSim
+    %                           Quedando:
+    %                  |y                Xos=-Z
+    %                  | /z              Yos=-y
+    %           x<-----|/                Zos=-x
+
+    ForceAndTorque(:,1)= -1.*(Fz);%-Fy(1));
+    ForceAndTorque(:,2)=-1.*(Fy);%-Fz(1));
+    ForceAndTorque(:,3)= -1.*(Fx);%-Fx(1));
+
+    ForceAndTorque(:,4)= 0;
+    ForceAndTorque(:,5)= -0.08;
+    ForceAndTorque(:,6)= 0;
+
+    ForceAndTorque(:,7)= -0.001.*(Tz);%-Ty(1));
+    ForceAndTorque(:,8)= -0.001.*(Ty);%-Tz(1));
+    ForceAndTorque(:,9)= 0.*-1.*(Tx);%-Tx(1)); % la componente z me da igual porque el propio mango ya resbala
+end
+
+    clear Fx Fy Fz Tx Ty Tz
+    %% Creo variable External Forces (FORCES AND TORQUES)
+
+    %Guardo todos los datos en un Storage -> ExternalForcesStorage
+    ExternalForcesTorquesStorage=org.opensim.modeling.Storage();
+    ExternalForcesTorquesStorage.setName('ExternalLoads.mot');   %
+    ExternalForcesTorquesStorage.setInDegrees(true); %Igual que en Gait2354
+    % Time=TrcTableCreada.getIndependentColumn;
+    %     Force=ForceAndTorque(:,1:3);
+    %     Torque=ForceAndTorque(:,7:9);
+    ColumnLabels=org.opensim.modeling.ArrayStr();
+    ColumnLabels.append('time');
+    ColumnLabels.append('hand_force_vx');
+    ColumnLabels.append('hand_force_vy');
+    ColumnLabels.append('hand_force_vz');
+    ColumnLabels.append('hand_force_px');
+    ColumnLabels.append('hand_force_py');
+    ColumnLabels.append('hand_force_pz');
+    ColumnLabels.append('hand_torque_x');
+    ColumnLabels.append('hand_torque_y');
+    ColumnLabels.append('hand_torque_z');
+
+    ExternalForcesTorquesStorage.setColumnLabels(ColumnLabels);
+    %Meto los valores COMO STATEVECTORS
+    for i=1:length(t(1,:))-1
+        fila=org.opensim.modeling.StateVector();
+        v=org.opensim.modeling.Vector();
+        v.resize(int16(length(ForceAndTorque(1,:))));
+        for j = 1:length(ForceAndTorque(1,:))
+            v.set(int16(j-1),ForceAndTorque(i,j)); %Vector empieza desde 0
+            fila.setStates(1,v);
+            fila.setTime(t(i));
+            %             size=fila.getSize;
+        end
+        ExternalForcesTorquesStorage.append(fila);
+    end
+
+    ExternalForcesTorquesStorage.print(strcat(CD_model,'\ForcesAndTorques\ExternalLoads.mot'));
+
+    External_Force_FT=org.opensim.modeling.ExternalForce(ExternalForcesTorquesStorage,'hand_force_v','hand_force_p','hand_torque_','hand','ground','hand');
+
+    External_Force_FT.setName('TCP_ExternalForce');
+    External_Force_FT.setAppliedToBodyName('hand');        %%%%%
+    % External_Force.setForceExpressedInBodyName('hand');  % No aplica en
+    % el caso de que la fuerza se aplique sobre un body (Instrucciones de
+    % OpenSim)
+    External_Force_FT.print(strcat(CD_model,'\ForcesAndTorques\ExternalForce.xml'));
+
+    clear ColumnLabels fila v
+    %% Aplico las fuerzas en External Loads (FORCES AND TORQUES)
+
+    External_Loads_FT=org.opensim.modeling.ExternalLoads();
+    External_Loads_FT.adoptAndAppend(External_Force_FT);
+    External_Loads_FT.setLowpassCutoffFrequencyForLoadKinematics(6);
+    External_Loads_FT.setDataFileName('ExternalLoads.mot');
+    % External_Loads_FT.setExternalLoadsModelKinematicsFileName(motFilePath); NO ES NECESARIO
+
+    xmlExternalLoadsFileName_FT=strcat(CD_model,'\ForcesAndTorques\ExternalLoads.xml');
+    External_Loads_FT.print(xmlExternalLoadsFileName_FT);
+    motExternalLoadsFileName_FT=strcat(CD_model,'\ForcesAndTorques\ExternalLoads.mot');
+
+
+% clear External_Force_FT External_Loads_FT
+pause(1);
 %% RRA - PENDIENTE DE VALIDAR
 import org.opensim.modeling.*
 CD_rra=strcat(CD_model,'\RRA');
@@ -458,9 +466,9 @@ rraTool.setOutputModelFileName(strcat(CD_model,'\',strrep(MODELO, '_calibrated.o
 %Actuators
 %     rraTool.setForceSetFiles(strcat(CD_rra,'Reserve_Actuators_Roboespas.xml')); %%%%%%%
 % Look ahead window time
-rraTool.setTimeWindow(0.001);
-
-rraTool.setUseFastTarget(false);
+% rraTool.setTimeWindow(0.001);
+% 
+% rraTool.setUseFastTarget(false);
 
 rraTool.setAdjustedCOMBody('thorax');
 rraTool.setAdjustCOMToReduceResiduals(1);
