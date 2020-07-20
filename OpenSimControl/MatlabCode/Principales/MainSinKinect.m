@@ -122,8 +122,8 @@ clear Dsalida CMarkers jp_Handle KinectData
 
 %% Modificaciones en el modelo previas a su uso (posición por defecto, coords. bloqueadas, rango de mvto...)
 
-model = f_ModelCoordChanges(CD_model,MODELO);
-model.print(strcat(CD_model,'\',MODELO))
+% model = f_ModelCoordChanges(CD_model,MODELO);
+% model.print(strcat(CD_model,'\',MODELO))
 
 % Creo los archivos txt para almacenar las velocidades de fibra en los
 % mï¿½sculos espasticos
