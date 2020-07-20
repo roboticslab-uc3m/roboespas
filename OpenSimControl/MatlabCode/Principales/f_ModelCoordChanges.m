@@ -14,13 +14,13 @@ model = Model(MODELO);
         deviation=CoordSet.get('deviation');
         flexion=CoordSet.get('flexion');
     %Coordenadas Iniciales:
-%         elv_angle.setDefaultValue(deg2rad(90.75));
-%         shoulder_elv.setDefaultValue(deg2rad(63));
-%         shoulder_rot.setDefaultValue(deg2rad(20));
-%         pro_sup.setDefaultValue(deg2rad(-90));
-%         elbow_flexion.setDefaultValue(deg2rad(0));
-%         deviation.setDefaultValue(deg2rad(0));
-%         flexion.setDefaultValue(deg2rad(0));
+        elv_angle.setDefaultValue(deg2rad(90.75));
+        shoulder_elv.setDefaultValue(deg2rad(64.84));
+        shoulder_rot.setDefaultValue(deg2rad(20));
+        pro_sup.setDefaultValue(deg2rad(-90));
+        elbow_flexion.setDefaultValue(deg2rad(0));
+        deviation.setDefaultValue(deg2rad(0));
+        flexion.setDefaultValue(deg2rad(0));
         
      %Prescribed:
 %         "Flag indicating whether or not the values of the coordinates should "
