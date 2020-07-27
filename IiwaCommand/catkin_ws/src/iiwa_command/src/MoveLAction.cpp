@@ -205,7 +205,7 @@ class MoveLAction
                     //Last iteration, fill last points
                     cout << "last iter " << endl;
                     id_curr = traj_theory.x.cols() -1;
-                    break;
+                    //break;
                 }
                 //Current cartesian position, and expected cartesian position and velocity
                 VectorXd x_exp = traj_theory.x.col(id_curr);
