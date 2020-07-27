@@ -7,21 +7,21 @@
 #include "sensor_msgs/JointState.h"
 #include "trajectory_msgs/JointTrajectoryPoint.h"
 #include "trajectory_msgs/JointTrajectory.h"
-#include <iiwa_command/IiwaCommandAction.h>
+#include <iiwa_command/MoveTorqueAction.h>
 #include <actionlib/server/simple_action_server.h>
 #include <Eigen/Dense>
 #include <math.h>
 
 using namespace std;
 
-class IiwaCommandAction
+class MoveTorqueAction
 {
     protected:
     ros::NodeHandle nh;
     //Iiwa command action server variables
-    actionlib::SimpleActionServer<iiwa_command::IiwaCommandAction> as;
-    iiwa_command::IiwaCommandFeedback as_feedback;
-    iiwa_command::IiwaCommandResult as_result;
+    actionlib::SimpleActionServer<iiwa_command::MoveTorqueAction> as;
+    iiwa_command::MoveTorqueFeedback as_feedback;
+    iiwa_command::MoveTorqueResult as_result;
     //Iiwa gazebo state subscriber
     ros::Subscriber iiwa_gazebo_state_sub;
     //Iiwa gazebo command publisher
@@ -32,13 +32,13 @@ class IiwaCommandAction
 
     public:
 
-    IiwaCommandAction(std::string name) :
-    as(nh, name, boost::bind(&IiwaCommandAction::callback_iiwa_command, this, _1), false) //Create the action server
+    MoveTorqueAction(std::string name) :
+    as(nh, name, boost::bind(&MoveTorqueAction::callback_iiwa_command, this, _1), false) //Create the action server
     {
         as.start();
         ROS_INFO("Action server %s started", name.c_str());
         iiwa_gazebo_command_pub = nh.advertise<trajectory_msgs::JointTrajectoryPoint>("/iiwa_gazebo/joint_command", 1000, false);
-        iiwa_gazebo_state_sub = nh.subscribe("/iiwa_gazebo/joint_state", 1000, &IiwaCommandAction::callback_iiwa_gazebo_state, this);
+        iiwa_gazebo_state_sub = nh.subscribe("/iiwa_gazebo/joint_state", 1000, &MoveTorqueAction::callback_iiwa_gazebo_state, this);
         if (!nh.getParam("/iiwa_command/control_step_size", control_step_size))
         {
             ROS_ERROR("Failed to read 'control_step_size' on param server");
@@ -48,9 +48,9 @@ class IiwaCommandAction
     {
         read_joint_state=iiwa_gazebo_state_msg;
     }
-    void callback_iiwa_command(const iiwa_command::IiwaCommandGoalConstPtr &goal)
-    {   
-        ROS_INFO("IiwaCommand action server active");
+    void callback_iiwa_command(const iiwa_command::MoveTorqueGoalConstPtr &goal)
+    {
+        ROS_INFO("MoveTorque action server active");
         //PD Gains
         Eigen::VectorXd weights(7);
         Eigen::VectorXd Kp(7);
@@ -81,11 +81,11 @@ class IiwaCommandAction
         {
             //read_joint_state may change during this iteration, save it in a different variable to fix it
             sensor_msgs::JointState joint_state=read_joint_state;
-            double time_from_start=(ros::Time::now()-tStartTraj).toSec(); 
+            double time_from_start=(ros::Time::now()-tStartTraj).toSec();
             //Get the index in the goal_points vector corresponding to the current time
             i = time_from_start/control_step_size;
             //If the index is outside the goal_points vector, exit the while loop
-            if (i>=goal_points.size()) 
+            if (i>=goal_points.size())
                 break;
             //Get variables used as Eigen vectors / ROS durations
             // - Current q_curr / qdot_curr
@@ -121,6 +121,6 @@ class IiwaCommandAction
         as_result.trajectory_joint_state=trajectory_joint_state;
         as_result.trajectory_commanded=trajectory_commanded;
         as.setSucceeded(as_result);
-        ROS_INFO("IiwaCommand action server result sent");
+        ROS_INFO("MoveTorque action server result sent");
     }
 };
