@@ -1,8 +1,0 @@
-trajectory_msgs/JointTrajectory joint_trajectory
----
-string[] joint_names
-float64[] stamps
-float64[] positions
-float64[] velocities
-float64[] accelerations
-float64[] efforts

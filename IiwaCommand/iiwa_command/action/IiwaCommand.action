@@ -1,8 +1,0 @@
-trajectory_msgs/JointTrajectory trajectory_desired
----
-trajectory_msgs/JointTrajectory trajectory_commanded
-sensor_msgs/JointState[] trajectory_joint_state
----
-trajectory_msgs/JointTrajectoryPoint point_commanded
-sensor_msgs/JointState joint_state
-float64 time_from_start
