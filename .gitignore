@@ -60,3 +60,4 @@ IiwaCommand/catkin_ws/src/CMakeLists.txt
 *.log
 *.asv
 *.mat
+IiwaCommand/catkin_ws/src/matlab_gen/
