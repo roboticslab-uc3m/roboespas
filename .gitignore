@@ -52,15 +52,10 @@ CATKIN_IGNORE
 
 #Added
 .catkin_workspace
-src_other/
-RoboespasApp/trials.mat
-matlab_gen/
-matlab/ModelCalibration/*.mat
-matlab/TestIiwaCommand/old
-matlab/trials_ERF2020.mat
-matlab/RoboespasApp/catkin_ws/devel/
-matlab/RoboespasApp/catkin_ws/build
-matlab/RoboespasApp/catkin_ws/src/roboespas_iiwacontrol/data/
+RoboespasApp/catkin_ws/devel/
+RoboespasApp/catkin_ws/build
+RoboespasApp/catkin_ws/src/roboespas_iiwacontrol/data/
+IiwaCommand/catkin_ws/src/CMakeLists.txt
 
 *.log
 *.asv
