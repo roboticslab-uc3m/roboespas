@@ -1,0 +1,7 @@
+add_subdirectory(base)
+add_subdirectory(client_lbr)
+add_subdirectory(client_trafo)
+add_subdirectory(connection)
+add_subdirectory(nanopb-0.2.8)
+add_subdirectory(protobuf)
+add_subdirectory(protobuf_gen)

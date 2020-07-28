@@ -1,0 +1,6 @@
+add_library(client_trafo_iface INTERFACE)
+target_link_libraries(client_trafo_iface INTERFACE base_iface protobuf_iface protobuf_gen_iface)
+
+add_library(client_trafo OBJECT friTransformationClient.cpp)
+target_include_directories(client_trafo PRIVATE $<TARGET_PROPERTY:client_trafo_iface,INTERFACE_INCLUDE_DIRECTORIES>)
+set_target_properties(client_trafo PROPERTIES COMPILE_DEFINITIONS "$<TARGET_PROPERTY:client_trafo_iface,INTERFACE_COMPILE_DEFINITIONS>")
