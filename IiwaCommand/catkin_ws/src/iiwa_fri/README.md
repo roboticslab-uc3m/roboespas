@@ -82,29 +82,8 @@ este proyecto, modificar la IP a la IP que estableceremos posteriormente en el R
     ```
    e. Aplicar estos cambios a todos los ejemplos y salvar. 
    f. Sincronizar con la controladora para aplicar los cambios. 
-## Compilación de ejemplos en Ubuntu / C++ 
-1. Configurar una red cableada nueva con IP fija 192.170.10.2, llamarla FRI por ejemplo. Conectarse a esa red y desconectar de la red WiFi por si acaso. 
-2. Descomprimir la carpeta FRI-Client-SDK_Cpp.zip 
-3. Hay un error en el Makefile, que habrá que arreglar. Abrir *FRI-Client-SDK_Cpp/build/GNUMake/Makefile* con un editor de texto. En la penúltima línea que sigue a ```EXAMPLE_DIRS =```, añadir una barra al final. La línea quedará así: 
- ```$(EXP_DIR)/SimulatedTransformationProvider \``` 
-4. Compilar todo: cd FRI-Client-SDK_Cpp/build/GNUMake make 
-5. Ejecutar cada ejemplo: **CUIDADO! El robot se moverá** 
-Para ejecutar cada ejemplo podemos ir a la carpeta examples, y en cada carpeta interior habrá un ejecutable para cada ejemplo. Si ejecutamos ./NombreEjemplo help nos saldrá una ayuda, pero IMPORTANTE! La ayuda está MAL, pone que se le puede pasar opcionalmente la IP y puerto del Remote/Client (el propio ordenador desde el que se ejecuta ese ejecutable, pero en realidad hay que pasarle la IP y Puerto de la controladora (el cabinet). Por ejemplo, para el ejemplo IOAccess 
-```
-cd FRI-Client-SDK_Cpp/examples/IOAccess 
-./IOAccess “192.170.10.2” 30200
-```
-Si funciona, en la terminal de Ubuntu aparecerá: 
-```
-IOAccessClient initialized: Enter IOAccess Client Application Exit IOAccess Client Application 
-```
-Y en el SmartPad: 
-```
-Creating FRI connection from controller port 30200 to 192.170.10.200:30200 SendPeriod: 5ms | ReceiveMultiplier: 1 Connection to Client established Enable clock Do something ... Disable clock Close connection to client 
-```
-6. Se pueden modificar los ejemplos y recompilar individualmente haciendo make clean y make de 
-nuevo en la carpeta de cada ejemplo. 
-
+## Compilación FRI-Client-SDK_Cpp
+Entrar en la carpeta FRI-Client-SDK_Cpp y seguir las instrucciones del README.md
 ### Resumen IPs y Puertos 
 1. Remote/Client: 192.170.200:30200 
 2. Controller: 192.170.10.2:30200 
