@@ -14,6 +14,34 @@ classdef IiwaPlotter < handle
         end
     end
     methods(Static)
+        function time_stamps(trajectories, colors)
+            if (~iscell(trajectories))
+                trajectories={trajectories};
+            end
+            figure;
+            leg={};
+            for j = 1:IiwaRobot.n_joints
+                subplot(IiwaRobot.n_joints,1,j);
+                for ntraj=1:size(trajectories,2)
+                    if (~isempty(trajectories{ntraj}.q))
+                        stamps = trajectories{ntraj}.t(2:end)-trajectories{ntraj}.t(1:end-1);
+                        plot(stamps, [colors(ntraj), '.']);
+                        hold on;
+                        leg=[leg trajectories{ntraj}.name trajectories{ntraj}.name];
+                    end
+                end
+                if j == 1
+                    legend(leg);
+                    title('Joint position (rad)')
+                end
+                if j == IiwaRobot.n_joints
+                    xlabel('time (s)');
+                end
+                s = sprintf('j%d',j);
+                ylabel(s);
+                grid on;
+            end
+        end
         function joint_positions(trajectories, colors)
             if (~iscell(trajectories))
                 trajectories={trajectories};
