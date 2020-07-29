@@ -26,7 +26,8 @@ classdef IiwaPlotter < handle
                     if (~isempty(trajectories{ntraj}.q))
                         plot(trajectories{ntraj}.t, trajectories{ntraj}.q(:,j), colors(ntraj));
                         hold on;
-                        leg=[leg trajectories{ntraj}.name];
+                        plot(trajectories{ntraj}.t, trajectories{ntraj}.q(:,j), [colors(ntraj), '.']);
+                        leg=[leg trajectories{ntraj}.name trajectories{ntraj}.name];
                     end
                 end
                 if j == 1
@@ -144,9 +145,10 @@ classdef IiwaPlotter < handle
                 hold on;
                 for ntraj=1:size(trajectories,2)
                     if (~isempty(trajectories{ntraj}.x))
-                        plot(trajectories{ntraj}.t, trajectories{ntraj}.x(:,coord), colors(ntraj));
+                        plot(trajectories{ntraj}.t, trajectories{ntraj}.x(:,coord),colors(ntraj));
+                        plot(trajectories{ntraj}.t, trajectories{ntraj}.x(:,coord),[colors(ntraj), '.']);
                         hold on;
-                        leg=[leg trajectories{ntraj}.name];
+                        leg=[leg trajectories{ntraj}.name trajectories{ntraj}.name];
                     end
                 end
                 if coord == 1
@@ -231,8 +233,10 @@ classdef IiwaPlotter < handle
                     for j = 1:IiwaRobot.n_joints
                         subplot(IiwaRobot.n_joints,1,j);
                         plot(ts_error.Time, ts_error.Data(:,j), colors(ntraj));
+                        leg{ntraj*2-1} = trajectories{ntraj}.name;
                         hold on;
-                        leg{ntraj} = trajectories{ntraj}.name;
+                        plot(ts_error.Time, ts_error.Data(:,j), [colors(ntraj), '.']);
+                        leg{ntraj*2} = trajectories{ntraj}.name;
                         if j == 1
                             title('Joint position error (rad)')
                         end
@@ -271,8 +275,10 @@ classdef IiwaPlotter < handle
                     for coord = 1:6
                         subplot(6,1,coord);
                         plot(ts_error.Time, ts_error.Data(:,coord), colors(ntraj));
+                        leg{ntraj*2-1} = trajectories{ntraj}.name;
                         hold on;
-                        leg{ntraj} = trajectories{ntraj}.name;
+                        plot(ts_error.Time, ts_error.Data(:,coord), [colors(ntraj), '.']);
+                        leg{ntraj*2} = trajectories{ntraj}.name;
                         if coord == 1
                             title('Cartesian position error (m, rad)')
                         end
