@@ -61,3 +61,6 @@ IiwaCommand/catkin_ws/src/CMakeLists.txt
 *.asv
 *.mat
 IiwaCommand/catkin_ws/src/matlab_gen/
+*.jar
+*.md5
+RoboespasApp/catkin_ws/src/matlab_gen/
