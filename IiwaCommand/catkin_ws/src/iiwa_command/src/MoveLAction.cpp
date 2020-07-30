@@ -181,23 +181,35 @@ class MoveLAction
 
             bool cont=true;
             int id_output = 0;
-            ros::Time tStartTraj = ros::Time::now();
-            ros::Duration timeFromStart = ros::Duration(0);
+
             VectorXd q_comm;
             VectorXd q_exp = q_curr;
+            ros::Time tJointStateStart = joint_state.header.stamp;
+            ros::Time tStartTraj = ros::Time::now();
+            ros::Duration timeFromStart = ros::Duration(0);
             while (cont)
             {
                 //Freeze the current joint state
                 sensor_msgs::JointState freezed_joint_state = joint_state;
                 //Get the id of traj_theory for the current time from start
                 timeFromStart = ros::Time::now()-tStartTraj;
+
+                cout << "t_joint_state: " << (joint_state.header.stamp-tJointStateStart).toSec()  << endl;
+                cout << "t_calc: " << timeFromStart << endl;
+                cout << endl;
                 int id_curr = round(timeFromStart.toSec()/control_step_size);
                 //Fill q_exp and q_curr if not the first iter
                 //(for first iter q_curr is already calculated and q_comm does not exist yet)
                 if (id_output != 0)
                 {
                     q_exp = q_comm;
+
                     q_curr = Map<VectorXd, Unaligned>(freezed_joint_state.position.data(), freezed_joint_state.position.size()); //q_exp; //
+                    cout <<"q_exp: " << q_exp.transpose() << endl;
+                    cout << "q_curr: " << q_curr.transpose() << endl;
+                    cout << endl;
+                    q_curr = q_exp;
+
                 }
                 //Break the while if id_curr>size(traj_theory)
                 if (id_curr >= traj_theory.x.cols())
@@ -205,7 +217,7 @@ class MoveLAction
                     //Last iteration, fill last points
                     cout << "last iter " << endl;
                     id_curr = traj_theory.x.cols() -1;
-                    //break;
+                    break;
                 }
                 //Current cartesian position, and expected cartesian position and velocity
                 VectorXd x_exp = traj_theory.x.col(id_curr);
@@ -217,7 +229,7 @@ class MoveLAction
                 VectorXd xdot_exp_S = IiwaScrewTheory::TransformScrew_A2S(xdot_exp, x_exp);
                 VectorXd xdot_err_S = IiwaScrewTheory::TransformScrew_A2S(xdot_err, x_curr);
                 //The desired cartesian velocity will be a mix of both
-                VectorXd xdot_S = xdot_exp_S + xdot_err_S*idk_error_factor;
+                VectorXd xdot_S = xdot_exp_S;// + xdot_err_S*idk_error_factor;
                 qdot_comm = IiwaScrewTheory::InverseDifferentialKinematicsPoint(q_curr, xdot_S);
                 if ((qdot_comm.array()>qdot_max.array()).any())
                 {
