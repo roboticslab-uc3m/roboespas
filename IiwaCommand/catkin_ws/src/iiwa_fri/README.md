@@ -35,7 +35,7 @@ En ambos casos, es necesario conectar el cabinet a una pantalla, teclado y rató
 ### Configurar puerto KONI para utilizar el iiwa_stack v1.2.5 
   - Enchufar pantalla, ratón y teclado a la controladora e iniciar sesión. 
   - Apagar KRC: Click derecho en el icono verde abajo a la derecha al lado del reloj, “Stop KRC”. 
-  - Abrir cmd.exe y escribir: ```C:\KUKA\Hardware\Manager\KUKAHardwareManager.exe -assign OptionNIC - os WIN```. Esto asignará el puerto KONI a Windows, y dejará de estar disponible para FRI. 
+  - Abrir cmd.exe y escribir: ```C:\KUKA\Hardware\Manager\KUKAHardwareManager.exe -assign OptionNIC -os WIN```. Esto asignará el puerto KONI a Windows, y dejará de estar disponible para FRI. 
   - Reiniciar el ordenador, abrir el panel de conexiones, elegir la red nueva (no la red que hay con el IIWA) y abrir las propiedades de Internet Protocol Version 4 (TCP/IPv4). Para diferenciar ambas redes, la del IIWA debería tener fijada la IP a 192.168.0.1 (no tocar esta IP), y la otra debería aparecer automáticamente en la opción “Obtain an IP address automatically” cuando se acaba de asignar el puerto KONI a Windows. 
   - En la ventana de propiedades de la red nueva, establecer la IP 160.69.69.69, máscara de subred 255.255.255.0 y puerta de enlace predeterminada 160.69.69.1. 
    - Conectar el ordenador con Ubuntu/ROS al puerto KONI. Establecer en este ordenador la IP fija 160.69.69.100, que actuará como ROS Master. 
