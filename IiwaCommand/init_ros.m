@@ -17,13 +17,17 @@ function init_ros(varargin)
             if (isempty(ros_ip))
                 network_name = 'enp3s0';
                 [~, ros_ip] = system(['(ifconfig |grep -A 1 "', network_name, '" |tail -1 |cut -d ":" -f 2| cut -d " " -f 1)']);
+                if (isempty(ros_ip))
+                    network_name = 'enp0s25';
+                    [~, ros_ip] = system(['(ifconfig |grep -A 1 "', network_name, '" |tail -1 |cut -d ":" -f 2| cut -d " " -f 1)']);
+                end
             end
             ros_ip = ros_ip(1:end-1);
             ros_master_uri = strcat('http://', ros_ip,':11311');
         else
             [~, result] = system('ipconfig');
             id_ipv4 = strfind(result, 'IPv4');
-            id_nextline = strfind(result, 'Máscara');
+            id_nextline = strfind(result, 'Mascara');
             ros_ip = extractBetween(result,id_ipv4(1)+34,id_nextline(1)-5);
             ros_ip = ros_ip{1};
             ros_master_uri = strcat('http://', ros_ip,':11311');

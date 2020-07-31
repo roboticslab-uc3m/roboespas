@@ -25,14 +25,14 @@ classdef IiwaPlotter < handle
                 for ntraj=1:size(trajectories,2)
                     if (~isempty(trajectories{ntraj}.q))
                         stamps = trajectories{ntraj}.t(2:end)-trajectories{ntraj}.t(1:end-1);
-                        plot(stamps, [colors(ntraj), '.']);
+                        plot(trajectories{ntraj}.t(1:end-1), stamps, [colors(ntraj), '.']);
                         hold on;
-                        leg=[leg trajectories{ntraj}.name trajectories{ntraj}.name];
+                        leg=[leg trajectories{ntraj}.name];
                     end
                 end
                 if j == 1
                     legend(leg);
-                    title('Joint position (rad)')
+                    title('Time stamp difference (second)')
                 end
                 if j == IiwaRobot.n_joints
                     xlabel('time (s)');

@@ -2,7 +2,7 @@ clear all;
 close all;
 init_ros;
 plot_feedback=0;
-plot_result=0;
+plot_result=1;
 
 [MoveJASrv_cli, MoveJASrv_msg] = rosactionclient('MoveJ');
 MoveJASrv_cli.ActivationFcn = @(~) disp('MoveJ action server active');
@@ -21,7 +21,6 @@ for i=1:7
 end
 
 %q_goal = [0, 0, 0, 0, 0, 0, 0];
-%q_goal = [ 0.4676    0.4744    0.7082    0.7071    1.3419    1.3148    1.6728];
 MoveJASrv_msg.JointPosition=q_goal;
 %MoveJASrv_msg.JointPosition=[-2.2725, 1.2797, -2.7501, 1.5968, -0.9615, -0.4337, -1.2612];
 %MoveJASrv_msg.JointPosition=[0 0 0 0 0 0 0];
@@ -34,6 +33,7 @@ traj_output = IiwaTrajectory('output', resultMsg.TrajectoryRead);
 
 if (plot_result)
     IiwaPlotter.joint_positions({traj_comm, traj_output}, ['b', 'r']);
+    IiwaPlotter.time_stamps({traj_comm, traj_output}, ['b', 'r'])
     %IiwaPlotter.cartesian_positions({traj_comm, traj_output}, ['b', 'r']);
     %IiwaPlotter.joint_velocities({traj_comm, traj_output}, ['b', 'r']);
     %IiwaPlotter.cartesian_position_error(traj_comm, traj_output, 'b');
