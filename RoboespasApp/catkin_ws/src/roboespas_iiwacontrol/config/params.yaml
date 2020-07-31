@@ -1,4 +1,4 @@
-/roboespas/dataPath: '/home/roboespas/catkin_ws/src/roboespas_iiwacontrol/data/'
+/roboespas/dataPath: '/home/roboespas/Documents/roboespas/RoboespasApp/catkin_ws/src/roboespas_iiwacontrol/data/'
 /roboespas/iiwa/twists/t1: [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
 /roboespas/iiwa/twists/t2:  [-0.36, 0.0, 0.0, 0.0, 1.0, 0.0]
 /roboespas/iiwa/twists/t3:  [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
