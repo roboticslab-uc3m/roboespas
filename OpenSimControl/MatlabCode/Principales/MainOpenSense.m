@@ -84,7 +84,7 @@ CMarkers.Handle = f_HandleCoordModifications(FKHandle(:,1:3), model);
 V_IIWA = CMarkers.Handle;
 
 % Creo una trcTable nueva
-[TrcTableCreada] = f_CreateTRCTable(trial.Trajectory.Trial.Timestamps,CMarkers,'IIWA');
+[TrcTableCreada] = f_CreateTRCTable(t,CMarkers,'IIWA');
 
 % Lo imprimo en un archivo .trc (Coordenadas cartesianas espaciales)
 
@@ -97,87 +97,86 @@ pause(0.2);
 V_OpenSim=CMarkers.Handle;
 
 %% Create Xsens file from trial
-% f_createXsensFile(trial, IMUpath);
-% 
-% %% Convert IMU data to OpenSim format
-% % Build an Xsens Settings Object. 
-% % Instantiate the Reader Settings Class
-% xsensSettings = XsensDataReaderSettings(strcat(IMUpath, '\myIMUMappings.xml'));
-% % Instantiate an XsensDataReader
-% xsens = XsensDataReader(xsensSettings);
-% % Get a table reference for the data
-% tables = xsens.read(strcat(IMUpath, '/'));
-% % get the trial name from the settings
-% trialName = char(xsensSettings.get_trial_prefix());
-% 
-% % Get Orientation Data as quaternions
-% quatTable = xsens.getOrientationsTable(tables);
-% % Write to file
-% STOFileAdapterQuaternion.write(quatTable,  [IMUpath, '\', trialName 'orientations.sto']);
-% 
-% %% Calibrate OpenSim model
-% % Set variables to use
-% modeloPath = [CD_model, '\', MODELO];
-% orientationsFileName = [IMUpath,'/',trialName,'orientations.sto']; % The path to orientation data for calibration 
-% sensor_to_opensim_rotation = Vec3(0, -pi/2, 0);% The rotation of IMU data to the OpenSim world frame 
-% % baseIMUName = 'humerus_imu';                     % The base IMU is the IMU on the base body of the model that dictates the heading (forward) direction of the model.
-% % baseIMUHeading = 'y';                           % The Coordinate Axis of the base IMU that points in the heading direction. 
-% visulizeCalibration = false;                     % Boolean to Visualize the Output model
-% 
-% % Instantiate an IMUPlacer object
-% imuPlacer = IMUPlacer();
-% 
-% % Set properties for the IMUPlacer
-% imuPlacer.setModel(model);
-% imuPlacer.set_model_file(modeloPath);
-% imuPlacer.set_orientation_file_for_calibration(orientationsFileName);
-% imuPlacer.set_sensor_to_opensim_rotations(sensor_to_opensim_rotation);
-% % imuPlacer.set_base_imu_label(baseIMUName);
-% % imuPlacer.set_base_heading_axis(baseIMUHeading);
-% 
-% % Run the IMUPlacer
-% imuPlacer.run(visulizeCalibration);
-% 
-% % Get the model with the calibrated IMU's
-% model = imuPlacer.getCalibratedModel();
-% 
-% % Print the calibrated model to file.
-% model.print(strrep(modeloPath, '.osim', '_calibrated.osim') );
-% MODELO = strrep(MODELO, '.osim', '_calibrated.osim');
-% 
-% %% Obtain IK motion from orientation tracking
-% % Set variables to use
-% visualizeTracking = false;  % Boolean to Visualize the tracking simulation
-% startTime = trial.DelsysSensors.Trial.Sensor1.IMU.Timestamps(1); %7.25;          % Start time (in seconds) of the tracking simulation. 
-% endTime = trial.DelsysSensors.Trial.Sensor1.IMU.Timestamps(end); %15;              % End time (in seconds) of the tracking simulation.
-% resultsDirectory = [CD_model,'\IKResults'];
-% 
-% % Instantiate an InverseKinematicsTool
-% imuIK = IMUInverseKinematicsTool();
-%  
-% % Set the model path to be used for tracking
-% imuIK.setModel(model);
-% imuIK.set_model_file([CD_model, '\', MODELO]);
-% imuIK.set_orientations_file(orientationsFileName);
-% imuIK.set_sensor_to_opensim_rotations(sensor_to_opensim_rotation)
-% % Set marker file
-% imuIK.loadMarkersFile(strcat(CD_model, '\CCartesianas\Lab.trc'));
-% imuIK.set_marker_file(strcat(CD_model, '\CCartesianas\Lab.trc'));
-% % Set time range in seconds
-% imuIK.set_time_range(0, startTime); 
-% imuIK.set_time_range(1, endTime);   
-% % Set a directory for the results to be written to
-% imuIK.set_results_directory(resultsDirectory)
-% % Set output accuracy
-% imuIK.set_accuracy(20);
-% % Run IK
-% imuIK.run(visualizeTracking);
-% 
-% 
-% OutputMotionStr = strcat('ik_', trialName, 'orientations.mot');
-% motFilePath=strcat(CD_model,'\IKResults\',OutputMotionStr);
+f_createXsensFile(trial, IMUpath);
 
-motFilePath = strcat(CD_model, '\CArticulares\movimiento_imuHandle.mot');
+%% Convert IMU data to OpenSim format
+% Build an Xsens Settings Object. 
+% Instantiate the Reader Settings Class
+xsensSettings = XsensDataReaderSettings(strcat(IMUpath, '\myIMUMappings.xml'));
+% Instantiate an XsensDataReader
+xsens = XsensDataReader(xsensSettings);
+% Get a table reference for the data
+tables = xsens.read(strcat(IMUpath, '/'));
+% get the trial name from the settings
+trialName = char(xsensSettings.get_trial_prefix());
+
+% Get Orientation Data as quaternions
+quatTable = xsens.getOrientationsTable(tables);
+% Write to file
+STOFileAdapterQuaternion.write(quatTable,  [IMUpath, '\', trialName 'orientations.sto']);
+
+%% Calibrate OpenSim model
+% Set variables to use
+modeloPath = [CD_model, '\', MODELO];
+orientationsFileName = [IMUpath,'/',trialName,'orientations.sto']; % The path to orientation data for calibration 
+sensor_to_opensim_rotation = Vec3(0, -pi/2, 0);% The rotation of IMU data to the OpenSim world frame 
+% baseIMUName = 'humerus_imu';                     % The base IMU is the IMU on the base body of the model that dictates the heading (forward) direction of the model.
+% baseIMUHeading = 'y';                           % The Coordinate Axis of the base IMU that points in the heading direction. 
+visulizeCalibration = false;                     % Boolean to Visualize the Output model
+
+% Instantiate an IMUPlacer object
+imuPlacer = IMUPlacer();
+
+% Set properties for the IMUPlacer
+imuPlacer.setModel(model);
+imuPlacer.set_model_file(modeloPath);
+imuPlacer.set_orientation_file_for_calibration(orientationsFileName);
+imuPlacer.set_sensor_to_opensim_rotations(sensor_to_opensim_rotation);
+% imuPlacer.set_base_imu_label(baseIMUName);
+% imuPlacer.set_base_heading_axis(baseIMUHeading);
+
+% Run the IMUPlacer
+imuPlacer.run(visulizeCalibration);
+
+% Get the model with the calibrated IMU's
+model = imuPlacer.getCalibratedModel();
+
+% Print the calibrated model to file.
+model.print(strrep(modeloPath, '.osim', '_calibrated.osim') );
+MODELO = strrep(MODELO, '.osim', '_calibrated.osim');
+
+%% Obtain IK motion from orientation tracking
+% Set variables to use
+visualizeTracking = false;  % Boolean to Visualize the tracking simulation
+startTime = trial.DelsysSensors.Trial.Sensor1.IMU.Timestamps(1); %7.25;          % Start time (in seconds) of the tracking simulation. 
+endTime = trial.DelsysSensors.Trial.Sensor1.IMU.Timestamps(end); %15;              % End time (in seconds) of the tracking simulation.
+resultsDirectory = [CD_model,'\IKResults'];
+
+% Instantiate an InverseKinematicsTool
+imuIK = IMUInverseKinematicsTool();
+ 
+% Set the model path to be used for tracking
+imuIK.setModel(model);
+imuIK.set_model_file([CD_model, '\', MODELO]);
+imuIK.set_orientations_file(orientationsFileName);
+imuIK.set_sensor_to_opensim_rotations(sensor_to_opensim_rotation)
+% Set marker file
+imuIK.loadMarkersFile(strcat(CD_model, 'CCartesianas\Lab.trc'));
+imuIK.set_marker_file(strcat(CD_model, 'CCartesianas\Lab.trc'));
+% Set time range in seconds
+imuIK.set_time_range(0, startTime); 
+imuIK.set_time_range(1, endTime);   
+% Set a directory for the results to be written to
+imuIK.set_results_directory(resultsDirectory)
+% Set output accuracy
+imuIK.set_accuracy(20);
+% Run IK
+imuIK.run(visualizeTracking);
+
+
+OutputMotionStr = strcat('ik_', trialName, 'orientations.mot');
+motFilePath=strcat(CD_model,'\IKResults\',OutputMotionStr);
+
 %% Create External Loads
 % t = trial.DelsysSensors.Trial.Sensor1.IMU.Timestamps;
 % ForceAndTorque = zeros(length(t),9);
@@ -243,31 +242,31 @@ if isequal(methodIIWA_FD,'Screw Theory')
 
    % Limpio la gr�fica por minimos cuadrados
    % Fuerza en X
-    x=stampsST(1:end);
-    y=ForceAndTorque(:,1);
+    x=stampsST(1:end-1);
+    y=ForceAndTorque(:,1)';
     px = polyfit(x,y,grado);
     ForceAndTorqueLimpio(:,1) = polyval(px,x)';
     % Fuerza en Y
-    y=ForceAndTorque(:,2);
+    y=ForceAndTorque(:,2)';
     py = polyfit(x,y,grado);
     ForceAndTorqueLimpio(:,2) = polyval(py,x)';
     % Fuerza en Z
-    y=ForceAndTorque(:,3);
+    y=ForceAndTorque(:,3)';
     pz = polyfit(x,y,grado);
     ForceAndTorqueLimpio(:,3) = polyval(pz,x)';
     % Momento en X
-    x=stampsST(1:end);
-    y=ForceAndTorque(:,4);
+    x=stampsST(1:end-1);
+    y=ForceAndTorque(:,7)';
     px = polyfit(x,y,grado);
-    ForceAndTorqueLimpio(:,4) = polyval(px,x)';
+    ForceAndTorqueLimpio(:,7) = polyval(px,x)';
     % Momento en Y
-    y=ForceAndTorque(:,5);
+    y=ForceAndTorque(:,8)';
     py = polyfit(x,y,grado);
-    ForceAndTorqueLimpio(:,5) = polyval(py,x)';
+    ForceAndTorqueLimpio(:,8) = polyval(py,x)';
     % Momento en Z
-    y=ForceAndTorque(:,6);
+    y=ForceAndTorque(:,9)';
     pz = polyfit(x,y,grado);
-    ForceAndTorqueLimpio(:,6) = polyval(pz,x)';
+    ForceAndTorqueLimpio(:,9) = polyval(pz,x)';
     ForceAndTorque=ForceAndTorqueLimpio;
     clear x y px py pz ForceAndTorqueLimpio
 
@@ -277,32 +276,28 @@ if isequal(methodIIWA_FD,'Screw Theory')
     Fy=-ForceAndTorque(:,2);
     Fz=-ForceAndTorque(:,3);
 
-    Tx=ForceAndTorque(:,4); % El sentido de los torques se trabaja a posteriori
-    Ty=ForceAndTorque(:,5);
-    Tz=ForceAndTorque(:,6);
+    Tx=ForceAndTorque(:,7); % El sentido de los torques se trabaja a posteriori
+    Ty=ForceAndTorque(:,8);
+    Tz=ForceAndTorque(:,9);
 
     ForceAndTorque(:,1)= -Fy;
     ForceAndTorque(:,2)= Fz;
     ForceAndTorque(:,3)= -Fx;
-    
-%     ForceAndTorque(:,7)= Tx;
-%     ForceAndTorque(:,8)= Tz;
-%     ForceAndTorque(:,9)= Ty;
 
     ForceAndTorque(:,4)= 0;
     ForceAndTorque(:,5)= -0.08;
     ForceAndTorque(:,6)= 0;
 
     % Compensar longitudes (brazos) de los momentos
-    for i=1:length(V_OpenSim)
-        M_OpenSim(i,1)=(norm(V_OpenSim(i,2:3))/norm(V_IIWA(i,2:3)))*Tx(i);
-        M_OpenSim(i,2)=(norm(V_OpenSim(i,1:2:3))/norm(V_IIWA(i,1:2)))*Tz(i);
-        M_OpenSim(i,3)=(norm(V_OpenSim(i,1:2))/norm(V_IIWA(i,1:2:3)))*Ty(i);
+    for i=1:dataSize
+    M_OpenSim(i,1)=(norm(V_OpenSim(i,2:3))/norm(V_IIWA(i,2:3)))*Tx(i);
+    M_OpenSim(i,2)=(norm(V_OpenSim(i,1:2:3))/norm(V_IIWA(i,1:2)))*Tz(i);
+    M_OpenSim(i,3)=(norm(V_OpenSim(i,1:2))/norm(V_IIWA(i,1:2:3)))*Ty(i);
     end
 
-    ForceAndTorque(:,4)=M_OpenSim(:,1);
-    ForceAndTorque(:,5)=M_OpenSim(:,2);
-    ForceAndTorque(:,6)=M_OpenSim(:,3);
+    ForceAndTorque(:,7)=M_OpenSim(:,1);
+    ForceAndTorque(:,8)=M_OpenSim(:,2);
+    ForceAndTorque(:,9)=M_OpenSim(:,3);
 
 else
     % Calculo FD haciendo uso de la toolbox de Matlab, EN EL SIST COORD DEL ROBOT
@@ -366,14 +361,14 @@ end
 
     ExternalForcesTorquesStorage.setColumnLabels(ColumnLabels);
     %Meto los valores COMO STATEVECTORS
-    for i=1:length(stampsST)%length(t(1,:))-1
+    for i=1:length(t(1,:))-1
         fila=org.opensim.modeling.StateVector();
         v=org.opensim.modeling.Vector();
         v.resize(int16(length(ForceAndTorque(1,:))));
         for j = 1:length(ForceAndTorque(1,:))
             v.set(int16(j-1),ForceAndTorque(i,j)); %Vector empieza desde 0
             fila.setStates(1,v);
-            fila.setTime(stampsST(i));
+            fila.setTime(t(i));
             %             size=fila.getSize;
         end
         ExternalForcesTorquesStorage.append(fila);
@@ -407,83 +402,83 @@ end
 % clear External_Force_FT External_Loads_FT
 pause(1);
 %% RRA - PENDIENTE DE VALIDAR
-% import org.opensim.modeling.*
-% CD_rra=strcat(CD_model,'\RRA');
-% %Coordenadas (todas)
-% CoordSet= model.getCoordinateSet();
-% elv_angle=CoordSet.get('elv_angle');
-% shoulder_elv=CoordSet.get('shoulder_elv');
-% shoulder_rot=CoordSet.get('shoulder_rot');
-% elbow_flexion=CoordSet.get('elbow_flexion');
-% pro_sup=CoordSet.get('pro_sup');
-% deviation=CoordSet.get('deviation');
-% flexion=CoordSet.get('flexion');
-% %Bloqueos:
-% elv_angle.set_locked(0);
-% shoulder_elv.set_locked(0);
-% shoulder_rot.set_locked(0);
-% elbow_flexion.set_locked(0);
-% pro_sup.set_locked(1);
-% deviation.set_locked(1);
-% flexion.set_locked(1);
-% model.print([CD_model,'\',MODELO]);
+import org.opensim.modeling.*
+CD_rra=strcat(CD_model,'\RRA');
+%Coordenadas (todas)
+CoordSet= model.getCoordinateSet();
+elv_angle=CoordSet.get('elv_angle');
+shoulder_elv=CoordSet.get('shoulder_elv');
+shoulder_rot=CoordSet.get('shoulder_rot');
+elbow_flexion=CoordSet.get('elbow_flexion');
+pro_sup=CoordSet.get('pro_sup');
+deviation=CoordSet.get('deviation');
+flexion=CoordSet.get('flexion');
+%Bloqueos:
+elv_angle.set_locked(0);
+shoulder_elv.set_locked(0);
+shoulder_rot.set_locked(0);
+elbow_flexion.set_locked(0);
+pro_sup.set_locked(1);
+deviation.set_locked(1);
+flexion.set_locked(1);
+model.print([CD_model,'\',MODELO]);
+
+sto=org.opensim.modeling.Storage(motFilePath);
+% Tiempos:
+StartTime=sto.getFirstTime;
+LastTime=sto.getLastTime;
+
+rraTool=RRATool();
+rraTool.setName('RRATool');
+% Model
+rraTool.setModel(model);
+rraTool.setModelFilename(strcat(CD_model,'\',MODELO));
+% Replace Force Set
+rraTool.setReplaceForceSet(true);
+% Set Force Set
+actuatorsFile = [CD_rra, '\RRA_Actuators.xml'];
+forceSetFile = org.opensim.modeling.ArrayStr();
+forceSetFile.append(actuatorsFile);
+rraTool.setForceSetFiles(forceSetFile);
+% Results
+rraTool.setResultsDir(strcat(CD_model,'\RRAResults'));
+% Output precision
+rraTool.setOutputPrecision(20);
+% Time Range
+rraTool.setStartTime(StartTime);
+rraTool.setFinalTime(LastTime);
+% Solve For Equilibrium
+rraTool.setSolveForEquilibrium(false);
+% External Loads File
+rraTool.setExternalLoadsFileName(xmlExternalLoadsFileName_FT);
+% Filtered Motion
+rraTool.setDesiredKinematicsFileName(motFilePath);
+% Tasks
+rraTool.setTaskSetFileName(strcat(CD_rra,'\RRA_Tasks-ROBOESPAS_flex.xml'));
+% Constraints
+rraTool.setConstraintsFileName(strcat(CD_rra,'\RRA_ControlConstraints_ROBOESPAS.xml'));
+%  Low Pass Frequency
+rraTool.setLowpassCutoffFrequency(6);  
+% Output model Name
+rraTool.setOutputModelFileName(strcat(CD_model,'\',strrep(MODELO, '_calibrated.osim', '_adjusted.osim')));
+%Actuators
+%     rraTool.setForceSetFiles(strcat(CD_rra,'Reserve_Actuators_Roboespas.xml')); %%%%%%%
+% Look ahead window time
+% rraTool.setTimeWindow(0.001);
 % 
-% sto=org.opensim.modeling.Storage(motFilePath);
-% % Tiempos:
-% StartTime=sto.getFirstTime;
-% LastTime=sto.getLastTime;
-% 
-% rraTool=RRATool();
-% rraTool.setName('RRATool');
-% % Model
-% rraTool.setModel(model);
-% rraTool.setModelFilename(strcat(CD_model,'\',MODELO));
-% % Replace Force Set
-% rraTool.setReplaceForceSet(true);
-% % Set Force Set
-% actuatorsFile = [CD_rra, '\RRA_Actuators.xml'];
-% forceSetFile = org.opensim.modeling.ArrayStr();
-% forceSetFile.append(actuatorsFile);
-% rraTool.setForceSetFiles(forceSetFile);
-% % Results
-% rraTool.setResultsDir(strcat(CD_model,'\RRAResults'));
-% % Output precision
-% rraTool.setOutputPrecision(20);
-% % Time Range
-% rraTool.setStartTime(StartTime);
-% rraTool.setFinalTime(LastTime);
-% % Solve For Equilibrium
-% rraTool.setSolveForEquilibrium(false);
-% % External Loads File
-% rraTool.setExternalLoadsFileName(xmlExternalLoadsFileName_FT);
-% % Filtered Motion
-% rraTool.setDesiredKinematicsFileName(motFilePath);
-% % Tasks
-% rraTool.setTaskSetFileName(strcat(CD_rra,'\RRA_Tasks-ROBOESPAS_flex.xml'));
-% % Constraints
-% rraTool.setConstraintsFileName(strcat(CD_rra,'\RRA_ControlConstraints_ROBOESPAS.xml'));
-% %  Low Pass Frequency
-% rraTool.setLowpassCutoffFrequency(6);  
-% % Output model Name
-% rraTool.setOutputModelFileName(strcat(CD_model,'\',strrep(MODELO, '_calibrated.osim', '_adjusted.osim')));
-% %Actuators
-% %     rraTool.setForceSetFiles(strcat(CD_rra,'Reserve_Actuators_Roboespas.xml')); %%%%%%%
-% % Look ahead window time
-% % rraTool.setTimeWindow(0.001);
-% % 
-% % rraTool.setUseFastTarget(false);
-% 
-% rraTool.setAdjustedCOMBody('thorax');
-% rraTool.setAdjustCOMToReduceResiduals(1);
-% 
-% rraTool.print(strcat(CD_rra,'\setupActualRRA.xml'));
-% 
-% rra = RRATool(strcat(CD_rra,'\setupActualRRA.xml'));
-% rra.run; %Esto se hace por seguridad. Recomendaci�n de OpenSim.
-% % rraTool.run
-% disp('RRA done');
-% 
-% MODELO = strrep(MODELO, '_calibrated.osim', '_adjusted.osim');
+% rraTool.setUseFastTarget(false);
+
+rraTool.setAdjustedCOMBody('thorax');
+rraTool.setAdjustCOMToReduceResiduals(1);
+
+rraTool.print(strcat(CD_rra,'\setupActualRRA.xml'));
+
+rra = RRATool(strcat(CD_rra,'\setupActualRRA.xml'));
+rra.run; %Esto se hace por seguridad. Recomendaci�n de OpenSim.
+% rraTool.run
+disp('RRA done');
+
+MODELO = strrep(MODELO, '_calibrated.osim', '_adjusted.osim');
 %% CMC
 import org.opensim.modeling.*;
 CD_cmc=strcat(CD_model,'\CMC');
@@ -520,7 +515,6 @@ force_set.setMemoryOwner(false);  % model will be the owner
 for i = 1:force_set.getSize()-1
     model.updForceSet().append(force_set.get(i));
 end
-MODELO = strrep(MODELO, '.osim', '_withReserves.osim');
 model.print([CD_model,'\',MODELO]);
    
 %     cmcTool=CMCTool(strcat(CD_cmc,"\CMC_Setup_Roboespas_Flex.xml"));
