@@ -23,9 +23,13 @@ class IiwaStatePublisher
 {
     protected:
     ros::NodeHandle nh;
-    //Iiwa state subscriber
+    //Iiwa gazebo/fri state subscriber
     ros::Subscriber iiwa_state_sub;
-    sensor_msgs::JointState joint_state;
+    //Iiwa stack state Subscriber
+    ros::Subscriber iiwa_stack_q_sub;
+    ros::Subscriber iiwa_stack_qdot_sub;
+    ros::Subscriber iiwa_stack_qtorque_sub;
+    sensor_msgs::JointState iiwa_stack_joint_state;
     //Iiwa gazebo/fri state publisher
     ros::Publisher iiwa_state_pub;
     string robot_mode;
@@ -50,6 +54,13 @@ class IiwaStatePublisher
         {
             iiwa_state_sub = nh.subscribe("/iiwa_fri/joint_state", 1000, &IiwaStatePublisher::callback_iiwa_state, this);
         }
+        else if (strcmp(robot_mode.c_str(), "iiwa_stack")==0)
+        {
+            iiwa_stack_q_sub = n.subscribe("/iiwa/state/JointPosition", 1, callback_q_iiwa_stack);
+            iiwa_stack_qdot_sub = n.subscribe("/iiwa/state/JointVelocity", 1, callback_qdot_iiwa_stack);
+            iiwa_stack_qtorque_sub = n.subscribe("/iiwa/state/JointTorque", 1, callback_qtorque_iiwa_stack);
+
+        }
         else
         {
             ROS_ERROR("Not implemented yet");
@@ -59,5 +70,52 @@ class IiwaStatePublisher
     void callback_iiwa_state(const sensor_msgs::JointState& iiwa_state_msg)
     {
         iiwa_state_pub.publish(iiwa_state_msg);
+    }
+    void callback_q_iiwa_stack(const iiwa_msgs::JointPosition& q_msg)
+    {
+        //Update position
+        iiwa_stack_joint_state.position.clear();
+        iiwa_stack_joint_state.position.push_back(q_msg.position.a1);
+        iiwa_stack_joint_state.position.push_back(q_msg.position.a2);
+        iiwa_stack_joint_state.position.push_back(q_msg.position.a3);
+        iiwa_stack_joint_state.position.push_back(q_msg.position.a4);
+        iiwa_stack_joint_state.position.push_back(q_msg.position.a5);
+        iiwa_stack_joint_state.position.push_back(q_msg.position.a6);
+        iiwa_stack_joint_state.position.push_back(q_msg.position.a7);
+        //Update stamp
+        iiwa_stack_joint_state.header=q_msg.header;
+        //Publish
+        iiwa_state_pub.publish(iiwa_stack_joint_state);
+    }
+    void callback_qdot_iiwa_stack(const iiwa_msgs::JointVelocity& qdot_msg)
+    {
+        //Update velocity
+        iiwa_stack_joint_state.velocity.clear();
+        iiwa_stack_joint_state.velocity.push_back(q_msg.velocity.a1);
+        iiwa_stack_joint_state.velocity.push_back(q_msg.velocity.a2);
+        iiwa_stack_joint_state.velocity.push_back(q_msg.velocity.a3);
+        iiwa_stack_joint_state.velocity.push_back(q_msg.velocity.a4);
+        iiwa_stack_joint_state.velocity.push_back(q_msg.velocity.a5);
+        iiwa_stack_joint_state.velocity.push_back(q_msg.velocity.a6);
+        iiwa_stack_joint_state.velocity.push_back(q_msg.velocity.a7);
+        //Do not update stamp bc stamp provided by iiwa_stack is wrong
+        //Publish
+        iiwa_state_pub.publish(iiwa_stack_joint_state);
+    }
+    void callback_qtorque_iiwa_stack(const iiwa_msgs::JointTorque& qtorque_msg)
+    {
+        //Update torque
+        iiwa_stack_joint_state.effort.clear();
+        iiwa_stack_joint_state.effort.push_back(q_msg.torque.a1);
+        iiwa_stack_joint_state.effort.push_back(q_msg.torque.a2);
+        iiwa_stack_joint_state.effort.push_back(q_msg.torque.a3);
+        iiwa_stack_joint_state.effort.push_back(q_msg.torque.a4);
+        iiwa_stack_joint_state.effort.push_back(q_msg.torque.a5);
+        iiwa_stack_joint_state.effort.push_back(q_msg.torque.a6);
+        iiwa_stack_joint_state.effort.push_back(q_msg.torque.a7);
+        //Update stamp
+        iiwa_stack_joint_state.header = qtorque_msg.header;
+        //Publish
+        iiwa_state_pub.publish(iiwa_stack_joint_state);
     }
 };

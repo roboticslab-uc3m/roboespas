@@ -13,12 +13,15 @@
         <arg name="hardware_interface" value="$(arg hardware_interface)"/>
         <arg name="robot_name" value="$(arg robot_name)"/>
     </include>
-    
+
     <rosparam command="load" file="$(find roboespas_iiwacontrol)/config/params.yaml"/>
+    <rosparam command="load" file="$(find iiwa_command)/config/params_iiwa_stack_position.yaml"/>
+    <rosparam command="load" file="$(find iiwa_command)/config/iiwa_robot_parameters.yaml"/>
 
     <node pkg="roboespas_iiwacontrol" name="capture" type="capture" respawn="true" output="screen" launch-prefix="xterm -e"/>
     <node pkg="roboespas_iiwacontrol" name="configuration" type="configuration" respawn="true" output="screen" launch-prefix="xterm -e"/>
     <node pkg="roboespas_iiwacontrol" name="movement" type="movement" respawn="true" output="screen" launch-prefix="xterm -e"/>
     <node pkg="roboespas_iiwacontrol" name="simulation" type="simulation" respawn="true" output="screen" launch-prefix="xterm -e"/>
+    <node pkg="iiwa_command" name = "iiwa_command" type="iiwa_command" respawn="true" output="screen" launch-prefix="xterm -e" />
 
 </launch>

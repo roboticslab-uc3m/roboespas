@@ -1,0 +1,9 @@
+<launch>
+
+    <!--Load parameters-->
+    <rosparam command="load" file="$(find iiwa_command)/config/params.yaml"/>
+    <rosparam command="load" file="$(find iiwa_command)/config/iiwa_robot_parameters.yaml"/>
+
+    <!-- Launch iiwa_command nodes -->
+
+</launch>

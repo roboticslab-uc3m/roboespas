@@ -220,6 +220,9 @@ bool captureList(roboespas_iiwacontrol::ListCapture::Request &req, roboespas_iiw
     std::vector<std::string> names;
     if (!boost::filesystem::exists(dataFilePath))
     {
+	cout << dataFilePath << endl;
+	ROS_ERROR("dataFilePath does not exist");
+	res.names = names;
         return false;
     }
     boost::filesystem::directory_iterator end_itr; // default construction yields past-the-end
