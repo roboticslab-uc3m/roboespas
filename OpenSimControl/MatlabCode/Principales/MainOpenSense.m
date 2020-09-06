@@ -84,7 +84,7 @@ CMarkers.Handle = f_HandleCoordModifications(FKHandle(:,1:3), model);
 V_IIWA = CMarkers.Handle;
 
 % Creo una trcTable nueva
-[TrcTableCreada] = f_CreateTRCTable(t,CMarkers,'IIWA');
+[TrcTableCreada] = f_CreateTRCTable(trial.Trajectory.Trial.Timestamps,CMarkers,'IIWA');
 
 % Lo imprimo en un archivo .trc (Coordenadas cartesianas espaciales)
 
@@ -145,11 +145,12 @@ model = imuPlacer.getCalibratedModel();
 model.print(strrep(modeloPath, '.osim', '_calibrated.osim') );
 MODELO = strrep(MODELO, '.osim', '_calibrated.osim');
 
+pause(2)
 %% Obtain IK motion from orientation tracking
 % Set variables to use
 visualizeTracking = false;  % Boolean to Visualize the tracking simulation
-startTime = trial.DelsysSensors.Trial.Sensor1.IMU.Timestamps(1); %7.25;          % Start time (in seconds) of the tracking simulation. 
-endTime = trial.DelsysSensors.Trial.Sensor1.IMU.Timestamps(end); %15;              % End time (in seconds) of the tracking simulation.
+startTime = trial.DelsysSensors.Trial.Sensor1.IMU.Timestamps(1); % Start time (in seconds) of the tracking simulation. 
+endTime = trial.DelsysSensors.Trial.Sensor1.IMU.Timestamps(end); % End time (in seconds) of the tracking simulation.
 resultsDirectory = [CD_model,'\IKResults'];
 
 % Instantiate an InverseKinematicsTool
@@ -161,8 +162,8 @@ imuIK.set_model_file([CD_model, '\', MODELO]);
 imuIK.set_orientations_file(orientationsFileName);
 imuIK.set_sensor_to_opensim_rotations(sensor_to_opensim_rotation)
 % Set marker file
-imuIK.loadMarkersFile(strcat(CD_model, 'CCartesianas\Lab.trc'));
-imuIK.set_marker_file(strcat(CD_model, 'CCartesianas\Lab.trc'));
+imuIK.loadMarkersFile(strcat(CD_model, '\CCartesianas\Lab.trc'));
+imuIK.set_marker_file(strcat(CD_model, '\CCartesianas\Lab.trc'));
 % Set time range in seconds
 imuIK.set_time_range(0, startTime); 
 imuIK.set_time_range(1, endTime);   
@@ -174,8 +175,17 @@ imuIK.set_accuracy(20);
 imuIK.run(visualizeTracking);
 
 
-OutputMotionStr = strcat('ik_', trialName, 'orientations.mot');
-motFilePath=strcat(CD_model,'\IKResults\',OutputMotionStr);
+ImuMotionStr = strcat('ik_', trialName, 'orientations.mot');
+motImuFilePath=strcat(CD_model,'\IKResults\',ImuMotionStr);
+
+%% Perform IK over the handle data using OpenSense resulting motion as reference
+%  En OpenSim: realizar una IK con los datos del marker del Handle y añadir en la casilla 'coordinate data for trial' los
+%  resultados de OpenSense (ImuMotionStr) con un peso de 0.1 (esto se cambia en la pestaña 'Weights')
+OutputMotionStr = 'Movimiento.mot';
+CD_CArticulares=strcat(CD_model,'\CArticulares');
+fCinInv(CD_model,CD_CArticulares,model,'Lab.trc',OutputMotionStr,ImuMotionStr);
+motFilePath=strcat(CD_CArticulares,'\',OutputMotionStr);
+pause(2);
 
 %% Create External Loads
 % t = trial.DelsysSensors.Trial.Sensor1.IMU.Timestamps;
@@ -242,31 +252,31 @@ if isequal(methodIIWA_FD,'Screw Theory')
 
    % Limpio la grï¿½fica por minimos cuadrados
    % Fuerza en X
-    x=stampsST(1:end-1);
-    y=ForceAndTorque(:,1)';
+    x=stampsST(1:end);
+    y=ForceAndTorque(:,1);
     px = polyfit(x,y,grado);
     ForceAndTorqueLimpio(:,1) = polyval(px,x)';
     % Fuerza en Y
-    y=ForceAndTorque(:,2)';
+    y=ForceAndTorque(:,2);
     py = polyfit(x,y,grado);
     ForceAndTorqueLimpio(:,2) = polyval(py,x)';
     % Fuerza en Z
-    y=ForceAndTorque(:,3)';
+    y=ForceAndTorque(:,3);
     pz = polyfit(x,y,grado);
     ForceAndTorqueLimpio(:,3) = polyval(pz,x)';
     % Momento en X
-    x=stampsST(1:end-1);
-    y=ForceAndTorque(:,7)';
+    x=stampsST(1:end);
+    y=ForceAndTorque(:,4);
     px = polyfit(x,y,grado);
-    ForceAndTorqueLimpio(:,7) = polyval(px,x)';
+    ForceAndTorqueLimpio(:,4) = polyval(px,x)';
     % Momento en Y
-    y=ForceAndTorque(:,8)';
+    y=ForceAndTorque(:,5);
     py = polyfit(x,y,grado);
-    ForceAndTorqueLimpio(:,8) = polyval(py,x)';
+    ForceAndTorqueLimpio(:,5) = polyval(py,x)';
     % Momento en Z
-    y=ForceAndTorque(:,9)';
+    y=ForceAndTorque(:,6);
     pz = polyfit(x,y,grado);
-    ForceAndTorqueLimpio(:,9) = polyval(pz,x)';
+    ForceAndTorqueLimpio(:,6) = polyval(pz,x)';
     ForceAndTorque=ForceAndTorqueLimpio;
     clear x y px py pz ForceAndTorqueLimpio
 
@@ -276,23 +286,33 @@ if isequal(methodIIWA_FD,'Screw Theory')
     Fy=-ForceAndTorque(:,2);
     Fz=-ForceAndTorque(:,3);
 
-    Tx=ForceAndTorque(:,7); % El sentido de los torques se trabaja a posteriori
-    Ty=ForceAndTorque(:,8);
-    Tz=ForceAndTorque(:,9);
+    Tx=ForceAndTorque(:,4); % El sentido de los torques se trabaja a posteriori
+    Ty=ForceAndTorque(:,5);
+    Tz=ForceAndTorque(:,6);
 
     ForceAndTorque(:,1)= -Fy;
     ForceAndTorque(:,2)= Fz;
     ForceAndTorque(:,3)= -Fx;
+    
+%     ForceAndTorque(:,7)= Tx;
+%     ForceAndTorque(:,8)= Tz;
+%     ForceAndTorque(:,9)= Ty;
 
     ForceAndTorque(:,4)= 0;
     ForceAndTorque(:,5)= -0.08;
     ForceAndTorque(:,6)= 0;
 
     % Compensar longitudes (brazos) de los momentos
-    for i=1:dataSize
-    M_OpenSim(i,1)=(norm(V_OpenSim(i,2:3))/norm(V_IIWA(i,2:3)))*Tx(i);
-    M_OpenSim(i,2)=(norm(V_OpenSim(i,1:2:3))/norm(V_IIWA(i,1:2)))*Tz(i);
-    M_OpenSim(i,3)=(norm(V_OpenSim(i,1:2))/norm(V_IIWA(i,1:2:3)))*Ty(i);
+    for i=1:length(ForceAndTorque)
+        if i<=length(V_OpenSim)
+            M_OpenSim(i,1)=(norm(V_OpenSim(i,2:3))/norm(V_IIWA(i,2:3)))*Tx(i);
+            M_OpenSim(i,2)=(norm(V_OpenSim(i,1:2:3))/norm(V_IIWA(i,1:2)))*Tz(i);
+            M_OpenSim(i,3)=(norm(V_OpenSim(i,1:2))/norm(V_IIWA(i,1:2:3)))*Ty(i);
+        else
+            M_OpenSim(i,1)=(norm(V_OpenSim(end,2:3))/norm(V_IIWA(end,2:3)))*Tx(i);
+            M_OpenSim(i,2)=(norm(V_OpenSim(end,1:2:3))/norm(V_IIWA(end,1:2)))*Tz(i);
+            M_OpenSim(i,3)=(norm(V_OpenSim(end,1:2))/norm(V_IIWA(end,1:2:3)))*Ty(i);
+        end
     end
 
     ForceAndTorque(:,7)=M_OpenSim(:,1);
@@ -361,14 +381,14 @@ end
 
     ExternalForcesTorquesStorage.setColumnLabels(ColumnLabels);
     %Meto los valores COMO STATEVECTORS
-    for i=1:length(t(1,:))-1
+    for i=1:length(stampsST)%length(t(1,:))-1
         fila=org.opensim.modeling.StateVector();
         v=org.opensim.modeling.Vector();
         v.resize(int16(length(ForceAndTorque(1,:))));
         for j = 1:length(ForceAndTorque(1,:))
             v.set(int16(j-1),ForceAndTorque(i,j)); %Vector empieza desde 0
             fila.setStates(1,v);
-            fila.setTime(t(i));
+            fila.setTime(stampsST(i));
             %             size=fila.getSize;
         end
         ExternalForcesTorquesStorage.append(fila);
@@ -478,9 +498,14 @@ rra.run; %Esto se hace por seguridad. Recomendaciï¿½n de OpenSim.
 % rraTool.run
 disp('RRA done');
 
+model.print(strrep(modeloPath, '_calibrated.osim', '_adjusted.osim') );
 MODELO = strrep(MODELO, '_calibrated.osim', '_adjusted.osim');
 %% CMC
 import org.opensim.modeling.*;
+
+% model = f_ModelCoordChanges(CD_model,MODELO);
+% model.print(strcat(CD_model,'\',MODELO))
+
 CD_cmc=strcat(CD_model,'\CMC');
 %Coordenadas (todas)
 CoordSet= model.getCoordinateSet();
@@ -508,15 +533,17 @@ LastTime=sto.getLastTime;
 
 % add reserve actuators and residuals
 import org.opensim.modeling.*;
-reserve_actuators = [CD_cmc, '\CMC_Actuators.xml'];
-% reserve_actuators = [CD_model, '\Arm_Flexion_Millard_V2_Actuators.xml'];
-force_set = org.opensim.modeling.ForceSet(reserve_actuators, true);
-force_set.setMemoryOwner(false);  % model will be the owner
-for i = 1:force_set.getSize()-1
-    model.updForceSet().append(force_set.get(i));
+if ~contains(MODELO, '_withReserves')
+    reserve_actuators = [CD_cmc, '\CMC_Actuators.xml'];
+    % reserve_actuators = [CD_model, '\Arm_Flexion_Millard_V2_Actuators.xml'];
+    force_set = org.opensim.modeling.ForceSet(reserve_actuators, true);
+    force_set.setMemoryOwner(false);  % model will be the owner
+    for i = 1:force_set.getSize()-1
+        model.updForceSet().append(force_set.get(i));
+    end
+    MODELO = strrep(MODELO, '.osim', '_withReserves.osim');
+    model.print([CD_model,'\',MODELO]);
 end
-model.print([CD_model,'\',MODELO]);
-   
 %     cmcTool=CMCTool(strcat(CD_cmc,"\CMC_Setup_Roboespas_Flex.xml"));
 cmcTool=CMCTool();
 % Name
