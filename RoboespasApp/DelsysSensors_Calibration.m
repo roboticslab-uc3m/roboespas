@@ -11,6 +11,8 @@
 %  el paso anterior antes de proceder a colocarlos en múltiples
 %  orientaciones, dejándolos 5s estáticos en cada orientación (mínimo 35 orientaciones diferentes)
 
+% Guardar thetaAcc_opt, thetaGyro_opt y offset_gyro para cada sensor
+
 %% Toma de datos
 % delsys = DelsysSensors(1);
 % delsys.SetMovement('calib');
