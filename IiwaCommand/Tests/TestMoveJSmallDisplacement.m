@@ -17,7 +17,7 @@ MoveJASrv_cli.ResultFcn = @(~,msg) disp('MoveJ action server result received');
 q_curr = IiwaCommand.ReadCurrentJointPosition();
 q_goal = q_curr;
 for i=1:7
-    q_goal(i) = q_goal(i) -deg2rad(-10);
+    q_goal(i) = q_goal(i) -deg2rad(10);
 end
 
 %q_goal = [0, 0, 0, 0, 0, 0, 0];

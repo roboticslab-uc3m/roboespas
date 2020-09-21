@@ -35,7 +35,7 @@ IiwaFRIClient::IiwaFRIClient(ros::NodeHandle *nh_)
 	{
 		ROS_ERROR("Failed to read '/iiwa_command/control_step_size' on param server");
 	}
-	//Calculate qinc_max with current GetVelocity
+	//Calculate qinc_max with current qdotmax and current control_step_size
 	for (int j=0; j<7; j++)
 	{
 		qinc_max[j] = qdot_max[j]*control_step_size*M_PI/180.0; //Convert to radians and multiply by control_step_size
@@ -116,14 +116,20 @@ void IiwaFRIClient::command()
 	for (unsigned int i=0; i<7; i++)
 	{
 		diff[i] = abs(q_command[i] - last_q_command[i]);
+
 		if ((diff[i]-qinc_max[i])>1e-10)
 		{
 			unreachable=true;
 		}
 		if (diff[i]>1e-10)
 		{
+			cout << diff[i] << ", ";
 			steady = false;
 		}
+	}
+	if (steady==false)
+	{
+		cout << endl;
 	}
 	//If the robot cannot reach the position or the difference is so little that the robot is considered to be steady
 	if (unreachable == true || steady == true)
@@ -261,5 +267,11 @@ void IiwaFRIClient::publishState()
 	{
 		control_step_size = LBRState_msg.sample_time;
 		nh->setParam("/iiwa_command/control_step_size", control_step_size);
+		//Calculate qinc_max with current qdotmax and current control_step_size
+		for (int j=0; j<7; j++)
+		{
+			qinc_max[j] = qdot_max[j]*control_step_size*M_PI/180.0; //Convert to radians and multiply by control_step_size
+		}
 	}
+
 }

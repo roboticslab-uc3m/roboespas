@@ -1,8 +1,8 @@
 #ifndef IIWA_ST
 #define IIWA_ST
 
-#include <Eigen/Dense>
-#include <Eigen/Geometry>
+#include <eigen3/Eigen/Dense>
+#include <eigen3/Eigen/Geometry>
 #include <iostream>
 #include <math.h>
 

@@ -1,28 +1,48 @@
-- If you haven't created a catkin_workspace, do so
+## Requirements
+### Ubuntu RT patch
+Check your current kernel version
+```uname -a```
+If it is not a RT kernel version (it does not contain the word "RT"), install the RT patch.
+Follow the instructions here: https://stackoverflow.com/questions/51669724/install-rt-linux-patch-for-ubuntu. To choose the RT kernel version, select the next kernel version which has a RT patch here: https://mirrors.edge.kernel.org/pub/linux/kernel/projects/rt/.
+For example, if ```uname -a``` returned *4.15.0-112-generic*, choose RT kernel *4.16.18-rt12*.
+### ROS Kinetic
+http://wiki.ros.org/kinetic/Installation/Ubuntu
+## Configuration
+- Download the repo
 ```
-cd ~
-mkdir your_ws
-cd your_ws
-mkdir src
-```
-- Download the packages in the src folder
-```
-cd ~
 git clone https://github.com/roboticslab-uc3m/roboespas
 ```
-
+- Change to develop if necessary
+```
+git checkout develop
+```
 - Modify .bashrc to use this workspace and set the ROS_IP and ROS_WORKSPACE env variables. Change the IP for your IP (check it using ```ifconfig```).
 ```
 export ROS_WORKSPACE=~/your_ws    #edit for your workspace
 export ROS_MASTER_URI=http://192.168.1.53:11311   #edit for your IP
 export ROS_IP=192.168.1.53  #edit for your IP
 ```
-- Compile the workspace
+- Compile and install FRI-Client-SDK
 ```
 roscd
-cd src/
+cd src/iiwa_fri/FRI-Client-SDK_Cpp/
+mkdir build
+cd build
+cmake ..
+make -j8
+sudo make install
+```
+
+- Fix Eigen dependencies
+
+- Compile the ROS workspace
+```
+roscd
 catkin_make
 ```
+
+
+
 - Re-generate messages (jump to 3 if you have not generate matlab messages before)
 
 1. Delete previously created messages.

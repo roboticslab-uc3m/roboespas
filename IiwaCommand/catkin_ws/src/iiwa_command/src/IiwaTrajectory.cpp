@@ -10,7 +10,7 @@
 #include "trajectory_msgs/JointTrajectoryPoint.h"
 #include "trajectory_msgs/JointTrajectory.h"
 #include "geometry_msgs/Twist.h"
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include <math.h>
 #include <cmath>
 #include "IiwaScrewTheory.cpp"

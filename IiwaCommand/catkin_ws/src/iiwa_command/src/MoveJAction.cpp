@@ -9,7 +9,7 @@
 #include "trajectory_msgs/JointTrajectory.h"
 #include <iiwa_command/MoveJAction.h>
 #include <actionlib/server/simple_action_server.h>
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include <math.h>
 #include <cmath>
 #include <iiwa_msgs/JointPosition.h>

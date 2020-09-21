@@ -7,10 +7,12 @@
 #include "sensor_msgs/JointState.h"
 #include "trajectory_msgs/JointTrajectoryPoint.h"
 #include "trajectory_msgs/JointTrajectory.h"
+#include "iiwa_msgs/JointVelocity.h"
+#include "iiwa_msgs/JointTorque.h"
 #include "geometry_msgs/TwistStamped.h"
 #include <iiwa_command/MoveLAction.h>
 #include <actionlib/server/simple_action_server.h>
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include <math.h>
 #include <cmath>
 #include "IiwaTrajectoryGeneration.cpp"
@@ -56,9 +58,9 @@ class IiwaStatePublisher
         }
         else if (strcmp(robot_mode.c_str(), "iiwa_stack")==0)
         {
-            iiwa_stack_q_sub = n.subscribe("/iiwa/state/JointPosition", 1, callback_q_iiwa_stack);
-            iiwa_stack_qdot_sub = n.subscribe("/iiwa/state/JointVelocity", 1, callback_qdot_iiwa_stack);
-            iiwa_stack_qtorque_sub = n.subscribe("/iiwa/state/JointTorque", 1, callback_qtorque_iiwa_stack);
+            iiwa_stack_q_sub = nh.subscribe("/iiwa/state/JointPosition", 1000, &IiwaStatePublisher::callback_q_iiwa_stack, this);
+            iiwa_stack_qdot_sub = nh.subscribe("/iiwa/state/JointVelocity", 1000, &IiwaStatePublisher::callback_qdot_iiwa_stack, this);
+            iiwa_stack_qtorque_sub = nh.subscribe("/iiwa/state/JointTorque", 1000, &IiwaStatePublisher::callback_qtorque_iiwa_stack, this);
 
         }
         else
@@ -91,13 +93,13 @@ class IiwaStatePublisher
     {
         //Update velocity
         iiwa_stack_joint_state.velocity.clear();
-        iiwa_stack_joint_state.velocity.push_back(q_msg.velocity.a1);
-        iiwa_stack_joint_state.velocity.push_back(q_msg.velocity.a2);
-        iiwa_stack_joint_state.velocity.push_back(q_msg.velocity.a3);
-        iiwa_stack_joint_state.velocity.push_back(q_msg.velocity.a4);
-        iiwa_stack_joint_state.velocity.push_back(q_msg.velocity.a5);
-        iiwa_stack_joint_state.velocity.push_back(q_msg.velocity.a6);
-        iiwa_stack_joint_state.velocity.push_back(q_msg.velocity.a7);
+        iiwa_stack_joint_state.velocity.push_back(qdot_msg.velocity.a1);
+        iiwa_stack_joint_state.velocity.push_back(qdot_msg.velocity.a2);
+        iiwa_stack_joint_state.velocity.push_back(qdot_msg.velocity.a3);
+        iiwa_stack_joint_state.velocity.push_back(qdot_msg.velocity.a4);
+        iiwa_stack_joint_state.velocity.push_back(qdot_msg.velocity.a5);
+        iiwa_stack_joint_state.velocity.push_back(qdot_msg.velocity.a6);
+        iiwa_stack_joint_state.velocity.push_back(qdot_msg.velocity.a7);
         //Do not update stamp bc stamp provided by iiwa_stack is wrong
         //Publish
         iiwa_state_pub.publish(iiwa_stack_joint_state);
@@ -106,13 +108,13 @@ class IiwaStatePublisher
     {
         //Update torque
         iiwa_stack_joint_state.effort.clear();
-        iiwa_stack_joint_state.effort.push_back(q_msg.torque.a1);
-        iiwa_stack_joint_state.effort.push_back(q_msg.torque.a2);
-        iiwa_stack_joint_state.effort.push_back(q_msg.torque.a3);
-        iiwa_stack_joint_state.effort.push_back(q_msg.torque.a4);
-        iiwa_stack_joint_state.effort.push_back(q_msg.torque.a5);
-        iiwa_stack_joint_state.effort.push_back(q_msg.torque.a6);
-        iiwa_stack_joint_state.effort.push_back(q_msg.torque.a7);
+        iiwa_stack_joint_state.effort.push_back(qtorque_msg.torque.a1);
+        iiwa_stack_joint_state.effort.push_back(qtorque_msg.torque.a2);
+        iiwa_stack_joint_state.effort.push_back(qtorque_msg.torque.a3);
+        iiwa_stack_joint_state.effort.push_back(qtorque_msg.torque.a4);
+        iiwa_stack_joint_state.effort.push_back(qtorque_msg.torque.a5);
+        iiwa_stack_joint_state.effort.push_back(qtorque_msg.torque.a6);
+        iiwa_stack_joint_state.effort.push_back(qtorque_msg.torque.a7);
         //Update stamp
         iiwa_stack_joint_state.header = qtorque_msg.header;
         //Publish

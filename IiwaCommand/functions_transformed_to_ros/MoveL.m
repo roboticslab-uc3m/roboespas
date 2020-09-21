@@ -93,5 +93,5 @@ IiwaPlotter.joint_positions({traj_straight, traj_output}, ['b', 'g']);
 IiwaPlotter.joint_position_error(traj_straight, traj_output, 'r');
 
 IiwaPlotter.joint_velocities({traj_straight, traj_output}, ['b', 'g']);
-IiwaPlotter.cartesian_frames({traj_commanded, traj_output}, ['b', 'g'], 30);
+%IiwaPlotter.cartesian_frames({traj_commanded, traj_output}, ['b', 'g'], 30);
 axis equal

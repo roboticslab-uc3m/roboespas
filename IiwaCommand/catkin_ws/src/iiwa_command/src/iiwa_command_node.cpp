@@ -9,10 +9,11 @@
 #include "trajectory_msgs/JointTrajectory.h"
 #include <iiwa_command/MoveTorqueAction.h>
 #include <actionlib/server/simple_action_server.h>
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include <math.h>
 #include "MoveTorqueAction.cpp"
 #include "MoveJAction.cpp"
+#include "MoveJTrajectoryAction.cpp"
 #include "MoveLAction.cpp"
 #include "MoveLTrajectoryAction.cpp"
 #include "IiwaScrewTheory.cpp"
@@ -47,10 +48,11 @@ int main(int argc, char **argv)
 	}
 	Eigen::VectorXd qdotMax = Eigen::Map<Eigen::Matrix<double, 1, 7>> (qdotmax.data());
 	qdotMax = qdotMax*M_PI/180;
-    IiwaScrewTheory::SetParameters(IiwaTwists, Hst0, qdotMax);
-    MoveTorqueAction movetorque(ros::this_node::getName());
-    MoveJAction movej("MoveJ");
-    MoveLAction movel("MoveL");
+  IiwaScrewTheory::SetParameters(IiwaTwists, Hst0, qdotMax);
+  MoveTorqueAction movetorque(ros::this_node::getName());
+  MoveJAction movej("MoveJ");
+  MoveLAction movel("MoveL");
+	MoveJTrajectoryAction movejtrajectory("MoveJTrajectory");
 	MoveLTrajectoryAction moveltrajectory("MoveLTrajectory");
 	IiwaStatePublisher iiwastate("IiwaStatePublisher");
 

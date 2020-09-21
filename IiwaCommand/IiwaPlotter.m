@@ -7,6 +7,7 @@ classdef IiwaPlotter < handle
         ColorOthers='m'
         ColorErrors='r'
         TimePlot=0.05;
+        plot_points=1;
     end
     
     methods
@@ -52,10 +53,13 @@ classdef IiwaPlotter < handle
                 subplot(IiwaRobot.n_joints,1,j);
                 for ntraj=1:size(trajectories,2)
                     if (~isempty(trajectories{ntraj}.q))
-                        plot(trajectories{ntraj}.t, trajectories{ntraj}.q(:,j), colors(ntraj));
+                        plot(trajectories{ntraj}.t, rad2deg(trajectories{ntraj}.q(:,j)), colors(ntraj));
                         hold on;
-                        plot(trajectories{ntraj}.t, trajectories{ntraj}.q(:,j), [colors(ntraj), '.']);
-                        leg=[leg trajectories{ntraj}.name trajectories{ntraj}.name];
+                        leg=[leg trajectories{ntraj}.name];
+                        if (IiwaPlotter.plot_points)
+                            plot(trajectories{ntraj}.t, rad2deg(trajectories{ntraj}.q(:,j)), [colors(ntraj), '.']);
+                            leg=[leg trajectories{ntraj}.name];
+                        end
                     end
                 end
                 if j == 1
@@ -88,6 +92,33 @@ classdef IiwaPlotter < handle
                 if j == 1
                     legend(leg);
                     title('Joint velocity (rad/s)')
+                end
+                if j == IiwaRobot.n_joints
+                    xlabel('time (s)');
+                end
+                s = sprintf('j%d',j);
+                ylabel(s);
+                grid on;
+            end
+        end
+        function joint_accelerations(trajectories, colors)
+            if (~iscell(trajectories))
+                trajectories={trajectories};
+            end
+            figure;
+            leg={};
+            for j = 1:IiwaRobot.n_joints
+                subplot(IiwaRobot.n_joints,1,j);
+                for ntraj=1:size(trajectories,2)
+                    if (~isempty(trajectories{ntraj}.qdotdot))
+                        plot(trajectories{ntraj}.t, trajectories{ntraj}.qdotdot(:,j), [colors(ntraj)]);
+                        hold on;
+                        leg=[leg trajectories{ntraj}.name];
+                    end
+                end
+                if j == 1
+                    legend(leg);
+                    title('Joint acceleration (rad/s2)')
                 end
                 if j == IiwaRobot.n_joints
                     xlabel('time (s)');
@@ -243,6 +274,27 @@ classdef IiwaPlotter < handle
             end
         end
         %% PLOT ERRORS
+        function [delays, trajectory_out] = fix_delay_q(traj_baseline, trajectory)
+             %Fix delay
+            ts_baseline = timeseries(traj_baseline.q, traj_baseline.t);
+            ts_traj = timeseries(trajectory.q, trajectory.t);
+            mean(traj_baseline.t(2:end)-traj_baseline.t(1:end-1))
+            [ts_baseline, ts_traj] =synchronize(ts_baseline, ts_traj, 'Uniform', 'Interval', mean(traj_baseline.t(2:end)-traj_baseline.t(1:end-1)));
+            
+            delays = finddelay(ts_baseline.Data, ts_traj.Data);
+            elem_delete = min(delays);
+            trajectory_out = IiwaTrajectory(trajectory.name, trajectory.npoints-elem_delete);
+            for j=1:IiwaRobot.n_joints
+                d=delays(j);
+                if (d~=0)
+                    trajectory_out.q(1:trajectory.npoints-d,j) = trajectory.q(1+d:end, j);
+                    trajectory_out.q(trajectory.npoints-d+1:end,j) = ones(d-elem_delete,1)*trajectory.q(end-d,j);
+                else
+                    trajectory_out.q(:,j)=trajectory.q(:,j);
+                end
+            end
+            trajectory_out.t=trajectory.t(1:end-elem_delete);
+        end
         function joint_position_error(traj_baseline, trajectories, colors)
             if (~iscell(trajectories))
                 trajectories={trajectories};
@@ -252,6 +304,7 @@ classdef IiwaPlotter < handle
                 leg=cell(1, size(trajectories,2));
                 ts_baseline = timeseries(traj_baseline.q, traj_baseline.t);
                 for ntraj = 1:size(trajectories,2)
+                    [delays, trajectories{ntraj}]=IiwaPlotter.fix_delay_q(traj_baseline, trajectories{ntraj});
                     ts_trajectory = timeseries(trajectories{ntraj}.q, trajectories{ntraj}.t);
                     [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Intersection');
                     if (size(ts_baseline_used.Time,1)<100)
@@ -265,6 +318,7 @@ classdef IiwaPlotter < handle
                         hold on;
                         plot(ts_error.Time, ts_error.Data(:,j), [colors(ntraj), '.']);
                         leg{ntraj*2} = trajectories{ntraj}.name;
+                        legend(['d = ', num2str(delays(j)*(traj_baseline.t(2)-traj_baseline.t(1)))]);
                         if j == 1
                             title('Joint position error (rad)')
                         end
@@ -276,7 +330,6 @@ classdef IiwaPlotter < handle
                         grid on;
                     end
                 end
-                legend(leg);
                 grid on;
             end
         end
