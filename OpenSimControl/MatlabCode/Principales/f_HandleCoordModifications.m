@@ -8,11 +8,11 @@ handle(:,2) = Datos(:,3);
 handle(:,3) = Datos(:,1);
 
 % Posición inicial del marcador Handle en OpenSim
-model.buildSystem;
-model.initializeState;
+model.initSystem;
 model.getMarkerSet().get(0).changeFramePreserveLocation(model.getWorkingState, model.getGround);
 loc = model.getMarkerSet().get(0).get_location;
 handleOpensim = [loc.get(0), loc.get(1), loc.get(2)];
+model.invalidateSystem();
 
 % Diferencia entre posición inicial de la trayectoria y handleOpensim
 diff = handleOpensim - handle(1,:);
