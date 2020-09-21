@@ -43,7 +43,7 @@ traj_theory.q = q_array';
 traj_theory.t = t_array';
 
 smoothing_max = 1e-10;
-qdotdot_max = 10;
+qdotdot_max = 5;
 nSegments=100;
 traj_spline = IiwaTrajectoryGeneration.BoundedSplineTrajectory(traj_theory, smoothing_max, nSegments);
 while (max(max(traj_spline.qdotdot)) > qdotdot_max)

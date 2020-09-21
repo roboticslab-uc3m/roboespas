@@ -6,7 +6,6 @@ classdef IiwaCommand < handle
         plot_feedback=0;
         smoothing_minimum = 1e-8;
         qdotdot_max = 1;
-        segments_per_deg_spline = 1;
     end
     
     methods (Static)
@@ -77,8 +76,7 @@ classdef IiwaCommand < handle
             x = linspace(0,1,n_points);
             traj_straight.q = (q_curr + x.*q_inc)';
             traj_straight.t = (0:control_step_size:t_total)';
-            segments = ceil(abs(IiwaCommand.segments_per_deg_spline*rad2deg(max(q_inc))));
-            traj_spline = IiwaTrajectoryGeneration.BoundedSplineTrajectory(traj_straight, IiwaCommand.smoothing_minimum, segments);
+            traj_spline = IiwaTrajectoryGeneration.BoundedSplineTrajectory(traj_straight, IiwaCommand.smoothing_minimum);
             [traj_comm, traj_output] = IiwaCommand.MoveJTrajectory(traj_spline);
         end
         function [traj_comm, traj_output] = MoveJTrajectory(traj_sent)

@@ -2,8 +2,8 @@ classdef IiwaTrajectoryGeneration
     %UNTITLED Summary of this class goes here
     %   Detailed explanation goes here
     
-    properties
-        
+    properties (Constant)
+        segments_per_deg_spline = 1;
     end
     methods (Static, Access = 'public')
         function traj_output = TrapezoidalVelocityProfileTrajectory(q_ini, x_goal, control_step_size, velocity, name)
@@ -146,6 +146,8 @@ classdef IiwaTrajectoryGeneration
             end
             t = traj_in.t';
             q = traj_in.q';
+            q_inc_max = max(traj_in.q) - min(traj_in.q);
+            nSegments = ceil(IiwaTrajectoryGeneration.segments_per_deg_spline*rad2deg(max(abs(q_inc_max))));
             nKnots=nSegments+1;
             tKnot=linspace(t(1), t(end), nKnots);    
 
