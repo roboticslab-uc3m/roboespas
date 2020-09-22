@@ -6,6 +6,16 @@ classdef IiwaTrajectoryGeneration
         segments_per_deg_spline = 1;
     end
     methods (Static, Access = 'public')
+        function traj_output = FillVelocityAndAcceleration(traj_input)
+            traj_output = traj_input;
+            css = mean(traj_input.t(2:end)-traj_input.t(1:end-1));
+            qdot_med = (traj_input.q(2:end,:)-traj_input.q(1:end-1,:))./css; %Mean velocities at css/2, css/2+css, css/2 + css*2, ...
+            qdot = (qdot_med(1:end-1,:)+qdot_med(2:end,:))./2;
+            traj_output.qdot = [zeros(1, IiwaRobot.n_joints); qdot; zeros(1, IiwaRobot.n_joints)];
+            qdotdot_med = (traj_output.qdot(2:end,:)-traj_output.qdot(1:end-1,:))./css; %Mean velocities at css/2, css/2+css, css/2 + css*2, ...
+            qdotdot = (qdotdot_med(1:end-1,:)+qdotdot_med(2:end,:))./2;
+            traj_output.qdotdot = [zeros(1, IiwaRobot.n_joints); qdotdot; zeros(1, IiwaRobot.n_joints)];
+        end
         function traj_output = TrapezoidalVelocityProfileTrajectory(q_ini, x_goal, control_step_size, velocity, name)
             %velocity is a number from 0 to 1 expressing the percentage of
             %the maximum qdot used in the whole trajectory

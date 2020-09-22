@@ -23,6 +23,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## System dependencies are found with CMake's conventions
 #find_package(Boost REQUIRED COMPONENTS system)
 find_package(Eigen3 REQUIRED NO_MODULE)
+find_package(FRIClient REQUIRED)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -159,9 +160,12 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
+
 add_executable(msg_transform_helper src/msg_transform_helper_node.cpp)
 add_executable(iiwa_command src/iiwa_command_node.cpp)
+add_executable(iiwa_command_fri src/iiwa_command_fri_node.cpp src/IiwaCommandFriNode.cpp)
 add_dependencies(iiwa_command ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(iiwa_command_fri ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(msg_transform_helper ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Rename C++ executable without prefix
@@ -180,6 +184,8 @@ add_dependencies(msg_transform_helper ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catk
 # )
 target_link_libraries(msg_transform_helper ${catkin_LIBRARIES})
 target_link_libraries(iiwa_command ${catkin_LIBRARIES})
+target_link_libraries(iiwa_command_fri ${catkin_LIBRARIES} ROBOTICSLAB::FRIClient)
+
 
 #############
 ## Install ##

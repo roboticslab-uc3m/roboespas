@@ -1,4 +1,4 @@
-- Change name IiwaCommandAction to MoveTorqueAction (or similar)
 - MoveJ (position control) working for iiwa_fri
+- MoveJTrajectory (position control) working for iiwa_fri
 - MoveL (position control) working for iiwa_fri
 - MoveLTrajectory (position control) working for iiwa_fri

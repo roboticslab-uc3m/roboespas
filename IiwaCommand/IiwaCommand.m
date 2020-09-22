@@ -37,8 +37,7 @@ classdef IiwaCommand < handle
             end
             q = q_sub.receive.Position;
         end
-        function [traj_comm, traj_output] = MoveJ(q)
-      
+        function [traj_comm, traj_output] = MoveJ(q)  
             [MoveJASrv_cli, MoveJASrv_msg] = rosactionclient('MoveJ');
             MoveJASrv_cli.ActivationFcn = @(~) disp('MoveJ action server active');
             MoveJASrv_cli.ResultFcn = @(~,msg) disp('MoveJ action server result received');
@@ -93,7 +92,7 @@ classdef IiwaCommand < handle
             resultMsg = sendGoalAndWait(MoveJTrajectoryASrv_cli, MoveJTrajectoryASrv_msg);
             traj_comm = IiwaTrajectory('commanded', resultMsg.TrajectoryCommanded);
             traj_output = IiwaTrajectory('output', resultMsg.TrajectoryRead);
-           
+            traj_output = IiwaTrajectoryGeneration.FillVelocityAndAcceleration(traj_output);
         end
     end
 end

@@ -23,7 +23,7 @@ q_goal = q_curr+q_inc;
 
 % Build trajectory given control_step_size and qdot_max
 t_needed = q_inc./qdot_max;
-t_total = max(t_needed)
+t_total = max(t_needed);
 t_total = ceil(t_total/control_step_size)*control_step_size;
 t_array = 0:control_step_size:t_total;
 
@@ -32,9 +32,12 @@ x = linspace(0,1,n_points);
 q_array = q_curr + x.*q_inc;
 q_array(:,end) = q_goal;
 
-%Mirror
-q_array(:,end+1:end+n_points) = fliplr(q_array);
-t_array(:,end+1:end+n_points) = t_array(end)+control_step_size:control_step_size:t_total*2+control_step_size;
+%Add flat area
+q_array(:,end+1:end+ceil(n_points/3)) = ones(1, ceil(n_points/3)).*q_array(:,end);
+t_array(:,end+1:end+ceil(n_points/3)) = t_array(end)+control_step_size:control_step_size:t_array(end)+t_array(end)/3+control_step_size;
+%Mirror beginning
+q_array(:,end+1:end+length(q_array)) = fliplr(q_array);
+t_array(:,end+1:end+length(t_array)) = t_array(end)+control_step_size:control_step_size:t_array(end)*2+control_step_size;
 n_points = size(t_array, 2);
 
 %% Build action server and message to send
@@ -52,21 +55,15 @@ while (max(max(traj_spline.qdotdot)) > qdotdot_max)
 end
 smoothing_max
 %%
-close all
-% IiwaPlotter.joint_positions({traj_theory, traj_spline}, ['b', 'r']);
-% IiwaPlotter.joint_velocities({traj_theory, traj_spline}, ['b', 'r']);
-% IiwaPlotter.joint_accelerations({traj_theory, traj_spline}, ['b', 'r']);
-
-%%
 [traj_comm, traj_output] = IiwaCommand.MoveJTrajectory(traj_spline);
 
 %%
 close all
-if (plot_result)
-    %IiwaPlotter.joint_positions({traj_comm, traj_output, traj_spline, traj_theory}, ['b', 'r', 'g', 'k']);
-    
-    IiwaPlotter.joint_positions({traj_theory, traj_comm, traj_output}, ['g', 'b', 'r']);
-    IiwaPlotter.joint_position_error(traj_comm, traj_output, 'b');
+if (plot_result)    
+    IiwaPlotter.joint_positions({traj_theory, traj_spline, traj_output}, ['m', 'b', 'r']);
+    IiwaPlotter.joint_velocities({traj_spline, traj_output}, ['b', 'r']);
+    IiwaPlotter.joint_accelerations({traj_spline, traj_output}, ['b', 'r']);
+    IiwaPlotter.joint_position_error(traj_spline, traj_output, 'b');
 end
 
 

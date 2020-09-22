@@ -12,10 +12,10 @@ using namespace KUKA::FRI;
 IiwaFRIClient::IiwaFRIClient(ros::NodeHandle *nh_)
 {
 	nh = nh_;
-	LBRState_pub = nh->advertise<iiwa_fri::LBRStateMsg>("/iiwa_fri/LBRState", 1);
-	joint_state_pub = nh->advertise<sensor_msgs::JointState>("/iiwa_fri/joint_state", 1);
-	info_pub = nh->advertise<std_msgs::String>("/iiwa_fri/info", 1);
-	joint_command_sub = nh->subscribe("/iiwa_fri/joint_command", 1, &IiwaFRIClient::JointCommandCallback, this);
+	LBRState_pub = nh->advertise<iiwa_fri::LBRStateMsg>("/iiwa_fri/LBRState", 1000);
+	joint_state_pub = nh->advertise<sensor_msgs::JointState>("/iiwa_fri/joint_state", 1000);
+	info_pub = nh->advertise<std_msgs::String>("/iiwa_fri/info", 1000);
+	joint_command_sub = nh->subscribe("/iiwa_fri/joint_command", 1000, &IiwaFRIClient::JointCommandCallback, this);
 
 	ROS_INFO("IiwaFRIClient initialized\n");
 

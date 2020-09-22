@@ -7,7 +7,7 @@ classdef IiwaPlotter < handle
         ColorOthers='m'
         ColorErrors='r'
         TimePlot=0.05;
-        plot_points=1;
+        plot_points=0;
     end
     
     methods
