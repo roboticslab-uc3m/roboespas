@@ -79,7 +79,7 @@ classdef IiwaCommand < handle
             [traj_comm, traj_output] = IiwaCommand.MoveJTrajectory(traj_spline);
         end
         function [traj_comm, traj_output] = MoveJTrajectory(traj_sent)
-            [MoveJTrajectoryASrv_cli, MoveJTrajectoryASrv_msg] = rosactionclient('MoveJTrajectory');
+            [MoveJTrajectoryASrv_cli, MoveJTrajectoryASrv_msg] = rosactionclient('IiwaCommandFriNode'); %rosactionclient('MoveJTrajectory');
             MoveJTrajectoryASrv_cli.ActivationFcn = @(~) disp('MoveJTrajectory action server active');
             MoveJTrajectoryASrv_cli.ResultFcn = @(~,res) disp('MoveJTrajectory result received');
             if (IiwaCommand.plot_feedback)
@@ -91,6 +91,7 @@ classdef IiwaCommand < handle
             MoveJTrajectoryASrv_msg.TrajectoryDesired = IiwaMsgTransformer.toJointTraj(traj_sent);
             resultMsg = sendGoalAndWait(MoveJTrajectoryASrv_cli, MoveJTrajectoryASrv_msg);
             traj_comm = IiwaTrajectory('commanded', resultMsg.TrajectoryCommanded);
+            traj_comm = IiwaTrajectoryGeneration.FillVelocityAndAcceleration(traj_comm);
             traj_output = IiwaTrajectory('output', resultMsg.TrajectoryRead);
             traj_output = IiwaTrajectoryGeneration.FillVelocityAndAcceleration(traj_output);
         end

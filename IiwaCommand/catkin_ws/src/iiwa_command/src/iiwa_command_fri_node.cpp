@@ -24,20 +24,17 @@ int main(int argc, char **argv)
 		//INIT NODE
 		ros::init(argc,argv, "iiwa_command_fri");
     ROS_INFO("Node registered as %s\n", ros::this_node::getName().c_str());
-    ros::NodeHandle nh;
 
 		//START FRI Client
 		int port = DEFAULT_PORTID;
 		char* hostname = NULL;
-		IiwaCommandFriNode lbrClient(ros::this_node::getName());
+		IiwaCommandFriNode lbrClient("IiwaCommandFriNode");
 		UdpConnection connection;
 		ClientApplication app(connection, lbrClient);
 		app.connect(port, hostname);
 
-
-		//START actionservers and publishers
-		IiwaCommandFriNode iiwacommandfrinode("IiwaCommandFriNode");
-
+		ros::AsyncSpinner spinner(8);
+		spinner.start();
 		bool success = true;
 		while (ros::ok())
 		{
@@ -46,8 +43,8 @@ int main(int argc, char **argv)
 			{
 				break;
 			}
-			ros::spinOnce();
 		}
+		ros::waitForShutdown();
 		app.disconnect();
 		return 0;
 }

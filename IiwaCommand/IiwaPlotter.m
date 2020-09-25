@@ -7,7 +7,9 @@ classdef IiwaPlotter < handle
         ColorOthers='m'
         ColorErrors='r'
         TimePlot=0.05;
-        plot_points=0;
+        plot_points=1;
+        plot_limits_qdot=1;
+        plot_limits_q=0; %Not implemented
     end
     
     methods
@@ -84,9 +86,13 @@ classdef IiwaPlotter < handle
                 subplot(IiwaRobot.n_joints,1,j);
                 for ntraj=1:size(trajectories,2)
                     if (~isempty(trajectories{ntraj}.qdot))
-                        plot(trajectories{ntraj}.t, trajectories{ntraj}.qdot(:,j), [colors(ntraj)]);
+                        plot(trajectories{ntraj}.t, rad2deg(trajectories{ntraj}.qdot(:,j)), [colors(ntraj)]);
                         hold on;
                         leg=[leg trajectories{ntraj}.name];
+                        if (IiwaPlotter.plot_points)
+                            plot(trajectories{ntraj}.t, rad2deg(trajectories{ntraj}.qdot(:,j)), [colors(ntraj), '.']);
+                            leg=[leg trajectories{ntraj}.name];
+                        end
                     end
                 end
                 if j == 1

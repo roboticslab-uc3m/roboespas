@@ -146,7 +146,7 @@ void IiwaFRIClient::command()
 		}
     	ss << "qinc_max: " << qinc_max[0] << ", " << qinc_max[1] << ", " << qinc_max[2] << ", " << qinc_max[3] << ", " << qinc_max[4] << ", " << qinc_max[5] << ", " << qinc_max[6];
     	msg.data = ss.str();
-		info_pub.publish(msg);
+			info_pub.publish(msg);
 	}
 	else
 	{
@@ -160,7 +160,7 @@ void IiwaFRIClient::command()
 	}
 	robotCommand().setJointPosition(last_q_command);
 
-   	// In command(), the joint angle values have to be set.
+  // In command(), the joint angle values have to be set.
    	this->publishState();
 }
 
