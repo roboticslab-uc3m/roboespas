@@ -4,10 +4,10 @@ init_ros;
 ptree=rosparam;
 % Create actionlib to send a trajectory to gazebo iiwa robot, and some
 % services to create and read the joint_trajectory messages faster
-[iiwaCommandASrv_cli, iiwaCommandASrv_msg] = rosactionclient('iiwa_command');
-iiwaCommandASrv_cli.ActivationFcn = @(~) disp('IiwaCommand action server active');
+[iiwaCommandASrv_cli, iiwaCommandASrv_msg] = rosactionclient('MoveTorque');
+iiwaCommandASrv_cli.ActivationFcn = @(~) disp('MoveTorque action server active');
 iiwaCommandASrv_cli.FeedbackFcn = @(~,msg) (1); %Clean feedback function so it doesn't print the result every time it receives something
-iiwaCommandASrv_cli.ResultFcn = @(~,msg) disp('IiwaCommand action server result received');
+iiwaCommandASrv_cli.ResultFcn = @(~,msg) disp('MoveTorque action server result received');
 
 [mdlConfig_cli, mdlConfig_msg] = rossvcclient('gazebo/set_model_configuration');
 plotter=IiwaPlotter();

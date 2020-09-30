@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 	Eigen::VectorXd qdotMax = Eigen::Map<Eigen::Matrix<double, 1, 7>> (qdotmax.data());
 	qdotMax = qdotMax*M_PI/180;
   IiwaScrewTheory::SetParameters(IiwaTwists, Hst0, qdotMax);
-  MoveTorqueAction movetorque(ros::this_node::getName());
+  MoveTorqueAction movetorque("MoveTorque");
   MoveJAction movej("MoveJ");
   MoveLAction movel("MoveL");
 	MoveJTrajectoryAction movejtrajectory("MoveJTrajectory");

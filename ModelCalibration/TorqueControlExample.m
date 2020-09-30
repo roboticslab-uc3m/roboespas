@@ -32,39 +32,39 @@ tt = 0:control_step_size:tt_final;
 traj_des = IiwaTrajectory(lbr, 'desired', tWaypoints_mod, qWaypoints_mod, tt);
 
 %% Present first and last joint positions before adding home position
-%First position
-lbr.Bodies{1,2}.Joint.HomePosition = qWaypoints(1,1);
-lbr.Bodies{1,3}.Joint.HomePosition = qWaypoints(1,2);
-lbr.Bodies{1,4}.Joint.HomePosition = qWaypoints(1,3);
-lbr.Bodies{1,5}.Joint.HomePosition = qWaypoints(1,4);
-lbr.Bodies{1,6}.Joint.HomePosition = qWaypoints(1,5);
-lbr.Bodies{1,7}.Joint.HomePosition = qWaypoints(1,6);
-lbr.Bodies{1,8}.Joint.HomePosition = qWaypoints(1,7);
-figure; hold on;
-show(lbr);
-%Last position
-lbr.Bodies{1,2}.Joint.HomePosition = qWaypoints(end,1);
-lbr.Bodies{1,3}.Joint.HomePosition = qWaypoints(end,2);
-lbr.Bodies{1,4}.Joint.HomePosition = qWaypoints(end,3);
-lbr.Bodies{1,5}.Joint.HomePosition = qWaypoints(end,4);
-lbr.Bodies{1,6}.Joint.HomePosition = qWaypoints(end,5);
-lbr.Bodies{1,7}.Joint.HomePosition = qWaypoints(end,6);
-lbr.Bodies{1,8}.Joint.HomePosition = qWaypoints(end,7);
-show(lbr);
-
-view([150 12]);
-axis([-0.8 0.8 -0.8 0.8 0 1.35]);
-camva(9);
-daspect([1 1 1]);
-
-%Correct home position
-lbr.Bodies{1,2}.Joint.HomePosition = qWaypoints_mod(1,1);
-lbr.Bodies{1,3}.Joint.HomePosition = qWaypoints_mod(1,2);
-lbr.Bodies{1,4}.Joint.HomePosition = qWaypoints_mod(1,3);
-lbr.Bodies{1,5}.Joint.HomePosition = qWaypoints_mod(1,4);
-lbr.Bodies{1,6}.Joint.HomePosition = qWaypoints_mod(1,5);
-lbr.Bodies{1,7}.Joint.HomePosition = qWaypoints_mod(1,6);
-lbr.Bodies{1,8}.Joint.HomePosition = qWaypoints_mod(1,7);
+% %First position
+% lbr.Bodies{1,2}.Joint.HomePosition = qWaypoints(1,1);
+% lbr.Bodies{1,3}.Joint.HomePosition = qWaypoints(1,2);
+% lbr.Bodies{1,4}.Joint.HomePosition = qWaypoints(1,3);
+% lbr.Bodies{1,5}.Joint.HomePosition = qWaypoints(1,4);
+% lbr.Bodies{1,6}.Joint.HomePosition = qWaypoints(1,5);
+% lbr.Bodies{1,7}.Joint.HomePosition = qWaypoints(1,6);
+% lbr.Bodies{1,8}.Joint.HomePosition = qWaypoints(1,7);
+% figure; hold on;
+% show(lbr);
+% %Last position
+% lbr.Bodies{1,2}.Joint.HomePosition = qWaypoints(end,1);
+% lbr.Bodies{1,3}.Joint.HomePosition = qWaypoints(end,2);
+% lbr.Bodies{1,4}.Joint.HomePosition = qWaypoints(end,3);
+% lbr.Bodies{1,5}.Joint.HomePosition = qWaypoints(end,4);
+% lbr.Bodies{1,6}.Joint.HomePosition = qWaypoints(end,5);
+% lbr.Bodies{1,7}.Joint.HomePosition = qWaypoints(end,6);
+% lbr.Bodies{1,8}.Joint.HomePosition = qWaypoints(end,7);
+% show(lbr);
+% 
+% view([150 12]);
+% axis([-0.8 0.8 -0.8 0.8 0 1.35]);
+% camva(9);
+% daspect([1 1 1]);
+% 
+% %Correct home position
+% lbr.Bodies{1,2}.Joint.HomePosition = qWaypoints_mod(1,1);
+% lbr.Bodies{1,3}.Joint.HomePosition = qWaypoints_mod(1,2);
+% lbr.Bodies{1,4}.Joint.HomePosition = qWaypoints_mod(1,3);
+% lbr.Bodies{1,5}.Joint.HomePosition = qWaypoints_mod(1,4);
+% lbr.Bodies{1,6}.Joint.HomePosition = qWaypoints_mod(1,5);
+% lbr.Bodies{1,7}.Joint.HomePosition = qWaypoints_mod(1,6);
+% lbr.Bodies{1,8}.Joint.HomePosition = qWaypoints_mod(1,7);
 
 %% Reset LBR to Home Configuration in Gazebo
 %Fill mdl config msg
