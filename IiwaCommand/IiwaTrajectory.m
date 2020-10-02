@@ -66,6 +66,33 @@ classdef IiwaTrajectory
                 obj.x(i,:)=IiwaScrewTheory.ForwardKinematics(obj.q(i,:));
             end
         end
+        function obj = CompleteEffort(obj, modeID)
+            if (strcmp(modeID,'st')==1)
+               	for i = 1:size(obj.q,1)
+                    tic
+                    obj.effort(i,:) = IiwaScrewTheory.InverseDynamics(obj.q(i,:), obj.qdot(i,:), obj.qdotdot(i,:));
+                    asdf = [obj.q(i,:); obj.qdot(i,:); obj.qdotdot(i,:); obj.effort(i,:)]
+                    toc
+                end
+            elseif (strcmp(modeID,'matlab')==1)
+                for i = 1:size(obj.q,1)
+                    obj.effort(i,:) = inverseDynamics(obj.lbr, obj.q(i,:), obj.qdot(i,:), obj.qdotdot(i,:));
+                    asdf = [obj.q(i,:); obj.qdot(i,:); obj.qdotdot(i,:); obj.effort(i,:)]
+                end
+            end
+        end
+        function obj = CompleteJoint(obj, qini)
+            obj.q(1,:)=qini;
+            for i=1:size(obj.x,1)-1
+                obj.xdot(i,:) = IiwaScrewTheory.screwA2B_A(obj.x(i,:), obj.x(i+1,:))/(obj.t(i+1)-obj.t(i));
+                xdot_S = IiwaScrewTheory.tfscrew_A2S(obj.xdot(i,:), obj.x(i,:));
+                obj.qdot(i,:) = IiwaScrewTheory.IDK_point(obj.q(i,:), xdot_S);
+                obj.q(i+1,:) = obj.q(i,:) + obj.qdot(i,:)*(obj.t(i+1)-obj.t(i));
+            end
+            obj.xdot(size(obj.x,1),:)=zeros(6,1);
+            obj.qdot(size(obj.x,1),:)=zeros(size(IiwaRobot.Twist,2),1);
+            obj.CompleteCartesian();
+        end
         function obj = wayPointsConstructor(obj, lbr, name, tWaypoints, qWaypoints, t)
             %Creates a trajectory that passes through some joint positions
             %at certain timestamps
@@ -103,11 +130,8 @@ classdef IiwaTrajectory
             obj.qdotdot = ppval(pp_acc, obj.t)';
             obj.name=name;
             obj.effort = zeros(size(obj.q,1),7);
-           
-            for i = 1:size(obj.q,1)
-                obj.effort(i,:) = inverseDynamics(lbr, obj.q(i,:), obj.qdot(i,:), obj.qdotdot(i,:));
-            end
             obj.lbr=lbr;
+            obj.npoints = length(obj.t);
         end
     end
     methods (Static)

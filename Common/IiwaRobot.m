@@ -27,9 +27,9 @@ classdef IiwaRobot
             IiwaRobot.IT5 IiwaRobot.IT6 IiwaRobot.IT7; IiwaRobot.mass];
     end
     properties (Constant, Access='private')
-        CM1 = [0; -0.03; 0.2775]; 
-        CM2 = [0; 0.042; 0.419]; 
-        CM3 = [0; 0.03; 0.6945];
+        CM1 = [0; -0.03; 0.2775];  %[-0.1, 0, 0.7] %[0 -0.03 0.12]
+        CM2 = [0; 0.042; 0.419]; %[0, 0.059, 0.042]
+        CM3 = [0; 0.03; 0.6945]; % 
         CM4 = [0; -0.034; 0.847]; 
         CM5 = [0; -0.021; 1];
         CM6 = [0; 0.001; 1.18]; 

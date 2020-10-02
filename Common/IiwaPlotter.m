@@ -7,7 +7,7 @@ classdef IiwaPlotter < handle
         ColorOthers='m'
         ColorErrors='r'
         TimePlot=0.05;
-        plot_points=1;
+        plot_points=0;
         plot_limits_qdot=1;
         plot_limits_q=0; %Not implemented
     end
@@ -38,9 +38,9 @@ classdef IiwaPlotter < handle
                     title('Time stamp difference (second)')
                 end
                 if j == IiwaRobot.n_joints
-                    xlabel('time (s)');
+                    xlabel('Time (s)');
                 end
-                s = sprintf('j%d',j);
+                s = sprintf('J%d',j);
                 ylabel(s);
                 grid on;
             end
@@ -66,12 +66,12 @@ classdef IiwaPlotter < handle
                 end
                 if j == 1
                     legend(leg);
-                    title('Joint position (rad)')
+                    title('Joint position (º)')
                 end
                 if j == IiwaRobot.n_joints
-                    xlabel('time (s)');
+                    xlabel('Time (s)');
                 end
-                s = sprintf('j%d',j);
+                s = sprintf('J%d',j);
                 ylabel(s);
                 grid on;
             end
@@ -203,17 +203,19 @@ classdef IiwaPlotter < handle
             end
             
             figure;
-            coords={'x', 'y', 'z', 'rx', 'ry', 'rz'};
+            coords={'X', 'Y', 'Z', 'RX', 'RY', 'RZ'};
             leg={};
             for coord=1:6
                 subplot(6,1,coord);
                 hold on;
                 for ntraj=1:size(trajectories,2)
                     if (~isempty(trajectories{ntraj}.x))
-                        plot(trajectories{ntraj}.t, trajectories{ntraj}.x(:,coord),colors(ntraj));
-                        plot(trajectories{ntraj}.t, trajectories{ntraj}.x(:,coord),[colors(ntraj), '.']);
-                        hold on;
-                        leg=[leg trajectories{ntraj}.name trajectories{ntraj}.name];
+                        plot(trajectories{ntraj}.t, trajectories{ntraj}.x(:,coord),colors(ntraj), 'LineWidth', 2.0);
+                        leg=[leg trajectories{ntraj}.name];
+                        if (IiwaPlotter.plot_points)
+                            plot(trajectories{ntraj}.t, trajectories{ntraj}.x(:,coord),[colors(ntraj), '.']);
+                            leg=[leg trajectories{ntraj}.name];
+                        end
                     end
                 end
                 if coord == 1
@@ -249,6 +251,26 @@ classdef IiwaPlotter < handle
                 zlabel('z');
                 grid on;
             end  
+        end
+        function cartesian_positions3d(trajectories, colors)
+            if (~iscell(trajectories))
+                trajectories={trajectories};
+            end
+            if (~isempty(trajectories{1}.x))
+                figure;
+                leg={}
+                for ntraj = 1:size(trajectories,2)
+                    plot3(trajectories{ntraj}.x(:,1), trajectories{ntraj}.x(:,2), trajectories{ntraj}.x(:,3), colors(ntraj));
+                    hold on;
+                    leg=[leg trajectories{ntraj}.name];
+                end
+                legend(leg);
+                title('3D cartesian position');
+                xlabel('x');
+                ylabel('y');
+                zlabel('z');
+                grid on;
+            end 
         end
         function cartesian_velocities(trajectories, colors)
             if (~iscell(trajectories))
@@ -382,8 +404,8 @@ classdef IiwaPlotter < handle
         end
         function effortWithPD(traj_des, traj_comm)
             figure;
-            ts_des=timeseries(traj_comm.effort, traj_comm.t);
-            ts_comm=timeseries(traj_des.effort, traj_des.t);
+            ts_des=timeseries(traj_des.effort, traj_des.t);
+            ts_comm=timeseries(traj_comm.effort, traj_comm.t);
             [ts_des, ts_comm] = synchronize(ts_des, ts_comm, 'Intersection');
             if (size(ts_des.Time,1)<100)
             [ts_des, ts_comm] = synchronize(ts_des, ts_comm, 'Union');
