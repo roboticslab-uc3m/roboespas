@@ -22,6 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 #find_package(Boost REQUIRED COMPONENTS system)
+find_package(Eigen3 REQUIRED NO_MODULE)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -131,16 +132,10 @@ catkin_package(
 ###########
 
 ## Specify additional locations of header files
-find_path(EIGEN3_INCLUDE_DIRS "Eigen" paths "/usr/include" "/usr/local/include" path_suffixes "eigen3")
-message(${EIGEN3_INCLUDE_DIRS})
-if ( NOT EIGEN3_INCLUDE_DIRS )
-    message(FATAL_ERROR "CMake variable EIGEN3_INCLUDE_DIRS not found.")
-endif()
 ## Your package locations should be listed before other locations
 include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
-  ${EIGEN3_INCLUDE_DIRS}
 )
 
 

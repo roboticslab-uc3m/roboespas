@@ -10,7 +10,7 @@
 #include "geometry_msgs/TwistStamped.h"
 #include <iiwa_command/MoveLTrajectoryAction.h>
 #include <actionlib/server/simple_action_server.h>
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include <math.h>
 #include <cmath>
 #include "IiwaTrajectoryGeneration.cpp"

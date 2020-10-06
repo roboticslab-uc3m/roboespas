@@ -1,5 +1,5 @@
-#include <Eigen/Dense>
-#include <Eigen/Geometry>
+#include <eigen3/Eigen/Dense>
+#include <eigen3/Eigen/Geometry>
 
 using namespace std;
 using namespace Eigen;
@@ -8,7 +8,7 @@ using namespace Eigen;
 //| FILTER LIBRARY | returning the median of the last nsamples.
 //|----------------|
 // - MovingAverageFilter: Class that saves each sample and return the median of the last nsamples, or the median of all the samples introduced if they are less than nsamples
-// - MovingAverageFilterSizVars: Class that creates six objects of the previous class to filter a whole cartesian position without having to create by yourself six different filters, one for each coordinate. All six filters use the same number of samples to calculate the median. 
+// - MovingAverageFilterSizVars: Class that creates six objects of the previous class to filter a whole cartesian position without having to create by yourself six different filters, one for each coordinate. All six filters use the same number of samples to calculate the median.
 namespace MAFilter
 {
     class MovingAverageFilter

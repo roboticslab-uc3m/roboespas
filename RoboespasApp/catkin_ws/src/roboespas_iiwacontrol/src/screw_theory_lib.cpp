@@ -1,5 +1,5 @@
-#include <Eigen/Dense>
-#include <Eigen/Geometry>
+#include <eigen3/Eigen/Dense>
+#include <eigen3/Eigen/Geometry>
 #include <iostream>
 #include <thread>         // this_thread::sleep_for
 //std::this_thread::sleep_for(std::chrono::milliseconds(x));
@@ -16,7 +16,7 @@ using namespace std;
 //| SCREW THEORY LIBRARY | related with screw theory calculations
 //|----------------------|
 // - ForwardKinematics: Compute the cartesian position corresponding to some joint_position
-// - InverseDifferentialKinematics: Compute next joint position to follow a given cartesian trajectory. It calculates the needed velocity to reach expected cartesian position from current cartesian position, and adds it to the given cartesian velocity needed to follow the trajectory, ponderating the error by a k factor. Then with the geometric jacobian obtain the joint velocity corresponding to that cartesian velocity. 
+// - InverseDifferentialKinematics: Compute next joint position to follow a given cartesian trajectory. It calculates the needed velocity to reach expected cartesian position from current cartesian position, and adds it to the given cartesian velocity needed to follow the trajectory, ponderating the error by a k factor. Then with the geometric jacobian obtain the joint velocity corresponding to that cartesian velocity.
 
 namespace ScrewTheory
 {
@@ -122,7 +122,7 @@ namespace ScrewTheory
     // - Variables to calculate the error:
     //     * x_exp -> Expected cartesian position
     //     * q_curr -> After applying FK will be the real current cartesian position
-    //     * t -> Time used for computing the offline cartesian velocity, that will be used to calculate the velocity needed to correct the existing error: 
+    //     * t -> Time used for computing the offline cartesian velocity, that will be used to calculate the velocity needed to correct the existing error:
     //          error_xdot=(x_traj[i]-FK(q_curr))/(stamp-previous_stamp)
     //     * k -> The calculated error will be added up to the theoretical cartesian velocity multiplied by a factor k, which will be a small number and is received as a parameter in the service.
     // - Output variables:
@@ -209,7 +209,7 @@ namespace ScrewTheory
     }
     //------------------------------------------------------------------------------------------
     //GEOMETRIC JACOBIAN
-    //Function that computes the geometric jacobian of the robot, given the Twists parameter, with the twists of the robot at home position, and given the current joint position. 
+    //Function that computes the geometric jacobian of the robot, given the Twists parameter, with the twists of the robot at home position, and given the current joint position.
     MatrixXd GeoJacobianS(VectorXd q)
     {
         //Compute the geometric jacobian given the current joint pos
@@ -235,7 +235,7 @@ namespace ScrewTheory
     {
         Vector3d v=twist.head(3);
         Vector3d w=twist.tail(3);
-        //Calculate homogeneous transformation expression for a screw vector (v, w) with a certain magnitude theta such that  
+        //Calculate homogeneous transformation expression for a screw vector (v, w) with a certain magnitude theta such that
         //T=[R, p; 0 0 0 1];
         // where p=(R-I)*(wxv)
         //First calculate the rotation matrix R given the axis and the angle of rotation
@@ -248,9 +248,9 @@ namespace ScrewTheory
         Matrix4d T=MatrixXd::Identity(4,4); //Initializate as a 4by4 identity matrix
         T.block<3,3>(0,0)=R; //Introduce a 3 rows by 3 columns block in row 0, column 0 containing R.
         T.block<3,1>(0,3)=p; //Introduce a 3 rows by 1 columns block in row 0, column 3 containing p.
-        return T; 
+        return T;
     }
-    //The linear component of the twist will be the linear component of the original vector minus the angular component cross-multiplied by the current tool position. This will transform some 6by1 vector from tool frame to space frame, but mantaining the vector origin at the origin of the tool frame. 
+    //The linear component of the twist will be the linear component of the original vector minus the angular component cross-multiplied by the current tool position. This will transform some 6by1 vector from tool frame to space frame, but mantaining the vector origin at the origin of the tool frame.
     VectorXd ToTwistForm(VectorXd vec, Vector3d p_tool)
     {
         Vector3d v=vec.head(3);
@@ -262,7 +262,7 @@ namespace ScrewTheory
         vec_twist.tail(3)=w_twist;
         return vec_twist;
     }
-    //Obtain the adjoint form of a transformation matrix, which express both rotation and translation as 3 by 3 matrices and joins them. It contains the rotation matrix in the upper left and lower right corner, the skew-symmetric form of the translation vector multiplied by the rotation matrix in the upper right corner, and a 3by3 zero matrix in the lower left corner. 
+    //Obtain the adjoint form of a transformation matrix, which express both rotation and translation as 3 by 3 matrices and joins them. It contains the rotation matrix in the upper left and lower right corner, the skew-symmetric form of the translation vector multiplied by the rotation matrix in the upper right corner, and a 3by3 zero matrix in the lower left corner.
     MatrixXd tform2adjoint(Matrix4d T)
     {
         Matrix3d R=T.block(0,0,3,3);
@@ -272,7 +272,7 @@ namespace ScrewTheory
         Ad.block(0,3,3,3)=axis2skew(p)*R;
         Ad.block(3,0,3,3)=Matrix3d::Zero();
         Ad.block(3,3,3,3)=R;
-        return Ad;    
+        return Ad;
     }
     //Obtain the skew-symmetric form of a rotation vector, which expresses the rotation as a 3by3 matrix as follows:
     Matrix3d axis2skew(Vector3d v)
@@ -317,7 +317,7 @@ namespace ScrewTheory
         Vector3d axis_S_curr_des=R_S_curr*axis_curr_des;
         //Finally, calculate the angular vel dividing by the time
         xdot.tail(3)=axis_S_curr_des/time;
-        return xdot;       
+        return xdot;
     }
     //Returns the limited joint velocity taking into account the velocity limits which are saved as global variables and should be set previously (in the Init function)
     VectorXd LimitJointVel(VectorXd qdot)
@@ -356,7 +356,7 @@ namespace ScrewTheory
             }
         }
         return q_out;
-    }    
+    }
 }
 
 
@@ -431,7 +431,7 @@ namespace ScrewTheory
                 //[ 0   1   2   3   4   5   6;
                 //  1   1   2   3   4   5   6;
                 //  2   2   2   3   4   5   6;
-                //  3   3   3   3   4   5   6;   
+                //  3   3   3   3   4   5   6;
                 //  4   4   4   4   4   5   6;
                 //  5   5   5   5   5   5   6;
                 //  6   6   6   6   6   6   6]
@@ -441,7 +441,7 @@ namespace ScrewTheory
                     //[ 0-6   1-6   2-6   3-6   4-6   5-6   6-6;
                     //  1-6   1-6   2-6   3-6   4-6   5-6   6-6;
                     //  2-6   2-6   2-6   3-6   4-6   5-6   6-6;
-                    //  3-6   3-6   3-6   3-6   4-6   5-6   6-6;   
+                    //  3-6   3-6   3-6   3-6   4-6   5-6   6-6;
                     //  4-6   4-6   4-6   4-6   4-6   5-6   6-6;
                     //  5-6   5-6   5-6   5-6   5-6   5-6   6-6;
                     //  6-6   6-6   6-6   6-6   6-6   6-6   6-6]
@@ -481,11 +481,10 @@ namespace ScrewTheory
                         [ 0-6   1-6   2-6   3-6   4-6   5-6   6-6;
                           1-6   1-6   2-6   3-6   4-6   5-6   6-6;
                           2-6   2-6   2-6   3-6   4-6   5-6   6-6;
-                          3-6   3-6   3-6   3-6   4-6   5-6   6-6;   
+                          3-6   3-6   3-6   3-6   4-6   5-6   6-6;
                           4-6   4-6   4-6   4-6   4-6   5-6   6-6;
                           5-6   5-6   5-6   5-6   5-6   5-6   6-6;
                           6-6   6-6   6-6   6-6   6-6   6-6   6-6]
     Ahora, para cada una de esas ls, por ejemplo en el primer término, estás teniendo en cuenta todas las inercias, porque el maximo de 0,0 es 0 entonces tendrías que hacer sumatorio de 0 a 6, todos los links, porque todos están influenciando en esa articulación. Bueno, entonces, iteras de 0 a 6, y para cada iteración, tienes en cuenta la inercia que ejerce el link l en el link i (Ali) y la inercia que ejerce el link l en el link j (Alj). Cuando l sea 0, como i es 0, Ali será la identidad porque no se genera inercia a si mismo y lo deja igual. Alj también será la identidad.
-    Entonces para l=0, i=0, j=0, usas la formulica esa que coge y multiplica el twist_i'*Ali'*inercia_l*Alj*twist_j, y básicamente como tanto Ali como Alj son la identidad, simplemente multiplicará twist_i'*inercia_l*twist_j, y eso lo que hace es quedarse con la parte de la inercia_l que esté en la misma dirección que el twist i y que el twist j. Por ejemplo, si el twist_0 es una rotación positiva en z, se quedará con la parte de la matriz de inercia positivo en z. Es decir, con el componente z del tensor de inercia, pero sudará de la masa del link porque no se influye a si mismo en absoluto. 
+    Entonces para l=0, i=0, j=0, usas la formulica esa que coge y multiplica el twist_i'*Ali'*inercia_l*Alj*twist_j, y básicamente como tanto Ali como Alj son la identidad, simplemente multiplicará twist_i'*inercia_l*twist_j, y eso lo que hace es quedarse con la parte de la inercia_l que esté en la misma dirección que el twist i y que el twist j. Por ejemplo, si el twist_0 es una rotación positiva en z, se quedará con la parte de la matriz de inercia positivo en z. Es decir, con el componente z del tensor de inercia, pero sudará de la masa del link porque no se influye a si mismo en absoluto.
     Siendo i,j todavía 0, cuando l sea 1, es decir, cuando midas la inercia que ejerce el segundo link en el primero, Ali será la influencia del link 1 en el link 0, que se calcula con el adjunto del producto de exponenciales de 0 a 1 (de las exponenciales de los dos primeros twists)*/
-

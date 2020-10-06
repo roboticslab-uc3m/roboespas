@@ -1,7 +1,7 @@
 #include "iiwa_msgs/JointPosition.h"
 #include "iiwa_msgs/JointVelocity.h"
-#include <Eigen/Dense>
-#include <Eigen/Geometry>
+#include <eigen3/Eigen/Dense>
+#include <eigen3/Eigen/Geometry>
 
 using namespace std;
 namespace Conversions
@@ -76,7 +76,7 @@ namespace Conversions
         jq_vec.push_back(vec[6]);
         return jq_vec;
     }
-    
+
     //From Eigen::Eigen::VectorXd to ...
     geometry_msgs::Twist EigenVectorToTwist(Eigen::VectorXd eigen_vector)
     {
@@ -109,7 +109,7 @@ namespace Conversions
 	    return q_std;
     }
 
-    //JointQuantity to...    
+    //JointQuantity to...
     string ToJointQuantityString(const iiwa_msgs::JointQuantity q)
     {
 	    stringstream ss;

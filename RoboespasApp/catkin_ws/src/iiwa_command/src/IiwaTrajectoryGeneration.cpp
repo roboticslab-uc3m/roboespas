@@ -1,8 +1,8 @@
 #ifndef IIWA_TG
 #define IIWA_TG
 
-#include <Eigen/Dense>
-#include <Eigen/Geometry>
+#include <eigen3/Eigen/Dense>
+#include <eigen3/Eigen/Geometry>
 #include <iostream>
 #include <math.h>
 #include "IiwaTrajectory.cpp"
