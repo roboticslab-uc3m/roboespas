@@ -9,11 +9,15 @@ classdef IiwaTrajectoryGeneration
         function traj_output = FillVelocityAndAcceleration(traj_input)
             traj_output = traj_input;
             css = mean(traj_input.t(2:end)-traj_input.t(1:end-1));
+            sub_q = traj_input.q(2:end,:)-traj_input.q(1:end-1, :);
+            sub_q = medfilt1(sub_q, round(traj_input.npoints/30));
             traj_output.t = (0:css:css*(traj_input.npoints-1))';
-            qdot_med = (traj_input.q(2:end,:)-traj_input.q(1:end-1,:))./css; %Mean velocities at css/2, css/2+css, css/2 + css*2, ...
+            qdot_med = sub_q./css; %Mean velocities at css/2, css/2+css, css/2 + css*2, ...
             qdot = (qdot_med(1:end-1,:)+qdot_med(2:end,:))./2;
             traj_output.qdot = [zeros(1, IiwaRobot.n_joints); qdot; zeros(1, IiwaRobot.n_joints)];
-            qdotdot_med = (traj_output.qdot(2:end,:)-traj_output.qdot(1:end-1,:))./css; %Mean velocities at css/2, css/2+css, css/2 + css*2, ...
+            sub_qdot = traj_output.qdot(2:end,:)-traj_output.qdot(1:end-1,:);
+            sub_qdot = medfilt1(sub_qdot, round(traj_input.npoints/30));
+            qdotdot_med = sub_qdot./css; %Mean velocities at css/2, css/2+css, css/2 + css*2, ...
             qdotdot = (qdotdot_med(1:end-1,:)+qdotdot_med(2:end,:))./2;
             traj_output.qdotdot = [zeros(1, IiwaRobot.n_joints); qdotdot; zeros(1, IiwaRobot.n_joints)];
         end
@@ -24,21 +28,35 @@ classdef IiwaTrajectoryGeneration
             end
         end
         function traj_output = TrapezoidalVelocityProfileTrajectory(q_ini, q_goal, control_step_size, qdot, qdotdot, name)
+            times=zeros(1,7);
             for i=1:7
-                if (qdot(i)*control_step_size>abs(q_goal(i)-q_ini(i)))
-                    [~, ~, ~, tSamples, ~] = trapveltraj([q_ini(i), q_goal(i)], 100, 'PeakVelocity', qdot(i));
+                nsamples = round(abs(q_goal(i)-q_ini(i))/(qdot(i)*control_step_size));
+                if (qdot(i)*control_step_size < abs(q_goal(i)-q_ini(i)))
+                    [~, ~, ~, tSamples, ~] = trapveltraj([q_ini(i), q_goal(i)], nsamples, 'PeakVelocity', qdot(i), 'Acceleration', qdotdot(i));
                 else
-                    [~, ~, ~, tSamples, ~] = trapveltraj([q_ini(i), q_goal(i)], 100, 'PeakVelocity', qdot(i), 'Acceleration', qdotdot(i));
+                    traj_output=IiwaTrajectory(0, name);
+                    continue;
                 end
+%                 if (qdot(i)*control_step_size/2>abs(q_goal(i)-q_ini(i)))
+%                     [~, ~, ~, tSamples, ~] = trapveltraj([q_ini(i), q_goal(i)], 100, 'PeakVelocity', qdot(i));
+%                 else
+%                     [~, ~, ~, tSamples, ~] = trapveltraj([q_ini(i), q_goal(i)], 100, 'Acceleration', qdotdot(i));
+%                 end
                 times(i)=tSamples(end);
             end
             ttot = max(times);
             npoints = ceil(ttot/control_step_size);
             for i=1:7
-                if (qdot(i)*control_step_size>abs(q_goal(i)-q_ini(i)))
-                    [q(i,:), qd(i,:), qdd(i,:), t(i,:), pp] = trapveltraj([q_ini(i), q_goal(i)], npoints, 'PeakVelocity', qdot(i));
-                else
+                if (qdot(i)*control_step_size<abs(q_goal(i)-q_ini(i)))
                     [q(i,:), qd(i,:), qdd(i,:), t(i,:), pp] = trapveltraj([q_ini(i), q_goal(i)], npoints, 'PeakVelocity', qdot(i), 'Acceleration', qdotdot(i));
+                else
+                    if (q_ini(i)==q_goal(i))
+                        q(i,:) = ones(1, npoints)*q_ini(i);
+                        qd(i,:) = zeros(1,npoints);
+                        qdd(i,:) = zeros(1,npoints);
+                    else
+                        [q(i,:), qd(i,:), qdd(i,:), t(i,:), pp] = trapveltraj([q_ini(i), q_goal(i)], npoints, 'PeakVelocity', abs(q_ini(i)-q_goal(i))/(control_step_size/2));
+                    end
                 end
             end
             traj_output = IiwaTrajectory(name,npoints);

@@ -53,6 +53,10 @@ protected:
   void callback_MoveJTrajectory(const iiwa_command::MoveJTrajectoryGoalConstPtr &goal)
   {
       ROS_INFO("MoveJTrajectory action server active");
+      trajectory_msgs::JointTrajectory trajectory_commanded;
+      vector<sensor_msgs::JointState> trajectory_read;
+      trajectory_commanded.points.clear();
+      trajectory_read.clear();
       //Read control_step_size from parameter server
       if (!nh.getParam("/iiwa_command/control_step_size", control_step_size))
       {
@@ -74,13 +78,13 @@ protected:
       //Calculate qinc_max with current maximum velocity
       qinc_max = qdot_max*v_percentage*control_step_size*1.5; //Convert to radians and multiply by control_step_size
       //Variables returned
-      trajectory_msgs::JointTrajectory trajectory_commanded;
-      vector<sensor_msgs::JointState> trajectory_read;
+
       //First save in an vector
       trajectory_msgs::JointTrajectory trajectory_desired = goal -> trajectory_desired;
       //Check position is not empty
       if (trajectory_desired.points.empty())
       {
+
           ROS_ERROR("Empty joint trajectory");
           as_movejtraj.setSucceeded(as_result);
           return;

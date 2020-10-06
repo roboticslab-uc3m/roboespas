@@ -11,7 +11,7 @@ iiwaCommandASrv_cli.ResultFcn = @(~,msg) disp('MoveTorque action server result r
 [mdlConfig_cli, mdlConfig_msg] = rossvcclient('gazebo/set_model_configuration');
 
 %% Create an LBR RigidBodyTree Object from URDF
-%load('/home/roboespas/roboespas/IDSimulation/input_traj.mat'); %loads traj_des
+load('/home/roboespas/roboespas/IDSimulation/input_traj.mat'); %loads traj_des
 traj_des_q = traj_des.CompleteJoint([0 0 0 0 0 0 0]);
 
 
@@ -21,7 +21,7 @@ lbr.DataFormat = 'row';
 lbr.Gravity = [0 0 -9.80];
 
 traj_spline = IiwaTrajectoryGeneration.BoundedSplineTrajectory(traj_des_q, 10e-4, 100);
-traj_des_st = traj_spline.CompleteEffort('st');
+%traj_des_st = traj_spline.CompleteEffort('st');
 traj_des_m = traj_spline.CompleteEffort('matlab');
 
 %% Reset LBR to Home Configuration in Gazebo

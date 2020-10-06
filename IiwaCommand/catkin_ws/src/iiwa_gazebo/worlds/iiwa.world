@@ -25,7 +25,7 @@
     <physics name="default_physics" default="0" type="ode">
       <!--max_step_size>0.01</max_step_size-->
       <real_time_factor>1</real_time_factor>
-      <real_time_update_rate>10</real_time_update_rate> <!-- 1000-1, 100- 0.1, 10- 0.10-->
+      <real_time_update_rate>100</real_time_update_rate> <!-- 1000-1, 100- 0.1, 10- 0.10-->
       <ode>
         <solver>
           <type>quick</type>
