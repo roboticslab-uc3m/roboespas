@@ -77,6 +77,8 @@ add_action_files(
     FILES
     MoveTorque.action
     MoveJ.action
+		MoveJTraj.action
+		MoveJVelTraj.action
     MoveL.action
     MoveLTrajectory.action
 )
@@ -155,7 +157,9 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(msg_transform_helper src/msg_transform_helper_node.cpp)
 add_executable(iiwa_command src/iiwa_command_node.cpp)
+add_executable(iiwa_command_stack src/iiwa_command_stack_node.cpp)
 add_dependencies(iiwa_command ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(iiwa_command_stack ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(msg_transform_helper ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Rename C++ executable without prefix
@@ -174,6 +178,8 @@ add_dependencies(msg_transform_helper ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catk
 # )
 target_link_libraries(msg_transform_helper ${catkin_LIBRARIES})
 target_link_libraries(iiwa_command ${catkin_LIBRARIES})
+target_link_libraries(iiwa_command_stack ${catkin_LIBRARIES})
+
 
 #############
 ## Install ##

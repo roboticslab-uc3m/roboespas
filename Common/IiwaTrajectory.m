@@ -21,6 +21,21 @@ classdef IiwaTrajectory
     methods
         
         function obj = IiwaTrajectory(varargin) %lbr, name, tWaypoints, qWaypoints, t)
+            if (length(varargin)>=1)
+                if (isa(varargin{1},'char'))
+                    obj.name=varargin{1};
+                end
+            end
+            if (length(varargin)>=2)
+                if(isa(varargin{2},'robotics.ros.msggen.trajectory_msgs.JointTrajectory') || ...
+                    isa(varargin{2},'robotics.ros.msggen.sensor_msgs.JointState'))
+                    obj=IiwaMsgTransformer.toIiwaTrajectory(obj.name, varargin{2});
+                    obj=obj.CompleteVelAcc();
+                    obj=obj.CompleteCartesian();
+                    return;
+                end 
+            end
+            
             if (length(varargin)==5)
                 obj=obj.wayPointsConstructor(varargin{1}, varargin{2}, varargin{3}, varargin{4}, varargin{5});
             elseif (length(varargin)==3)
@@ -65,6 +80,26 @@ classdef IiwaTrajectory
             for i=1:size(obj.q,1)
                 obj.x(i,:)=IiwaScrewTheory.ForwardKinematics(obj.q(i,:));
             end
+        end
+        function obj = CompleteVelAcc(obj)
+            if (isempty(obj.q))
+                return;
+            end
+%             if (~isempty(obj.qdot))
+%                 return
+%             end
+            css = mean(obj.t(2:end)-obj.t(1:end-1));
+            sub_q = obj.q(2:end,:)-obj.q(1:end-1, :);
+            sub_q = medfilt1(sub_q, round(obj.npoints/30));
+            obj.t = (0:css:css*(obj.npoints-1))';
+            qdot_med = sub_q./css; %Mean velocities at css/2, css/2+css, css/2 + css*2, ...
+            qdot_= (qdot_med(1:end-1,:)+qdot_med(2:end,:))./2;
+            obj.qdot = [zeros(1, IiwaRobot.n_joints); qdot_; zeros(1, IiwaRobot.n_joints)];
+            sub_qdot = obj.qdot(2:end,:)-obj.qdot(1:end-1,:);
+            sub_qdot = medfilt1(sub_qdot, round(obj.npoints/30));
+            qdotdot_med = sub_qdot./css; %Mean velocities at css/2, css/2+css, css/2 + css*2, ...
+            qdotdot_ = (qdotdot_med(1:end-1,:)+qdotdot_med(2:end,:))./2;
+            obj.qdotdot = [zeros(1, IiwaRobot.n_joints); qdotdot_; zeros(1, IiwaRobot.n_joints)];
         end
         function obj = CompleteEffort(obj, modeID)
             if (strcmp(modeID,'st')==1)
