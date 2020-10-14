@@ -7,9 +7,15 @@ classdef IiwaPlotter < handle
         ColorOthers='m'
         ColorErrors='r'
         TimePlot=0.05;
-        plot_points=1;
+        plot_points=0;
         plot_limits_qdot=1;
         plot_limits_q=0; %Not implemented
+        LineWidth = 2;
+        ColorsLightNames=['r', 'b'];
+        ColorsLight=[[243/256, 163/256, 152/256]; [152/256, 163/256, 243/256]];
+        ColorsXYZ = ['b', 'r', 'g'];
+        CoordNames = ['X', 'Y', 'Z', 'A', 'B', 'C']
+        CoordUnits = {'cm', 'cm', 'cm', 'deg', 'deg', 'deg'}
     end
     
     methods
@@ -38,100 +44,140 @@ classdef IiwaPlotter < handle
                     title('Time stamp difference (second)')
                 end
                 if j == IiwaRobot.n_joints
-                    xlabel('Time (s)');
+                    xlabel('Time [s]');
                 end
                 s = sprintf('J%d',j);
                 ylabel(s);
                 grid on;
             end
         end
-        function joint_positions(trajectories, colors)
+        function joint_positions(trajectories, colors, varargin)
+            s = [1,3,5,7,2,4,6]; %Subplot order
             if (~iscell(trajectories))
                 trajectories={trajectories};
             end
-            figure;
+            if (isempty(varargin))
+                figure;
+            else
+                display = varargin{1};
+            end
             leg={};
+            ax = zeros(1,7);
             for j = 1:IiwaRobot.n_joints
-                subplot(IiwaRobot.n_joints,1,j);
+                if (isempty(varargin))
+                    ax(j) = subplot(4,2,s(j));
+                else
+                    ax(j) = subplot(4,2,s(j), 'Parent', display);
+                end
                 for ntraj=1:size(trajectories,2)
                     if (~isempty(trajectories{ntraj}.q))
-                        plot(trajectories{ntraj}.t, rad2deg(trajectories{ntraj}.q(:,j)), colors(ntraj));
-                        hold on;
+                        plot(ax(j), trajectories{ntraj}.t, rad2deg(trajectories{ntraj}.q(:,j)), colors(ntraj), 'LineWidth', IiwaPlotter.LineWidth);
+                        hold(ax(j), 'on');
                         leg=[leg trajectories{ntraj}.name];
                         if (IiwaPlotter.plot_points)
-                            plot(trajectories{ntraj}.t, rad2deg(trajectories{ntraj}.q(:,j)), [colors(ntraj), '.']);
+                            plot(ax(j), trajectories{ntraj}.t, rad2deg(trajectories{ntraj}.q(:,j)), [colors(ntraj), '.']);
                             leg=[leg trajectories{ntraj}.name];
                         end
                     end
                 end
-                if j == 1
-                    legend(leg);
-                    title('Joint position (º)')
+                if (j == 7)
+                	legend(ax(j), leg);
                 end
-                if j == IiwaRobot.n_joints
-                    xlabel('Time (s)');
+                if (j == 1 && isempty(varargin))
+                    title(ax(j), 'Joint position (º)')
                 end
-                s = sprintf('J%d',j);
-                ylabel(s);
-                grid on;
+                if (j == IiwaRobot.n_joints || ~isempty(varargin))
+                    xlabel(ax(j), 'Time [s]');
+                end
+                title(ax(j), ['J', num2str(j)])
+                ylabel(ax(j), '[deg]');
+                grid(ax(j),'on');
             end
         end
-        function joint_velocities(trajectories, colors)
+        function joint_velocities(trajectories, colors, varargin)
+            s = [1,3,5,7,2,4,6]; %Subplot order
             if (~iscell(trajectories))
                 trajectories={trajectories};
             end
-            figure;
+            if (isempty(varargin))
+                figure;
+            else
+                display = varargin{1};
+            end
             leg={};
+            ax = zeros(1,7);
             for j = 1:IiwaRobot.n_joints
-                subplot(IiwaRobot.n_joints,1,j);
+                if (isempty(varargin))
+                    ax(j) = subplot(4,2,s(j));
+                else
+                    ax(j) = subplot(4,2,s(j), 'Parent', display);
+                end
                 for ntraj=1:size(trajectories,2)
                     if (~isempty(trajectories{ntraj}.qdot))
-                        plot(trajectories{ntraj}.t, rad2deg(trajectories{ntraj}.qdot(:,j)), [colors(ntraj)]);
-                        hold on;
+                        plot(ax(j), trajectories{ntraj}.t, rad2deg(trajectories{ntraj}.qdot(:,j)), [colors(ntraj)], 'LineWidth', IiwaPlotter.LineWidth);
+                        hold(ax(j), 'on');
                         leg=[leg trajectories{ntraj}.name];
                         if (IiwaPlotter.plot_points)
-                            plot(trajectories{ntraj}.t, rad2deg(trajectories{ntraj}.qdot(:,j)), [colors(ntraj), '.']);
+                            plot(ax(j), trajectories{ntraj}.t, rad2deg(trajectories{ntraj}.qdot(:,j)), [colors(ntraj), '.']);
                             leg=[leg trajectories{ntraj}.name];
                         end
                     end
                 end
-                if j == 1
-                    legend(leg);
-                    title('Joint velocity (rad/s)')
+                if (j == 7 && isempty(varargin))
+                    title(ax(j), 'Joint velocity (rad/s)')
                 end
-                if j == IiwaRobot.n_joints
-                    xlabel('time (s)');
+                if (j == IiwaRobot.n_joints || ~isempty(varargin))
+                    xlabel(ax(j), 'Time [s]');
                 end
-                s = sprintf('j%d',j);
-                ylabel(s);
-                grid on;
+                if j == 7
+                    legend(ax(j), leg);
+                end
+                title(ax(j), ['J', num2str(j)])
+                ylabel(ax(j), '[deg/s]');
+                grid(ax(j), 'on')
             end
         end
-        function joint_accelerations(trajectories, colors)
+        function joint_accelerations(trajectories, colors, varargin)
+            s = [1,3,5,7,2,4,6]; %Subplot order
             if (~iscell(trajectories))
                 trajectories={trajectories};
             end
-            figure;
+            if (isempty(varargin))
+                figure;
+            else
+                display = varargin{1};
+            end
             leg={};
+            ax = zeros(1,7);
             for j = 1:IiwaRobot.n_joints
-                subplot(IiwaRobot.n_joints,1,j);
+                if (isempty(varargin))
+                    ax(j) = subplot(4,2,s(j));
+                else
+                    ax(j) = subplot(4,2,s(j), 'Parent', display);
+                end
                 for ntraj=1:size(trajectories,2)
                     if (~isempty(trajectories{ntraj}.qdotdot))
-                        plot(trajectories{ntraj}.t, trajectories{ntraj}.qdotdot(:,j), [colors(ntraj)]);
-                        hold on;
+                        plot(ax(j), trajectories{ntraj}.t, rad2deg(trajectories{ntraj}.qdotdot(:,j)), [colors(ntraj)], 'LineWidth', IiwaPlotter.LineWidth);
+                        hold(ax(j), 'on');
                         leg=[leg trajectories{ntraj}.name];
+                        if (IiwaPlotter.plot_points)
+                            plot(ax(j), trajectories{ntraj}.t, rad2deg(trajectories{ntraj}.qdotdot(:,j)), [colors(ntraj), '.']);
+                            leg=[leg trajectories{ntraj}.name];
+                        end
                     end
                 end
-                if j == 1
-                    legend(leg);
-                    title('Joint acceleration (rad/s2)')
+                if (j == 1 && isempty(varargin))
+                    title(ax(j), 'Joint acceleration (rad/s2)')
                 end
-                if j == IiwaRobot.n_joints
-                    xlabel('time (s)');
+                if (j == IiwaRobot.n_joints || ~isempty(varargin))
+                    xlabel(ax(j), 'Time [s]');
                 end
-                s = sprintf('j%d',j);
-                ylabel(s);
-                grid on;
+                if j == 7
+                    legend(ax(j), leg);
+                end
+                title(ax(j), ['J', num2str(j)])
+                ylabel(ax(j), '[deg/s2]');
+                grid(ax(j), 'on')
             end
         end
         function joint_efforts(trajectories, colors)
@@ -154,7 +200,7 @@ classdef IiwaPlotter < handle
                     title('Joint effort (Nm)')
                 end
                 if j == IiwaRobot.n_joints
-                    xlabel('time (s)');
+                    xlabel('time [s]');
                 end
                 s = sprintf('j%d',j);
                 ylabel(s);
@@ -170,7 +216,7 @@ classdef IiwaPlotter < handle
                     title('Joint effort (Nm)')
                 end
                 if j == IiwaRobot.n_joints
-                    xlabel('time (s)');
+                    xlabel('time [s]');
                 end
                 s = sprintf('j%d',j);
                 ylabel(s);
@@ -189,47 +235,74 @@ classdef IiwaPlotter < handle
                     title('Commanded and output efforts')
                 end
                 if j == IiwaRobot.n_joints
-                    xlabel('time (s)');
+                    xlabel('time [s]');
                 end
                 s = sprintf('j%d',j);
                 ylabel(s);
                 grid on;
             end
-        end
-        
-        function cartesian_positions(trajectories, colors)
+        end      
+        function cartesian_positions(trajectories, colors, varargin)
+            s = [1,3,5,2,4,6]; %Subplot order
             if (~iscell(trajectories))
                 trajectories={trajectories};
             end
-            
-            figure;
-            coords={'X', 'Y', 'Z', 'RX', 'RY', 'RZ'};
+            if (isempty(varargin))
+                figure;
+            else
+                display = varargin{1};
+            end
             leg={};
-            for coord=1:6
-                subplot(6,1,coord);
-                hold on;
+            ax = zeros(1,7);
+            for coord = 1:3
+                if (isempty(varargin))
+                    ax(coord) = subplot(3,2,s(coord));
+                else
+                    ax(coord) = subplot(3,2,s(coord), 'Parent', display);
+                end
                 for ntraj=1:size(trajectories,2)
                     if (~isempty(trajectories{ntraj}.x))
-                        plot(trajectories{ntraj}.t, trajectories{ntraj}.x(:,coord),colors(ntraj), 'LineWidth', 2.0);
+                        plot(ax(coord), trajectories{ntraj}.t, 100*(trajectories{ntraj}.x(:,coord)), colors(ntraj), 'LineWidth', IiwaPlotter.LineWidth);
+                        hold(ax(coord), 'on');
                         leg=[leg trajectories{ntraj}.name];
                         if (IiwaPlotter.plot_points)
-                            plot(trajectories{ntraj}.t, trajectories{ntraj}.x(:,coord),[colors(ntraj), '.']);
+                            plot(ax(coord), trajectories{ntraj}.t, 100*(trajectories{ntraj}.x(:,coord)), [colors(ntraj), '.']);
                             leg=[leg trajectories{ntraj}.name];
                         end
                     end
                 end
-                if coord == 1
-                    legend(leg);
-                    title('Cartesian position (m, rad)')
+                xlabel(ax(coord), 'Time [s]');
+                title(ax(coord), IiwaPlotter.CoordNames(coord));
+                ylabel(ax(coord), ['[', IiwaPlotter.CoordUnits{coord}, ']']);
+                grid(ax(coord),'on');
+            end
+           for coord = 4:6
+                if (isempty(varargin))
+                    ax(coord) = subplot(3,2,s(coord));
+                else
+                    ax(coord) = subplot(3,2,s(coord), 'Parent', display);
                 end
-                if (coord==6)
-                    xlabel('time(s)');
+                for ntraj=1:size(trajectories,2)
+                    if (~isempty(trajectories{ntraj}.x))
+                        plot(ax(coord), trajectories{ntraj}.t, rad2deg(trajectories{ntraj}.x(:,coord)), colors(ntraj), 'LineWidth', IiwaPlotter.LineWidth);
+                        hold(ax(coord), 'on');
+                        leg=[leg trajectories{ntraj}.name];
+                        if (IiwaPlotter.plot_points)
+                            plot(ax(coord), trajectories{ntraj}.t, rad2deg(trajectories{ntraj}.x(:,coord)), [colors(ntraj), '.']);
+                            leg=[leg trajectories{ntraj}.name];
+                        end
+                    end
                 end
-                ylabel(coords{coord});
-                grid on;
+                if (coord == 6)
+                	legend(ax(coord), leg{1:size(trajectories,2)});
+                end
+                xlabel(ax(coord), 'Time [s]');
+                title(ax(coord), IiwaPlotter.CoordNames(coord));
+                ylabel(ax(coord), ['[', IiwaPlotter.CoordUnits{coord}, ']']);
+                grid(ax(coord),'on');
             end
         end
-        function cartesian_frames(trajectories, colors, n_frames)
+        function cartesian_frames(trajectories, colors, n_frames, varargin)
             if (~iscell(trajectories))
                 trajectories={trajectories};
             end
@@ -249,56 +322,212 @@ classdef IiwaPlotter < handle
                 xlabel('x');
                 ylabel('y');
                 zlabel('z');
+                axis equal;
                 grid on;
             end  
         end
-        function cartesian_positions3d(trajectories, colors)
+        function cartesian_positions3d(trajectories, colors, varargin)
             if (~iscell(trajectories))
                 trajectories={trajectories};
             end
             if (~isempty(trajectories{1}.x))
-                figure;
+                if (isempty(varargin))
+                    figure;
+                else
+                    display = varargin{1};
+                end
                 leg={}
                 for ntraj = 1:size(trajectories,2)
-                    plot3(trajectories{ntraj}.x(:,1), trajectories{ntraj}.x(:,2), trajectories{ntraj}.x(:,3), colors(ntraj));
-                    hold on;
+                    if (~isempty(varargin))
+                        ax = subplot(1,1,1,'Parent', display);
+                    else
+                        ax = subplot(1,1,1);
+                    end
+                    if (ntraj==1)
+                        hold(ax, 'off')
+                    end
+                    plot3(ax, trajectories{ntraj}.x(:,1), trajectories{ntraj}.x(:,2), trajectories{ntraj}.x(:,3), char(colors(ntraj)), 'LineWidth', IiwaPlotter.LineWidth);
+                    hold(ax, 'on');
                     leg=[leg trajectories{ntraj}.name];
                 end
-                legend(leg);
-                title('3D cartesian position');
-                xlabel('x');
-                ylabel('y');
-                zlabel('z');
-                grid on;
+                legend(ax,leg, 'Location', 'southeast');
+                if (isempty(varargin))
+                    title(ax, '3D cartesian position');
+                end
+                xlabel(ax, 'x');
+                ylabel(ax, 'y');
+                zlabel(ax, 'z');
+                grid(ax, 'on');
+                view(ax, [-120, 30]);
+                axis(ax, 'equal');
             end 
         end
-        function cartesian_velocities(trajectories, colors)
+        function cartesian_velocities(trajectories, colors, varargin)
+            s = [1,3,5,2,4,6]; %Subplot order
             if (~iscell(trajectories))
                 trajectories={trajectories};
             end
-            
-            figure;
-            coords={'x', 'y', 'z', 'rx', 'ry', 'rz'};
+            if (isempty(varargin))
+                figure;
+            else
+                display = varargin{1};
+            end
             leg={};
-            for coord=1:6
-                subplot(6,1,coord);
-                hold on;
+            ax = zeros(1,7);
+            subsample=1;
+            for coord = 1:3
+                if (isempty(varargin))
+                    ax(coord) = subplot(3,2,s(coord));
+                else
+                    ax(coord) = subplot(3,2,s(coord), 'Parent', display);
+                end
                 for ntraj=1:size(trajectories,2)
-                    if (~isempty(trajectories{ntraj}.x))
-                        plot(trajectories{ntraj}.t, trajectories{ntraj}.xdot(:,coord), colors(ntraj));
-                        hold on;
+                    if (~isempty(trajectories{ntraj}.xdot))
+                        plot(ax(coord), trajectories{ntraj}.t(1:subsample:end), 100*(trajectories{ntraj}.xdot(1:subsample:end,coord)), colors(ntraj), 'LineWidth', IiwaPlotter.LineWidth);
+                        hold(ax(coord), 'on');
                         leg=[leg trajectories{ntraj}.name];
+                        if (IiwaPlotter.plot_points)
+                            plot(ax(coord), trajectories{ntraj}.t(1:subsample:end), 100*(trajectories{ntraj}.xdot(1:subsample:end,coord)), [colors(ntraj), '.']);
+                            leg=[leg trajectories{ntraj}.name];
+                        end
                     end
                 end
-                if coord == 1
-                    legend(leg);
-                    title('Cartesian velocity (m/s)')
+                if (coord == 6)
+                	legend(ax(coord), leg{1:size(trajectories,2)});
                 end
-                if (coord==6)
-                    xlabel('time(s)');
+                xlabel(ax(coord), 'Time [s]');
+                title(ax(coord), IiwaPlotter.CoordNames(coord));
+                ylabel(ax(coord), ['[', IiwaPlotter.CoordUnits{coord}, '/s]']);
+                grid(ax(coord),'on');
+            end
+            for coord = 4:6
+                if (isempty(varargin))
+                    ax(coord) = subplot(3,2,s(coord));
+                else
+                    ax(coord) = subplot(3,2,s(coord), 'Parent', display);
                 end
-                ylabel(coords{coord});
-                grid on;
+                for ntraj=1:size(trajectories,2)
+                    if (~isempty(trajectories{ntraj}.xdot))
+                        plot(ax(coord), trajectories{ntraj}.t(1:subsample:end), rad2deg(trajectories{ntraj}.xdot(1:subsample:end,coord)), colors(ntraj), 'LineWidth', IiwaPlotter.LineWidth);
+                        hold(ax(coord), 'on');
+                        leg=[leg trajectories{ntraj}.name];
+                        if (IiwaPlotter.plot_points)
+                            plot(ax(coord), trajectories{ntraj}.t(1:subsample:end), rad2deg(trajectories{ntraj}.xdot(1:subsample:end,coord)), [colors(ntraj), '.']);
+                            leg=[leg trajectories{ntraj}.name];
+                        end
+                    end
+                end
+                if (coord == 6)
+                	legend(ax(coord), leg{1:size(trajectories,2)});
+                end
+                xlabel(ax(coord), 'Time [s]');
+                title(ax(coord), IiwaPlotter.CoordNames(coord));
+                ylabel(ax(coord), ['[', IiwaPlotter.CoordUnits{coord}, '/s]']);
+                grid(ax(coord),'on');
+            end
+        end
+        function fill_joint_position(traj_1, traj_2, color, varargin)
+            s = [1,3,5,7,2,4,6]; %subplot order
+            ax = zeros(1,7);
+            for j = 1:7
+                if (isempty(varargin))
+                    ax(j) = subplot(4,2,s(j));
+                else
+                    display=varargin{1};
+                    ax(j) = subplot(4,2,s(j), 'Parent', display);
+                end
+                hold(ax(j), 'on');
+                x=[traj_1.t; flipud(traj_2.t)];
+                y=[rad2deg(traj_1.q(:,j)); flipud(rad2deg(traj_2.q(:,j)))];
+                fill(ax(j), x,y, IiwaPlotter.ColorsLight(find(color==IiwaPlotter.ColorsLightNames),:));
+            end
+        end
+        function fill_joint_velocity(traj_1, traj_2, color, varargin)
+            s = [1,3,5,7,2,4,6]; %subplot order
+            ax = zeros(1,7);
+            for j = 1:7
+                if (isempty(varargin))
+                    ax(j) = subplot(4,2,s(j));
+                else
+                    display=varargin{1};
+                    ax(j) = subplot(4,2,s(j), 'Parent', display);
+                end
+                hold(ax(j), 'on');
+                x=[traj_1.t; flipud(traj_2.t)];
+                y=[rad2deg(traj_1.qdot(:,j)); flipud(rad2deg(traj_2.qdot(:,j)))];
+                fill(ax(j), x,y, IiwaPlotter.ColorsLight(color==IiwaPlotter.ColorsLightNames,:));
+            end
+        end
+        function fill_joint_acceleration(traj_1, traj_2, color, varargin)
+            s = [1,3,5,7,2,4,6]; %subplot order
+            ax = zeros(1,7);
+            for j = 1:7
+                if (isempty(varargin))
+                    ax(j) = subplot(4,2,s(j));
+                else
+                    display=varargin{1};
+                    ax(j) = subplot(4,2,s(j), 'Parent', display);
+                end
+                x=[traj_1.t; flipud(traj_2.t)];
+                y=[rad2deg(traj_1.qdotdot(:,j)); flipud(rad2deg(traj_2.qdotdot(:,j)))];
+                fill(ax(j), x,y, IiwaPlotter.ColorsLight(color==IiwaPlotter.ColorsLightNames,:));
+                hold(ax(j), 'on');
+            end
+        end
+        function fill_cartesian_position(traj_1, traj_2, color, varargin)
+            s = [1,3,5,2,4,6]; %subplot order
+            ax = zeros(1,6);
+            for coord = 1:3
+                if (isempty(varargin))
+                    ax(coord) = subplot(3,2,s(coord));
+                else
+                    display=varargin{1};
+                    ax(coord) = subplot(3,2,s(coord), 'Parent', display);
+                end
+                x=[traj_1.t; flipud(traj_2.t)];
+                y=[100*(traj_1.x(:,coord)); flipud(100*(traj_2.x(:,coord)))];
+                fill(ax(coord), x,y, IiwaPlotter.ColorsLight(color==IiwaPlotter.ColorsLightNames,:));
+                hold(ax(coord), 'on');
+            end
+            for coord = 4:6
+                if (isempty(varargin))
+                    ax(coord) = subplot(3,2,s(coord));
+                else
+                    display=varargin{1};
+                    ax(coord) = subplot(3,2,s(coord), 'Parent', display);
+                end
+                x=[traj_1.t; flipud(traj_2.t)];
+                y=[rad2deg(traj_1.x(:,coord)); flipud(rad2deg(traj_2.x(:,coord)))];
+                fill(ax(coord), x,y, IiwaPlotter.ColorsLight(color==IiwaPlotter.ColorsLightNames,:));
+                hold(ax(coord), 'on');
+            end
+        end
+        function fill_cartesian_velocity(traj_1, traj_2, color, varargin)
+            s = [1,3,5,2,4,6]; %subplot order
+            ax = zeros(1,6);
+            for coord = 1:3
+                if (isempty(varargin))
+                    ax(coord) = subplot(3,2,s(coord));
+                else
+                    display=varargin{1};
+                    ax(coord) = subplot(3,2,s(coord), 'Parent', display);
+                end
+                hold(ax(coord), 'on');
+                x=[traj_1.t; flipud(traj_2.t)];
+                y=[100*(traj_1.xdot(:,coord)); flipud(100*(traj_2.xdot(:,coord)))];
+                fill(ax(coord), x,y, IiwaPlotter.ColorsLight(color==IiwaPlotter.ColorsLightNames,:));
+            end
+            for coord = 4:6
+                if (isempty(varargin))
+                    ax(coord) = subplot(3,2,s(coord));
+                else
+                    display=varargin{1};
+                    ax(coord) = subplot(3,2,s(coord), 'Parent', display);
+                end
+                hold(ax(coord), 'on');
+                x=[traj_1.t; flipud(traj_2.t)];
+                y=[rad2deg(traj_1.xdot(:,coord)); flipud(rad2deg(traj_2.xdot(:,coord)))];
+                fill(ax(coord), x,y, IiwaPlotter.ColorsLight(color==IiwaPlotter.ColorsLightNames,:));
             end
         end
         %% PLOT ERRORS
@@ -323,84 +552,283 @@ classdef IiwaPlotter < handle
             end
             trajectory_out.t=trajectory.t(1:end-elem_delete);
         end
-        function joint_position_error(traj_baseline, trajectories, colors)
+        function joint_position_error(traj_baseline, trajectories, colors, varargin)
+            s = [1,3,5,7,2,4,6]; %Subplot order
             if (~iscell(trajectories))
                 trajectories={trajectories};
             end
-            if (~isempty(traj_baseline.q))
+            if (isempty(varargin))
                 figure;
-                leg=cell(1, size(trajectories,2));
-                ts_baseline = timeseries(traj_baseline.q, traj_baseline.t);
-                for ntraj = 1:size(trajectories,2)
-                    [delays, trajectories{ntraj}]=IiwaPlotter.fix_delay_q(traj_baseline, trajectories{ntraj});
-                    ts_trajectory = timeseries(trajectories{ntraj}.q, trajectories{ntraj}.t);
-                    [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Intersection');
-                    if (size(ts_baseline_used.Time,1)<100)
-                        [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Union');
-                    end
-                    ts_error = ts_trajectory_used - ts_baseline_used;
-                    for j = 1:IiwaRobot.n_joints
-                        subplot(IiwaRobot.n_joints,1,j);
-                        plot(ts_error.Time, ts_error.Data(:,j), colors(ntraj));
-                        leg{ntraj*2-1} = trajectories{ntraj}.name;
-                        hold on;
-                        plot(ts_error.Time, ts_error.Data(:,j), [colors(ntraj), '.']);
-                        leg{ntraj*2} = trajectories{ntraj}.name;
-                        legend(['d = ', num2str(delays(j)*(traj_baseline.t(2)-traj_baseline.t(1)))]);
-                        if j == 1
-                            title('Joint position error (rad)')
-                        end
-                        if j == IiwaRobot.n_joints
-                            xlabel('time (s)');
-                        end
-                        s = sprintf('j%d',j);
-                        ylabel(s);
-                        grid on;
-                    end
+            else
+                display = varargin{1};
+            end
+            leg={};
+            ax = zeros(1,7);
+            ts_baseline = timeseries(traj_baseline.q, traj_baseline.t);
+            for ntraj = 1:size(trajectories,2)
+                ts_trajectory = timeseries(trajectories{ntraj}.q, trajectories{ntraj}.t);
+                [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Intersection');
+                st_baseline = mean(traj_baseline.t(2:end)-traj_baseline.t(1:end-1));
+                st_traj = mean(trajectories{ntraj}.t(2:end)-trajectories{ntraj}.t(1:end-1));
+                if (size(ts_baseline_used.Time,1)<100)
+                    [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Uniform', 'interval', (st_baseline+st_traj)*2);
                 end
-                grid on;
+                ts_error = ts_trajectory_used-ts_baseline_used;
+                for j = 1:IiwaRobot.n_joints
+                    if (isempty(varargin))
+                        ax(j) = subplot(4,2,s(j));
+                    else
+                        ax(j) = subplot(4,2,s(j), 'Parent', display);
+                    end
+                    rms_error(j) = rms(ts_error.Data(:,j)); 
+                    dashedcolor = ['--', colors(ntraj)];
+                    plot(ax(j), ts_error.Time', ones(length(ts_error.Time),1).*rms_error(j)', dashedcolor);
+                    hold(ax(j), 'on');
+                    plot(ax(j), ts_error.Time, rad2deg(ts_error.Data(:,j)), colors(ntraj), 'LineWidth', IiwaPlotter.LineWidth);
+                    leg=[leg trajectories{ntraj}.name];
+                    if (IiwaPlotter.plot_points)
+                        plot(ax(j), ts_error.Time, rad2deg(ts_error.Data(:,j)), [colors(ntraj), '.']);
+                        leg=[leg trajectories{ntraj}.name];
+                    end
+                    legend(ax(j), ['Error_{', trajectories{ntraj}.name, '}'], ['rms_{', trajectories{ntraj}.name, '} = ', num2str(rms_error(j),3), 'deg']);
+                    title(ax(j), ['J', num2str(j)])
+                    ylabel(ax(j), ['[deg]']);
+                    xlabel(ax(j), 'Time [s]');
+                    grid(ax(j),'on');
+                end
             end
         end
-        function cartesian_position_error(traj_baseline, trajectories, colors)
+        function joint_velocity_error(traj_baseline, trajectories, colors, varargin)
+            s = [1,3,5,7,2,4,6]; %Subplot order
             if (~iscell(trajectories))
                 trajectories={trajectories};
             end
-            coords={'x', 'y', 'z', 'rx', 'ry', 'rz'};
-            if (~isempty(traj_baseline.x))
+            if (isempty(varargin))
                 figure;
-                leg=cell(1, size(trajectories,2));
-                ts_baseline = timeseries(traj_baseline.x, traj_baseline.t);
-                for ntraj = 1:size(trajectories,2)
-                    ts_trajectory = timeseries(trajectories{ntraj}.x, trajectories{ntraj}.t);
-                    [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Intersection');
-                    if (size(ts_baseline_used.Time,1)<100)
-                        [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Union');
-                    end
-                    error = zeros(size(ts_trajectory_used.Data,1), 6);
-                    for i=1:size(ts_trajectory_used.Data,1)
-                        error(i,:) = IiwaScrewTheory.screwA2B_A(ts_baseline_used.Data(i,:), ts_trajectory_used.Data(i,:));
-                    end
-                    ts_error = timeseries(error, ts_baseline_used.Time);
-                    for coord = 1:6
-                        subplot(6,1,coord);
-                        plot(ts_error.Time, ts_error.Data(:,coord), colors(ntraj));
-                        leg{ntraj*2-1} = trajectories{ntraj}.name;
-                        hold on;
-                        plot(ts_error.Time, ts_error.Data(:,coord), [colors(ntraj), '.']);
-                        leg{ntraj*2} = trajectories{ntraj}.name;
-                        if coord == 1
-                            title('Cartesian position error (m, rad)')
-                        end
-                        if coord == 6
-                            xlabel('time (s)');
-                        end
-                        ylabel(coords{coord});
-                        grid on;
-                    end
-                end
-                legend(leg);
-                grid on;
+            else
+                display = varargin{1};
             end
+            leg={};
+            ax = zeros(1,7);
+            ts_baseline = timeseries(traj_baseline.qdot, traj_baseline.t);
+            for ntraj = 1:size(trajectories,2)
+                ts_trajectory = timeseries(trajectories{ntraj}.qdot, trajectories{ntraj}.t);
+                [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Intersection');
+                st_baseline = mean(traj_baseline.t(2:end)-traj_baseline.t(1:end-1));
+                st_traj = mean(trajectories{ntraj}.t(2:end)-trajectories{ntraj}.t(1:end-1));
+                if (size(ts_baseline_used.Time,1)<100)
+                    [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Uniform', 'interval', (st_baseline+st_traj)*2);
+                end
+                ts_error = ts_trajectory_used-ts_baseline_used;
+                for j = 1:IiwaRobot.n_joints
+                    if (isempty(varargin))
+                        ax(j) = subplot(4,2,s(j));
+                    else
+                        ax(j) = subplot(4,2,s(j), 'Parent', display);
+                    end
+                    rms_error(j) = rms(ts_error.Data(:,j)); 
+                    dashedcolor = ['--', colors(ntraj)];
+                    plot(ax(j), ts_error.Time', ones(length(ts_error.Time),1).*rms_error(j)', dashedcolor);
+                    hold(ax(j), 'on');
+                    plot(ax(j), ts_error.Time, rad2deg(ts_error.Data(:,j)), colors(ntraj), 'LineWidth', IiwaPlotter.LineWidth);
+                    leg=[leg trajectories{ntraj}.name];
+                    if (IiwaPlotter.plot_points)
+                        plot(ax(j), ts_error.Time, rad2deg(ts_error.Data(:,j)), [colors(ntraj), '.']);
+                        leg=[leg trajectories{ntraj}.name];
+                    end
+                    legend(ax(j), ['Error_{', trajectories{ntraj}.name, '}'], ['rms_{', trajectories{ntraj}.name, '} = ', num2str(rms_error(j),3), 'deg/s']);
+                    title(ax(j), ['J', num2str(j)])
+                    ylabel(ax(j), '[deg/s]');
+                    xlabel(ax(j), 'Time [s]');
+                    grid(ax(j),'on');
+                end
+            end
+        end
+        function joint_acceleration_error(traj_baseline, trajectories, colors, varargin)
+            s = [1,3,5,7,2,4,6]; %Subplot order
+            if (~iscell(trajectories))
+                trajectories={trajectories};
+            end
+            if (isempty(varargin))
+                figure;
+            else
+                display = varargin{1};
+            end
+            leg={};
+            ax = zeros(1,7);
+            ts_baseline = timeseries(traj_baseline.qdotdot, traj_baseline.t);
+            for ntraj = 1:size(trajectories,2)
+                ts_trajectory = timeseries(trajectories{ntraj}.qdotdot, trajectories{ntraj}.t);
+                [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Intersection');
+                st_baseline = mean(traj_baseline.t(2:end)-traj_baseline.t(1:end-1));
+                st_traj = mean(trajectories{ntraj}.t(2:end)-trajectories{ntraj}.t(1:end-1));
+                if (size(ts_baseline_used.Time,1)<100)
+                    [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Uniform', 'interval', (st_baseline+st_traj)*2);
+                end
+                ts_error = ts_trajectory_used-ts_baseline_used;
+                for j = 1:IiwaRobot.n_joints
+                    if (isempty(varargin))
+                        ax(j) = subplot(4,2,s(j));
+                    else
+                        ax(j) = subplot(4,2,s(j), 'Parent', display);
+                    end
+                    rms_error(j) = rms(ts_error.Data(:,j)); 
+                    dashedcolor = ['--', colors(ntraj)];
+                    plot(ax(j), ts_error.Time', ones(length(ts_error.Time),1).*rms_error(j)', dashedcolor);
+                    hold(ax(j), 'on');
+                    plot(ax(j), ts_error.Time, rad2deg(ts_error.Data(:,j)), colors(ntraj), 'LineWidth', IiwaPlotter.LineWidth);
+                    leg=[leg trajectories{ntraj}.name];
+                    if (IiwaPlotter.plot_points)
+                        plot(ax(j), ts_error.Time, rad2deg(ts_error.Data(:,j)), [colors(ntraj), '.']);
+                        leg=[leg trajectories{ntraj}.name];
+                    end
+                    legend(ax(j), ['Error_{', trajectories{ntraj}.name, '}'], ['rms_{', trajectories{ntraj}.name, '} = ', num2str(rms_error(j),3), 'deg/s2']);
+                    title(ax(j), ['J', num2str(j)])
+                    ylabel(ax(j), '[deg/s2]');
+                    xlabel(ax(j), 'Time [s]');
+                    grid(ax(j),'on');
+                end
+            end
+        end
+        function cartesian_position_error(traj_baseline, trajectories, varargin)
+            if (~iscell(trajectories))
+                trajectories={trajectories};
+            end
+            if (isempty(varargin))
+                figure;
+            else
+                display = varargin{1};
+            end
+            leg=cell(1, size(trajectories,2));
+            ts_baseline = timeseries(traj_baseline.x, traj_baseline.t);
+            
+            for ntraj = 1:size(trajectories,2)
+                %Calculate cartesian_error
+                ts_trajectory = timeseries(trajectories{ntraj}.x, trajectories{ntraj}.t);
+                [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Intersection');
+                st_baseline = mean(traj_baseline.t(2:end)-traj_baseline.t(1:end-1));
+                st_traj = mean(trajectories{ntraj}.t(2:end)-trajectories{ntraj}.t(1:end-1));
+                if (size(ts_baseline_used.Time,1)<100)
+                    [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Uniform', 'interval', (st_baseline+st_traj)*2);
+                end
+                error = zeros(size(ts_trajectory_used.Data,1), 6);
+                for i=1:size(ts_trajectory_used.Data,1)
+                    error(i,:) = IiwaScrewTheory.screwA2B_A(ts_baseline_used.Data(i,:), ts_trajectory_used.Data(i,:));
+                end
+                for i=4:6
+                    ids = find(error(:,i)>pi/2);
+                    error(ids,i) = error(ids,i)-pi;
+                    ids = find(error(:,i)<-pi/2);
+                    error(ids,i) = error(ids,i)+pi;
+                    ids = find(abs(error(:,i))>pi/4);
+                    error(ids,i) = 0;
+                end
+                error(:,1:3) = 100*error(:,1:3);
+                error(:,4:6) = rad2deg(error(:,4:6));
+                ts_error = timeseries(error, ts_baseline_used.Time);
+                if (isempty(varargin))
+                    IiwaPlotter.cartesian_error(ts_error,1, trajectories{ntraj}.name, 'cm');
+                else
+                    IiwaPlotter.cartesian_error(ts_error,1,trajectories{ntraj}.name, 'cm', varargin{1});
+                end
+                ts_error.Data = ts_error.Data(:,4:6);
+                if (isempty(varargin))
+                    IiwaPlotter.cartesian_error(ts_error,4, trajectories{ntraj}.name, 'deg');
+                else
+                    IiwaPlotter.cartesian_error(ts_error,4,trajectories{ntraj}.name, 'deg', varargin{1});
+                end
+            end
+        end
+        function cartesian_velocity_error(traj_baseline, trajectories, varargin)
+            if (~iscell(trajectories))
+                trajectories={trajectories};
+            end
+            if (isempty(varargin))
+                figure;
+            else
+                display = varargin{1};
+            end
+            leg=cell(1, size(trajectories,2));
+            ts_baseline = timeseries(traj_baseline.xdot, traj_baseline.t);
+            for ntraj = 1:size(trajectories,2)
+                %Calculate cartesian_error
+                ts_trajectory = timeseries(trajectories{ntraj}.xdot, trajectories{ntraj}.t);
+                [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Intersection');
+                st_baseline = mean(traj_baseline.t(2:end)-traj_baseline.t(1:end-1));
+                st_traj = mean(trajectories{ntraj}.t(2:end)-trajectories{ntraj}.t(1:end-1));
+                if (size(ts_baseline_used.Time,1)<100)
+                    [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Union');
+                end
+                error = zeros(size(ts_trajectory_used.Data,1), 6);
+                for i=1:size(ts_trajectory_used.Data,1)
+                    error(i,:) = IiwaScrewTheory.screwA2B_A(ts_baseline_used.Data(i,:), ts_trajectory_used.Data(i,:));
+                end
+                for i=4:6
+                    ids = find(error(:,i)>pi/2);
+                    error(ids,i) = error(ids,i)-pi;
+                    ids = find(error(:,i)<-pi/2);
+                    error(ids,i) = error(ids,i)+pi;
+                    ids = find(abs(error(:,i))>pi/4);
+                    error(ids,i) = 0;
+                end
+                error(:,1:3) = 100*error(:,1:3);
+                error(:,4:6) = rad2deg(error(:,4:6));
+                ts_error = timeseries(error, ts_baseline_used.Time);
+                if (isempty(varargin))
+                    IiwaPlotter.cartesian_error(ts_error,1, trajectories{ntraj}.name, 'cm/s');
+                else
+                    IiwaPlotter.cartesian_error(ts_error,1,trajectories{ntraj}.name, 'cm/s', varargin{1});
+                end
+                ts_error.Data = ts_error.Data(:,4:6);
+                if (isempty(varargin))
+                    IiwaPlotter.cartesian_error(ts_error,4, trajectories{ntraj}.name, 'deg/s');
+                else
+                    IiwaPlotter.cartesian_error(ts_error,4,trajectories{ntraj}.name, 'deg/s', varargin{1});
+                end
+            end
+        end
+        function cartesian_error(ts_error, n_start, name_traj, unit_error, varargin)
+            s=[1,3,5,7,2,4,6,8];
+            rms_xpos = zeros(1,3);
+            ax = zeros(1,3);
+            for i=n_start:n_start+2
+                row = (floor((i-1)/3))+1;
+                id = i - (row-1)*3;
+                if (isempty(varargin))
+                    ax(id) = subplot(4,2,s(i+row-1));
+                else
+                    display=varargin{1};
+                    ax(id) = subplot(4,2,s(i+row-1), 'Parent', display);
+                end
+                rms_xpos(id) = rms(ts_error.Data(:,id));
+                plot(ax(id), ts_error.Time, ts_error.Data(:,id), IiwaPlotter.ColorsXYZ(id), 'LineWidth', IiwaPlotter.LineWidth);
+                hold(ax(id), 'on');
+                dashedcolor = ['--', IiwaPlotter.ColorsXYZ(id)];
+                plot(ax(id), ts_error.Time, ones(length(ts_error.Time),1)*rms_xpos(id), dashedcolor);
+                grid(ax(id), 'on');
+                legend(ax(id), ['Error_{', name_traj, '}'], ['rms_{', name_traj, '} = ', num2str(rms_xpos(id),3), unit_error]);
+                ylabel(ax(id), ['E[', unit_error, ']']);
+                xlabel(ax(id), 'Time[s]');
+                title(ax(id), IiwaPlotter.CoordNames(i));
+                legend(ax(id), 'Location', 'southeast');
+            end
+            if (isempty(varargin))
+                ax(id+1) = subplot(4,2,s(i+1+row-1));
+            else
+                ax(id+1) = subplot(4,2,s(i+1+row-1), 'Parent', display);
+            end
+            hold(ax(id+1), 'on');
+            xpos_euc_error = vecnorm(ts_error.Data(:,1:3)');
+            rms_euc_xpos = rms(xpos_euc_error);
+            plot(ax(id+1), ts_error.Time, xpos_euc_error, 'k', 'LineWidth', IiwaPlotter.LineWidth);
+            dashedcolor = ['--', 'k'];
+            plot(ax(id+1), ts_error.Time, ones(length(ts_error.Time),1)*rms_euc_xpos, dashedcolor);
+            legend(ax(id+1), ['Error_{', name_traj, '}'], ['rms_{', name_traj, '}=', num2str(rms_euc_xpos,3), unit_error]);
+            title(ax(id+1), 'Euclidean');
+            ylabel(ax(id+1), ['E[', unit_error, ']']);
+            xlabel(ax(id+1), 'Time[s]');
+            grid(ax(id+1), 'on');
+            legend(ax(id+1), 'Location', 'southeast');
         end
         function effortWithPD(traj_des, traj_comm)
             figure;
@@ -421,37 +849,13 @@ classdef IiwaPlotter < handle
                     title('Commanded and output efforts with PD efforts')
                 end
                 if j == IiwaRobot.n_joints
-                    xlabel('time (s)');
+                    xlabel('time [s]');
                 end
                 s = sprintf('j%d',j);
                 ylabel(s);
                 grid on;
             end
         end
-%         function joint_position_error(traj_comm, traj_output)
-%             figure;
-%             ts_output = timeseries(traj_comm.q, traj_comm.t);
-%             ts_comm = timeseries(traj_output.q, traj_output.t);
-%             [ts_output, ts_comm] = synchronize(ts_output, ts_comm, 'Union');
-% 
-%             ts_error = ts_comm-ts_output;
-%                 
-%             for j=1:7
-% 
-%                 subplot(7,1,j);
-%                 plot(ts_error.Time, ts_error.Data(:,j), IiwaPlotter.ColorErrors);
-%                 if j == 1
-%                     legend('Error joint position(rad)');
-%                     title('Error between commanded and output position')
-%                 end
-%                 if j == 7
-%                     xlabel('time (s)');
-%                 end
-%                 s = sprintf('j%d',j);
-%                 ylabel(s);
-%                 grid on;
-%             end
-%         end
         %% INDIVIDUAL PLOTS
         function frame(frame_given, color)
             if (size(frame_given)==[6, 1])
@@ -479,7 +883,7 @@ classdef IiwaPlotter < handle
                         title(['Joint positions from 0 to ', num2str(t), ' (rad)'])
                     end
                     if j == IiwaRobot.n_joints
-                        xlabel('time (s)');
+                        xlabel('time [s]');
                     end
                     s = sprintf('j%d',j);
                     ylabel(s);
@@ -515,7 +919,7 @@ classdef IiwaPlotter < handle
                         title(['Joint efforts from 0 to ', num2str(t), ' (rad)'])
                     end
                     if j == IiwaRobot.n_joints
-                        xlabel('time (s)');
+                        xlabel('time [s]');
                     end
                     s = sprintf('e%d',j);
                     ylabel(s);
@@ -534,11 +938,10 @@ classdef IiwaPlotter < handle
                 plot(traj_output.t,traj_output.effort(:,i), IiwaPlotter.ColorOutput);
                 legend('commanded', 'ideal','output');
                 title('Commanded and output efforts with PD efforts')
-                xlabel('time (s)');
+                xlabel('time [s]');
                 ylabel(s);
             end
         end
-
         function joint_effort_error(traj_comm, traj_output)
             figure;
             ts_output = timeseries(traj_comm.effort, traj_comm.t);
@@ -556,7 +959,7 @@ classdef IiwaPlotter < handle
                     title('Error between commanded and output efforts')
                 end
                 if j == IiwaRobot.n_joints
-                    xlabel('time (s)');
+                    xlabel('time [s]');
                 end
                 s = sprintf('j%d',j);
                 ylabel(s);
@@ -571,7 +974,7 @@ classdef IiwaPlotter < handle
                 plot(traj_output.t, traj_output.q(:,j), IiwaPlotter.ColorOutput); 
                 legend('Commanded joint position (rad)','Output joint position');
                 title('Commanded and output joint positions')
-                xlabel('time (s)');
+                xlabel('time [s]');
                 s = sprintf('j%d',j);
                 ylabel(s);
                 grid on;

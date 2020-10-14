@@ -113,7 +113,6 @@ classdef IiwaTrajectoryGeneration
             traj_spline.q=(ppval(qpp, t))';
             traj_spline.qdot=(ppval(qdotpp, t))';
             traj_spline.qdotdot=(ppval(qdotdotpp, t))';
-            traj_spline.lbr = traj_in.lbr;
             traj_spline = IiwaTrajectoryGeneration.FillCartesian(traj_spline);
         end
         function dpp = ppDer(pp)

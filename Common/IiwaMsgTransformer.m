@@ -1,16 +1,18 @@
 classdef IiwaMsgTransformer < handle
     methods(Static)
         function iiwa_traj = toIiwaTrajectory(name, input, varargin)
-            persistent initialized
             persistent fromJointTrajSrv_cli fromJointTrajSrv_msg;
             persistent fromJointStateVecSrv_cli fromJointStateVecSrv_msg;
             persistent fromTwistStampedVecSrv_cli fromTwistStampedVecSrv_msg;
             iiwa_traj=IiwaTrajectory();
-            if (isempty(initialized))
+            if (isempty(fromJointTrajSrv_cli) || ~isvalid(fromJointTrajSrv_cli))
                 [fromJointTrajSrv_cli, fromJointTrajSrv_msg] = rossvcclient('/msg_transform_helper/from_joint_traj');
+            end
+            if (isempty(fromJointStateVecSrv_cli) || ~isvalid(fromJointStateVecSrv_cli))
                 [fromJointStateVecSrv_cli, fromJointStateVecSrv_msg] = rossvcclient('/msg_transform_helper/from_joint_state_vec');                
+            end
+            if (isempty(fromTwistStampedVecSrv_cli) || ~isvalid(fromTwistStampedVecSrv_cli))
                 [fromTwistStampedVecSrv_cli, fromTwistStampedVecSrv_msg] = rossvcclient('/msg_transform_helper/from_twist_stamped_vec');
-                initialized='true';
             end
             if (length(varargin)==1)
                 fromTwistStampedVecSrv_msg.TwistStampedVec = input;

@@ -39,9 +39,47 @@ classdef IiwaScrewTheory < handle
             far_ratio = abs(qdot)./abs(IiwaRobot.ThDotmax);
             farest = max(far_ratio);
             if (farest>1)
-                disp('Limited qdot');
+                %disp('Limited qdot');
                 qdot = qdot./(farest);
             end
+        end
+        function q = IDK_IK_norot(xyz_obj, q_close)
+            xyz_obj = xyz_obj(1:3);
+            x_close = IiwaScrewTheory.ForwardKinematics(q_close);
+            xyz_close = x_close(1:3);
+            xyz_inc = xyz_obj(1:3) - xyz_close;
+            points_per_cm = 50; 
+            points = ceil(points_per_cm*norm(xyz_inc));
+            for i=1:3
+                xx(i,:)=linspace(xyz_close(i), xyz_obj(i), points);
+            end
+            xx(4:6,:) = x_close(4:6)'.*ones(3,points);
+            q_curr = q_close;
+            for i=1:size(xx,2)-1
+                x_curr = IiwaScrewTheory.ForwardKinematics(q_curr);
+                xinc_A = IiwaScrewTheory.screwA2B_A(x_curr, xx(:,i+1)');
+                xinc_S = IiwaScrewTheory.tfscrew_A2S(xinc_A, x_curr);
+                qinc = IiwaScrewTheory.IDK_point(q_curr, xinc_S); %To avoid qdot limits
+                q_curr = q_curr + qinc;
+            end
+            q=q_curr;
+            
+%             data_output.qdot(:,size(xpos,2))=[0; 0; 0; 0; 0; 0; 0];
+%             data_output.t = t;
+%             data_output=fill_cartesian(data_output);
+%             end
+%             t=linspace(0, 10, npoints);
+%             xpos=[linspace(xpos_ini(1), xpos_ini(1)+displacement(1), npoints); ...
+%                              linspace(xpos_ini(2), xpos_ini(2)+displacement(2), npoints); ...
+%                              linspace(xpos_ini(3), xpos_ini(3)+displacement(3), npoints)];
+%             % !! Does NOT work for displacements in orientation, use
+%             % IDK_point_straightline2 and absolute pos/ori, instead of relative
+%             % ones
+%             xori=[linspace(xori_ini(1), xori_ini(1)+displacement(4), npoints); ...
+%                              linspace(xori_ini(2), xori_ini(2)+displacement(5), npoints); ...
+%                              linspace(xori_ini(3), xori_ini(3)+displacement(6), npoints)];
+%             data_output=IDK_trajectory(xpos, xori, t, q_close);    
+%             q_end = data_output.q(:,end);
         end
         %% Complete trajectories with certain data
         % TODO: Change to IiwaTrajectoryGeneration
@@ -63,7 +101,7 @@ classdef IiwaScrewTheory < handle
             end
             traj.xdot(size(traj.x,1),:)=zeros(6,1);
             traj.qdot(size(traj.x,1),:)=zeros(size(IiwaRobot.Twist,2),1);
-        end 
+        end
         function traj = FillCartesianPositionsFromJointPositions(traj)
             for i=1:size(traj.q,1)
                 traj.x(i,:)=IiwaScrewTheory.ForwardKinematics(traj.q(i,:));
@@ -82,8 +120,28 @@ classdef IiwaScrewTheory < handle
             %frame A wrt to frame S
             %screw_A = a screw expressed in the frame A that you want it to
             %be represented in the space frame
-            screw_S(4:6) = eul2rotm(frame_SA(4:6), 'XYZ')*screw_A(4:6)'; %screw_A(4:6);%
+            screw_S(4:6) = eul2rotm(frame_SA(4:6), 'XYZ')*screw_A(4:6)'; %
             screw_S(1:3) = screw_A(1:3) - cross(screw_S(4:6), frame_SA(1:3));
+        end
+        function axang3A2B_A = axangA2B_A(oriA, oriB)
+            %Get rotation matrices that express orientations A and B, which
+            %are the rotations from space frame S to frames A or B
+            R_SA = eul2rotm(oriA, 'XYZ');
+            R_SB = eul2rotm(oriB, 'XYZ');
+            %Rotation matrix from A to S will be the transposed of the
+            %rotation matrix from S to A
+            R_AS = R_SA';
+            %Rotation matrix from A to B will be rotation matrix from A to
+            %S multiplied by rotation matrix from S to B
+            R_AB = R_AS * R_SB;
+            %Transform this rotation matrix into the axang4 notation. Three
+            %first elements are the unit axis of rotation (in the A frame)
+            %and the fourth is the magnitude (angle) of that rotation. 
+            axang4A2B_A = rotm2axang(R_AB);
+            %Transform this into the axis notation, which will be the
+            %unit axis multiplied by the magnitude, expressed in the A
+            %frame.
+            axang3A2B_A = axang4A2B_A(1:3)*axang4A2B_A(4);
         end
     end
     % Kinematics
@@ -168,26 +226,6 @@ classdef IiwaScrewTheory < handle
             end
             H = [r, p; [0 0 0 1]];
         end        
-        function axang3A2B_A = axangA2B_A(oriA, oriB)
-            %Get rotation matrices that express orientations A and B, which
-            %are the rotations from space frame S to frames A or B
-            R_SA = eul2rotm(oriA, 'XYZ');
-            R_SB = eul2rotm(oriB, 'XYZ');
-            %Rotation matrix from A to S will be the transposed of the
-            %rotation matrix from S to A
-            R_AS = R_SA';
-            %Rotation matrix from A to B will be rotation matrix from A to
-            %S multiplied by rotation matrix from S to B
-            R_AB = R_AS * R_SB;
-            %Transform this rotation matrix into the axang4 notation. Three
-            %first elements are the unit axis of rotation (in the A frame)
-            %and the fourth is the magnitude (angle) of that rotation. 
-            axang4A2B_A = rotm2axang(R_AB);
-            %Transform this into the axis notation, which will be the
-            %unit axis multiplied by the magnitude, expressed in the A
-            %frame.
-            axang3A2B_A = axang4A2B_A(1:3)*axang4A2B_A(4);
-        end
         function oriB = rotframe_A(oriA, axang_A)
             angle = norm(axang_A);
             if (angle~=0)

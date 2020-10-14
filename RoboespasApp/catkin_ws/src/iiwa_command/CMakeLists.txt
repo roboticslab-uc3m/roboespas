@@ -70,6 +70,8 @@ add_service_files(
     ToJointStateVec.srv
     FromTwistStampedVec.srv
     ToTwistStampedVec.srv
+		CaptureStart.srv
+		CaptureStop.srv
 )
 
 ## Generate actions in the 'action' folder
