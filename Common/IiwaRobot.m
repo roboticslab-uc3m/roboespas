@@ -18,7 +18,7 @@ classdef IiwaRobot
         Hst0 = [1 0 0 0; 0 1 0 0; 0 0 1 1.306 + IiwaRobot.l_tool; 0 0 0 1];
         % Maximum Magnitude for the robot joints POSITION rad, (by catalog).
         Thmax = deg2rad([170 120 170 120 170 120 175]);
-        ThDotmax = deg2rad([75 75 90 90 144 135 135]);
+        ThDotmax = deg2rad([85, 85, 100, 75, 130, 135, 135]);%75 75 90 90 144 135 135]);
         Torquemax = [176 176 110 110 110 40 40]; %Nm
         CartAccMax = 0.5 %m/s2
         LiMas = [IiwaRobot.CM1 IiwaRobot.CM2 IiwaRobot.CM3 IiwaRobot.CM4 ...

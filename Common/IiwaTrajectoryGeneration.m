@@ -28,42 +28,26 @@ classdef IiwaTrajectoryGeneration
             end
         end
         function traj_output = TrapezoidalVelocityProfileTrajectory(q_ini, q_goal, control_step_size, qdot, qdotdot, name)
-            times=zeros(1,7);
-            for i=1:7
-                nsamples = round(abs(q_goal(i)-q_ini(i))/(qdot(i)*control_step_size));
-                if (qdot(i)*control_step_size < abs(q_goal(i)-q_ini(i)))
-                    [~, ~, ~, tSamples, ~] = trapveltraj([q_ini(i), q_goal(i)], nsamples, 'PeakVelocity', qdot(i), 'Acceleration', qdotdot(i));
-                else
-                    traj_output=IiwaTrajectory(0, name);
-                    continue;
-                end
-%                 if (qdot(i)*control_step_size/2>abs(q_goal(i)-q_ini(i)))
-%                     [~, ~, ~, tSamples, ~] = trapveltraj([q_ini(i), q_goal(i)], 100, 'PeakVelocity', qdot(i));
-%                 else
-%                     [~, ~, ~, tSamples, ~] = trapveltraj([q_ini(i), q_goal(i)], 100, 'Acceleration', qdotdot(i));
-%                 end
-                times(i)=tSamples(end);
-            end
-            ttot = max(times);
-            npoints = ceil(ttot/control_step_size);
-            for i=1:7
-                if (qdot(i)*control_step_size<abs(q_goal(i)-q_ini(i)))
-                    [q(i,:), qd(i,:), qdd(i,:), t(i,:), pp] = trapveltraj([q_ini(i), q_goal(i)], npoints, 'PeakVelocity', qdot(i), 'Acceleration', qdotdot(i));
-                else
-                    if (q_ini(i)==q_goal(i))
-                        q(i,:) = ones(1, npoints)*q_ini(i);
-                        qd(i,:) = zeros(1,npoints);
-                        qdd(i,:) = zeros(1,npoints);
-                    else
-                        [q(i,:), qd(i,:), qdd(i,:), t(i,:), pp] = trapveltraj([q_ini(i), q_goal(i)], npoints, 'PeakVelocity', abs(q_ini(i)-q_goal(i))/(control_step_size/2));
-                    end
-                end
+            qinc = q_goal-q_ini;
+            npoints = 1000;
+            vels_normalised = qdot./qinc;
+            [qdot_perc, j_limits_v] = max(abs(1./vels_normalised));
+            qdot_used = qinc./qdot_perc;
+            accs_normalised = qdotdot./qinc;
+            [qdotdot_perc, j_limits_a] = max(abs(1./accs_normalised));
+            qdotdot_used = qdot_used./qdotdot_perc;
+            v_normalised = abs(vels_normalised(j_limits_v));
+            a_normalised = abs(accs_normalised(j_limits_a));
+            try
+                [s, sd, sdd, ts] = trapveltraj([0 1], npoints, 'PeakVelocity', v_normalised, 'Acceleration', a_normalised/10);
+            catch
+                [s, sd, sdd, ts] = trapveltraj([0 1], npoints);
             end
             traj_output = IiwaTrajectory(name,npoints);
-            traj_output.q=q';
-            traj_output.qdot=qd';
-            traj_output.qdotdot=qdd';
-            traj_output.t=t(1,:)';
+            traj_output.t=ts;
+            traj_output.q=q_ini + s'.*qinc;
+            traj_output = traj_output.CompleteVelAcc();
+            traj_output = traj_output.ChangeSampleTime(control_step_size);
         end
 %% Build bounded spline trajectory
         function traj_spline = BoundedSplineTrajectory (traj_in, smoothing, nSegments)

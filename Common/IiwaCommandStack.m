@@ -42,6 +42,10 @@ classdef IiwaCommandStack < handle
             traj_comm = IiwaTrajectory('commanded', resultMsg.TrajectoryCommanded);
             traj_out = IiwaTrajectory('output', resultMsg.TrajectoryRead);
         end
+        function [traj_comm, traj_out] = SendTraj(traj_des)
+            %Interface to select a specific mode of commanding trajectories
+            [traj_comm, traj_out] = MoveJVelTraj(traj_des);
+        end
         function [traj_comm, traj_out] = MoveJTraj(traj_des)
             %First move to first joint_position
             if (~isempty(traj_des.q))
@@ -145,6 +149,9 @@ classdef IiwaCommandStack < handle
                 throw(ME)
             end
             rosparam("set", "/iiwa_command/control_step_size", t);
+        end
+        function t = GetControlStepSize()
+            t = rosparam("get", "/iiwa_command/control_step_size");
         end
         function GravityCompensationMode(mode, coordinates)
             %Mode: 'joint', 'cartesian', 'stop'

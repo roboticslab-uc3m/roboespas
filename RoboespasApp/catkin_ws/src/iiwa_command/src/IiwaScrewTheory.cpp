@@ -3,8 +3,11 @@
 
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Geometry>
+#include "geometry_msgs/Twist.h"
 #include <iostream>
 #include <math.h>
+#include "ros/ros.h"
+
 
 using namespace Eigen;
 namespace IiwaScrewTheory
@@ -30,9 +33,13 @@ namespace IiwaScrewTheory
     static Matrix4d ScrewExponential(VectorXd screw, double mag);
     static Vector3d AxisAngleA2B_A(Vector3d axang_A, Vector3d axang_B);
     static VectorXd ScrewA2B_A(VectorXd x_A, VectorXd x_B);
+    static VectorXd ScrewA2B_S(VectorXd x_A, VectorXd x_B);
+    static geometry_msgs::Twist ScrewA2B_S(geometry_msgs::Twist x_A, geometry_msgs::Twist x_B);
     static MatrixXd GeoJacobianS(VectorXd q_curr);
     static VectorXd ForwardKinematics(VectorXd q);
+    static geometry_msgs::Twist ForwardKinematics(vector<double> q);
     static VectorXd InverseDifferentialKinematicsPoint(VectorXd q_curr, VectorXd xdot);
+    vector<double> InverseDifferentialKinematicsPoint(std::vector<double> q_curr, geometry_msgs::Twist xdot_S);
 
     void SetParameters(MatrixXd IiwaTwists_, Matrix4d Hst0_, VectorXd qdot_max_)
     {
@@ -210,10 +217,43 @@ namespace IiwaScrewTheory
     }
     static VectorXd ScrewA2B_A(VectorXd x_A, VectorXd x_B)
     {
+
         VectorXd screw(6);
         screw.head(3) = x_B.head(3)-x_A.head(3);
         screw.tail(3) = AxisAngleA2B_A(x_A.tail(3), x_B.tail(3));
         return screw;
+    }
+    static VectorXd ScrewA2B_S(VectorXd x_A, VectorXd x_B)
+    {
+      VectorXd screw_A = IiwaScrewTheory::ScrewA2B_A(x_A, x_B);
+      VectorXd screw_S = IiwaScrewTheory::TransformScrew_A2S(screw_A, x_A);
+      return screw_S;
+    }
+    static geometry_msgs::Twist ScrewA2B_S(geometry_msgs::Twist x_A, geometry_msgs::Twist x_B)
+    {
+        VectorXd x_A_vec(6);
+        VectorXd x_B_vec(6);
+        x_A_vec[0] = x_A.linear.x;
+        x_A_vec[1] = x_A.linear.y;
+        x_A_vec[2] = x_A.linear.z;
+        x_A_vec[3] = x_A.angular.x;
+        x_A_vec[4] = x_A.angular.y;
+        x_A_vec[5] = x_A.angular.z;
+        x_B_vec[0] = x_B.linear.x;
+        x_B_vec[1] = x_B.linear.y;
+        x_B_vec[2] = x_B.linear.z;
+        x_B_vec[3] = x_B.angular.x;
+        x_B_vec[4] = x_B.angular.y;
+        x_B_vec[5] = x_B.angular.z;
+        VectorXd screw_S_vec = IiwaScrewTheory::ScrewA2B_S(x_A_vec, x_B_vec);
+        geometry_msgs::Twist screw_S;
+        screw_S.linear.x = screw_S_vec[0];
+        screw_S.linear.y = screw_S_vec[1];
+        screw_S.linear.z = screw_S_vec[2];
+        screw_S.angular.x = screw_S_vec[3];
+        screw_S.angular.y = screw_S_vec[4];
+        screw_S.angular.z = screw_S_vec[5];
+        return screw_S;
     }
 //--
     static MatrixXd GeoJacobianS(VectorXd q_curr)
@@ -248,12 +288,46 @@ namespace IiwaScrewTheory
         x.tail(3) = Rotm2Eul(R);
         return x;
     }
+    static geometry_msgs::Twist ForwardKinematics(vector<double> q)
+    {
+      VectorXd q_eig = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned> (q.data(), q.size());
+      VectorXd x_eig = IiwaScrewTheory::ForwardKinematics(q_eig);
+      geometry_msgs::Twist x;
+      x.linear.x = x_eig[0];
+      x.linear.y = x_eig[1];
+      x.linear.z = x_eig[2];
+      x.angular.x = x_eig[3];
+      x.angular.y = x_eig[4];
+      x.angular.z = x_eig[5];
+      return x;
+    }
 //--Differential Kinematics
     static VectorXd InverseDifferentialKinematicsPoint(VectorXd q_curr, VectorXd xdot_S)
     {
         MatrixXd JstS = GeoJacobianS(q_curr);
         MatrixXd JstS_inv = JstS.transpose()*(JstS*JstS.transpose()).inverse();
         VectorXd qdot = JstS_inv*xdot_S;//.transpose();
+        return qdot;
+    }
+    vector<double> InverseDifferentialKinematicsPoint(std::vector<double> q_curr, geometry_msgs::Twist xdot_S)
+    {
+        VectorXd q_curr_eig = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned> (q_curr.data(), q_curr.size());
+        VectorXd xdot_S_eig(6);
+        xdot_S_eig[0] = xdot_S.linear.x;
+        xdot_S_eig[1] = xdot_S.linear.y;
+        xdot_S_eig[2] = xdot_S.linear.z;
+        xdot_S_eig[3] = xdot_S.angular.x;
+        xdot_S_eig[4] = xdot_S.angular.y;
+        xdot_S_eig[5] = xdot_S.angular.z;
+        VectorXd qdot_eig = IiwaScrewTheory::InverseDifferentialKinematicsPoint(q_curr_eig, xdot_S_eig);
+        vector<double> qdot;
+        qdot.push_back(qdot_eig[0]);
+        qdot.push_back(qdot_eig[1]);
+        qdot.push_back(qdot_eig[2]);
+        qdot.push_back(qdot_eig[3]);
+        qdot.push_back(qdot_eig[4]);
+        qdot.push_back(qdot_eig[5]);
+        qdot.push_back(qdot_eig[6]);
         return qdot;
     }
 }

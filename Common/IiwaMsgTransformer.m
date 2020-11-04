@@ -46,11 +46,9 @@ classdef IiwaMsgTransformer < handle
             iiwa_traj.name=name;
         end
         function joint_traj = toJointTraj(input)
-            persistent initialized;
             persistent toJointTrajSrv_cli toJointTrajSrv_msg;
-            if (isempty(initialized))
+            if (isempty(toJointTrajSrv_cli) || ~isvalid(toJointTrajSrv_cli))
                 [toJointTrajSrv_cli, toJointTrajSrv_msg] = rossvcclient('/msg_transform_helper/to_joint_traj');
-                initialized='true';
             end
             toJointTrajSrv_msg.JointNames={'joint_1', 'joint_2', 'joint_3', 'joint_4', 'joint_5', 'joint_6', 'joint_7'};
             toJointTrajSrv_msg.Efforts=reshape(input.effort', size(input.effort,1)*size(input.effort,2), 1);
@@ -62,11 +60,9 @@ classdef IiwaMsgTransformer < handle
             joint_traj=jointTrajMsg.JointTrajectory;
         end
         function joint_state = toJointState(input)
-            persistent initialized;
             persistent toJointStateVecSrv_cli toJointStateVecSrv_msg;
-            if (isempty(initialized))
+            if (isempty(toJointStateVecSrv_cli) || ~isvalid(toJointStateVecSrv_cli) || strcmp(toJointStateVecSrv_cli.GoalState, 'pending')==1)
                 [toJointStateVecSrv_cli, toJointStateVecSrv_msg] = rossvcclient('/msg_transform_helper/to_joint_state_vec');
-                initialized='true';
             end
             joint_state='not implemented';
             % TODO: Implement

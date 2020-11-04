@@ -531,27 +531,27 @@ classdef IiwaPlotter < handle
             end
         end
         %% PLOT ERRORS
-        function [delays, trajectory_out] = fix_delay_q(traj_baseline, trajectory)
-             %Fix delay
-            ts_baseline = timeseries(traj_baseline.q, traj_baseline.t);
-            ts_traj = timeseries(trajectory.q, trajectory.t);
-            mean(traj_baseline.t(2:end)-traj_baseline.t(1:end-1))
-            [ts_baseline, ts_traj] =synchronize(ts_baseline, ts_traj, 'Uniform', 'Interval', mean(traj_baseline.t(2:end)-traj_baseline.t(1:end-1)));
-            
-            delays = finddelay(ts_baseline.Data, ts_traj.Data);
-            elem_delete = min(delays);
-            trajectory_out = IiwaTrajectory(trajectory.name, trajectory.npoints-elem_delete);
-            for j=1:IiwaRobot.n_joints
-                d=delays(j);
-                if (d~=0)
-                    trajectory_out.q(1:trajectory.npoints-d,j) = trajectory.q(1+d:end, j);
-                    trajectory_out.q(trajectory.npoints-d+1:end,j) = ones(d-elem_delete,1)*trajectory.q(end-d,j);
-                else
-                    trajectory_out.q(:,j)=trajectory.q(:,j);
-                end
-            end
-            trajectory_out.t=trajectory.t(1:end-elem_delete);
-        end
+%         function [delays, data_out, t_out] = fix_delay_q(baseline, baseline_t, data, data_t)
+%              %Fix delay
+%             ts_baseline = timeseries(baseline, baseline_t);
+%             ts_traj = timeseries(data, data_t);
+%             [ts_baseline, ts_traj] =synchronize(ts_baseline, ts_traj, 'Uniform', 'Interval', mean(baseline_t(2:end)-baseline_t(1:end-1)));
+%             
+%             delays = finddelay(ts_baseline.Data, ts_traj.Data);
+%             elem_delete = min(delays);
+%             for j=1:IiwaRobot.n_joints
+%                 d=delays(j);
+%                 if (d~=0)
+%                     trajectory_out.q(1:trajectory.npoints-d,j) = trajectory.q(1+d:end, j);
+%                     trajectory_out.q(trajectory.npoints-d+1:end,j) = ones(d-elem_delete,1)*trajectory.q(end-d,j);
+%                 else
+%                     trajectory_out.q(:,j)=trajectory.q(:,j);
+%                 end
+%             end
+%             trajectory_out.t=trajectory.t(1:end-elem_delete);
+%             trajectory_out = trajectory_out.CompleteCartesian();
+%             trajectory_out = trajectory_out.CompleteVelAcc();
+%         end
         function joint_position_error(traj_baseline, trajectories, colors, varargin)
             s = [1,3,5,7,2,4,6]; %Subplot order
             if (~iscell(trajectories))
@@ -580,7 +580,7 @@ classdef IiwaPlotter < handle
                     else
                         ax(j) = subplot(4,2,s(j), 'Parent', display);
                     end
-                    rms_error(j) = rms(ts_error.Data(:,j)); 
+                    rms_error(j) = rad2deg(rms(ts_error.Data(:,j))); 
                     dashedcolor = ['--', colors(ntraj)];
                     plot(ax(j), ts_error.Time', ones(length(ts_error.Time),1).*rms_error(j)', dashedcolor);
                     hold(ax(j), 'on');
@@ -595,6 +595,166 @@ classdef IiwaPlotter < handle
                     ylabel(ax(j), ['[deg]']);
                     xlabel(ax(j), 'Time [s]');
                     grid(ax(j),'on');
+                end
+            end
+        end
+        function joint_position_rms(trajectories, colors, varargin)
+            s = [1,3,5,7,2,4,6]; %Subplot order
+            if (~iscell(trajectories))
+                trajectories={trajectories};
+            end
+            if (isempty(varargin))
+                figure;
+            else
+                display = varargin{1};
+            end
+            leg={};
+            ax = zeros(1,7);
+            for ntraj = 1:size(trajectories,2)
+                for j = 1:IiwaRobot.n_joints
+                    if (isempty(varargin))
+                        ax(j) = subplot(4,2,s(j));
+                    else
+                        ax(j) = subplot(4,2,s(j), 'Parent', display);
+                    end
+                    rms_error(j) = rad2deg(rms(trajectories{ntraj}.q(:,j))); 
+                    dashedcolor = ['--', colors(ntraj)];
+                    plot(ax(j), trajectories{ntraj}.t', ones(length(trajectories{ntraj}.t),1).*rms_error(j)', dashedcolor);
+                    legend(ax(j), ['Error_{', trajectories{ntraj}.name, '}'], ['rms_{', trajectories{ntraj}.name, '} = ', num2str(rms_error(j),3), 'deg']);
+                    hold(ax(j), 'on');
+                end
+            end
+        end
+        function joint_velocity_rms(trajectories, colors, varargin)
+            s = [1,3,5,7,2,4,6]; %Subplot order
+            if (~iscell(trajectories))
+                trajectories={trajectories};
+            end
+            if (isempty(varargin))
+                figure;
+            else
+                display = varargin{1};
+            end
+            leg={};
+            ax = zeros(1,7);
+            for ntraj = 1:size(trajectories,2)
+                for j = 1:IiwaRobot.n_joints
+                    if (isempty(varargin))
+                        ax(j) = subplot(4,2,s(j));
+                    else
+                        ax(j) = subplot(4,2,s(j), 'Parent', display);
+                    end
+                    rms_error(j) = rad2deg(rms(trajectories{ntraj}.qdot(:,j))); 
+                    dashedcolor = ['--', colors(ntraj)];
+                    plot(ax(j), trajectories{ntraj}.t', ones(length(trajectories{ntraj}.t),1).*rms_error(j)', dashedcolor);
+                    legend(ax(j), ['Error_{', trajectories{ntraj}.name, '}'], ['rms_{', trajectories{ntraj}.name, '} = ', num2str(rms_error(j),3), 'deg/s']);
+                    hold(ax(j), 'on');
+                end
+            end
+        end
+        function joint_acceleration_rms(trajectories, colors, varargin)
+            s = [1,3,5,7,2,4,6]; %Subplot order
+            if (~iscell(trajectories))
+                trajectories={trajectories};
+            end
+            if (isempty(varargin))
+                figure;
+            else
+                display = varargin{1};
+            end
+            leg={};
+            ax = zeros(1,7);
+            for ntraj = 1:size(trajectories,2)
+                for j = 1:IiwaRobot.n_joints
+                    if (isempty(varargin))
+                        ax(j) = subplot(4,2,s(j));
+                    else
+                        ax(j) = subplot(4,2,s(j), 'Parent', display);
+                    end
+                    rms_error(j) = rad2deg(rms(trajectories{ntraj}.qdotdot(:,j))); 
+                    dashedcolor = ['--', colors(ntraj)];
+                    plot(ax(j), trajectories{ntraj}.t', ones(length(trajectories{ntraj}.t),1).*rms_error(j)', dashedcolor);
+                    legend(ax(j), ['Error_{', trajectories{ntraj}.name, '}'], ['rms_{', trajectories{ntraj}.name, '} = ', num2str(rms_error(j),3), 'deg/s2']);
+                    hold(ax(j), 'on');
+                end
+            end
+        end
+        function cartesian_position_rms(trajectories, colors, varargin)
+            s = [1,3,5,2,4,6]; %Subplot order
+            if (~iscell(trajectories))
+                trajectories={trajectories};
+            end
+            if (isempty(varargin))
+                figure;
+            else
+                display = varargin{1};
+            end
+            leg={};
+            ax = zeros(1,7);
+            for ntraj = 1:size(trajectories,2)
+                for j = 1:3
+                    if (isempty(varargin))
+                        ax(j) = subplot(3,2,s(j));
+                    else
+                        ax(j) = subplot(3,2,s(j), 'Parent', display);
+                    end
+                    rms_error(j) = 100*(rms(trajectories{ntraj}.x(:,j))); 
+                    dashedcolor = ['--', colors(ntraj)];
+                    plot(ax(j), trajectories{ntraj}.t', ones(length(trajectories{ntraj}.t),1).*rms_error(j)', dashedcolor);
+                    legend(ax(j), ['Error_{', trajectories{ntraj}.name, '}'], ['rms_{', trajectories{ntraj}.name, '} = ', num2str(rms_error(j),3), 'cm']);
+                    hold(ax(j), 'on');
+                end
+                for j = 4:6
+                    if (isempty(varargin))
+                        ax(j) = subplot(3,2,s(j));
+                    else
+                        ax(j) = subplot(3,2,s(j), 'Parent', display);
+                    end
+                    rms_error(j) = rad2deg(rms(trajectories{ntraj}.x(:,j))); 
+                    dashedcolor = ['--', colors(ntraj)];
+                    plot(ax(j), trajectories{ntraj}.t', ones(length(trajectories{ntraj}.t),1).*rms_error(j)', dashedcolor);
+                    legend(ax(j), ['Error_{', trajectories{ntraj}.name, '}'], ['rms_{', trajectories{ntraj}.name, '} = ', num2str(rms_error(j),3), 'deg']);
+                    hold(ax(j), 'on');
+                end
+            end
+            
+        end
+        function cartesian_velocity_rms(trajectories, colors, varargin)
+            s = [1,3,5,2,4,6]; %Subplot order
+            if (~iscell(trajectories))
+                trajectories={trajectories};
+            end
+            if (isempty(varargin))
+                figure;
+            else
+                display = varargin{1};
+            end
+            leg={};
+            ax = zeros(1,7);
+            for ntraj = 1:size(trajectories,2)
+                for j = 1:3
+                    if (isempty(varargin))
+                        ax(j) = subplot(3,2,s(j));
+                    else
+                        ax(j) = subplot(3,2,s(j), 'Parent', display);
+                    end
+                    rms_error(j) = 100*(rms(trajectories{ntraj}.xdot(:,j))); 
+                    dashedcolor = ['--', colors(ntraj)];
+                    plot(ax(j), trajectories{ntraj}.t', ones(length(trajectories{ntraj}.t),1).*rms_error(j)', dashedcolor);
+                    legend(ax(j), ['Error_{', trajectories{ntraj}.name, '}'], ['rms_{', trajectories{ntraj}.name, '} = ', num2str(rms_error(j),3), 'cm']);
+                    hold(ax(j), 'on');
+                end
+                for j = 4:6
+                    if (isempty(varargin))
+                        ax(j) = subplot(3,2,s(j));
+                    else
+                        ax(j) = subplot(3,2,s(j), 'Parent', display);
+                    end
+                    rms_error(j) = rad2deg(rms(trajectories{ntraj}.xdot(:,j))); 
+                    dashedcolor = ['--', colors(ntraj)];
+                    plot(ax(j), trajectories{ntraj}.t', ones(length(trajectories{ntraj}.t),1).*rms_error(j)', dashedcolor);
+                    legend(ax(j), ['Error_{', trajectories{ntraj}.name, '}'], ['rms_{', trajectories{ntraj}.name, '} = ', num2str(rms_error(j),3), 'deg']);
+                    hold(ax(j), 'on');
                 end
             end
         end

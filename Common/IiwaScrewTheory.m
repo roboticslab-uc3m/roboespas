@@ -111,17 +111,13 @@ classdef IiwaScrewTheory < handle
             screw_A(1:3) = frameB(1:3)-frameA(1:3);
             screw_A(4:6) = IiwaScrewTheory.axangA2B_A(frameA(4:6), frameB(4:6));
         end
+        function screw_S = screwA2B_S (frameA, frameB)
+            screw_A = IiwaScrewTheory.screwA2B_A(frameA, frameB);
+            screw_S = IiwaScrewTheory.tfscrew_A2S(screw_A, frameA);
+        end
         function frameB = tfframe_A(frameA, screw_A)
             frameB(1:3) = frameA(1:3) + screw_A(1:3);
             frameB(4:6) = IiwaScrewTheory.rotframe_A(frameA(4:6), screw_A(4:6));
-        end
-        function screw_S = tfscrew_A2S (screw_A, frame_SA)
-            %frame_A = screw representing the position and orientation of
-            %frame A wrt to frame S
-            %screw_A = a screw expressed in the frame A that you want it to
-            %be represented in the space frame
-            screw_S(4:6) = eul2rotm(frame_SA(4:6), 'XYZ')*screw_A(4:6)'; %
-            screw_S(1:3) = screw_A(1:3) - cross(screw_S(4:6), frame_SA(1:3));
         end
         function axang3A2B_A = axangA2B_A(oriA, oriB)
             %Get rotation matrices that express orientations A and B, which
@@ -142,6 +138,18 @@ classdef IiwaScrewTheory < handle
             %unit axis multiplied by the magnitude, expressed in the A
             %frame.
             axang3A2B_A = axang4A2B_A(1:3)*axang4A2B_A(4);
+        end
+        function screw_S = tfscrew_A2S (screw_A, frame_SA)
+            %frame_A = screw representing the position and orientation of
+            %frame A wrt to frame S
+            %screw_A = a screw expressed in the frame A that you want it to
+            %be represented in the space frame
+            screw_S(4:6) = eul2rotm(frame_SA(4:6), 'XYZ')*screw_A(4:6)'; %
+            screw_S(1:3) = screw_A(1:3) - cross(screw_S(4:6), frame_SA(1:3));
+        end
+        function screw_A = tfscrew_S2A (screw_S, frame_SA)
+            screw_A(1:3) = screw_S(1:3) + cross(screw_S(4:6), frame_SA(1:3));
+            screw_A(4:6) = eul2rotm(frame_SA(4:6), 'XYZ')'*screw_S(4:6)';
         end
     end
     % Kinematics
@@ -237,10 +245,6 @@ classdef IiwaScrewTheory < handle
             else
                 oriB = oriA;
             end
-        end
-        function screw_A = tfscrew_S2A (screw_S, frame_SA)
-            screw_A(1:3) = screw_S(1:3) + cross(screw_S(4:6), frame_SA(1:3));
-            screw_A(4:6) = eul2rotm(frame_SA(4:6), 'XYZ')'*screw_S(4:6)';
         end
         function xdot_S = DK_point (q_curr, qdot)
             if (size(qdot,2)==1)

@@ -1,11 +1,13 @@
 <?xml version="1.0"?>
 <launch>
+    <!-- Tool ManetaFT-->
+    <arg name="tool_name" default="ManetaFT"/>
+    <param name="/iiwa/toolName" type="string" value="$(arg tool_name)"/>
+
 
     <include file="$(find iiwa_gazebo)/launch/iiwa_gazebo.launch">
 		<arg name="model" default="iiwa14ManetaFT" />
-		<arg name="tool_name" default="ManetaFT" />
-		<param name="/iiwa/toolName" type="string" value="$arg tool_name)" />
-    </include>
+		</include>
 
     <rosparam command="load" file="$(find roboespas_iiwacontrol)/config/params.yaml"/>
 
