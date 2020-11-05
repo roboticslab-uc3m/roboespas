@@ -44,7 +44,7 @@ classdef IiwaCommandStack < handle
         end
         function [traj_comm, traj_out] = SendTraj(traj_des)
             %Interface to select a specific mode of commanding trajectories
-            [traj_comm, traj_out] = MoveJVelTraj(traj_des);
+            [traj_comm, traj_out] = IiwaCommandStack.MoveJVelTraj(traj_des);
         end
         function [traj_comm, traj_out] = MoveJTraj(traj_des)
             %First move to first joint_position
@@ -68,6 +68,7 @@ classdef IiwaCommandStack < handle
             resultMsg = sendGoalAndWait(MoveJTraj_cli, MoveJTraj_msg);
             traj_comm = IiwaTrajectory('commanded', resultMsg.TrajectoryCommanded);
             traj_out = IiwaTrajectory('output', resultMsg.TrajectoryRead);
+            traj_out = traj_out.ChangeSampleTime(mean(traj_comm.t(2:end)-traj_comm.t(1:end-1)));
         end
         function [traj_comm, traj_out] = MoveJVelTraj(traj_des)
             %First move to first joint_position

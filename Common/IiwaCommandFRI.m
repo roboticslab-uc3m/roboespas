@@ -59,6 +59,9 @@ classdef IiwaCommandFRI < handle
         
         function [traj_comm, traj_out] = MoveJCartVelTraj(traj_des)
             %First move to first joint_position
+%             for i=1:traj_des.npoints
+%                 traj_des.xdot(i,:) = IiwaScrewTheory.tfscrew_A2S(traj_des.xdot(i,:), traj_des.x(i,:));
+%             end
             if (~isempty(traj_des.q))
                 IiwaCommandFRI.MoveJ(traj_des.q(1,:));
             end
@@ -113,6 +116,13 @@ classdef IiwaCommandFRI < handle
             qdot_max = IiwaCommandFRI.GetMaximumJointVelocity();
             css = IiwaCommandFRI.GetControlStepSize();
             qinc_max = qdot_max*css;
+        end
+        function SetKp(kp)
+            if (kp<0 || kp>1)
+                ME = MException('IiwaCommandStack:InvalidKp', 'Given kp must belong [0, 1]');
+                throw(ME)
+            end
+            rosparam('set', '/iiwa_command/control_cart_vel/kp', kp);
         end
         function SetVelocity(v)
             if (v<0 || v>1)

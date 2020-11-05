@@ -48,8 +48,9 @@ classdef IiwaScrewTheory < handle
             x_close = IiwaScrewTheory.ForwardKinematics(q_close);
             xyz_close = x_close(1:3);
             xyz_inc = xyz_obj(1:3) - xyz_close;
-            points_per_cm = 50; 
+            points_per_cm = 1000; 
             points = ceil(points_per_cm*norm(xyz_inc));
+            points = max(10, points);
             for i=1:3
                 xx(i,:)=linspace(xyz_close(i), xyz_obj(i), points);
             end
@@ -80,6 +81,13 @@ classdef IiwaScrewTheory < handle
 %                              linspace(xori_ini(3), xori_ini(3)+displacement(6), npoints)];
 %             data_output=IDK_trajectory(xpos, xori, t, q_close);    
 %             q_end = data_output.q(:,end);
+        end
+        function q = IDK_position(x_obj, q_curr, inc_t)
+            x_curr = IiwaScrewTheory.ForwardKinematics(q_curr);
+            xdot = IiwaScrewTheory.screwA2B_A(x_curr, x_obj)/inc_t;
+            xdot_S = IiwaScrewTheory.tfscrew_A2S(xdot, x_curr);
+            qdot = IiwaScrewTheory.IDK_point(q_curr, xdot_S);
+            q = q_curr + qdot*inc_t;
         end
         %% Complete trajectories with certain data
         % TODO: Change to IiwaTrajectoryGeneration

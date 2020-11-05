@@ -6,16 +6,18 @@ classdef IIWAControl < handle
         ReferencePositionLeft = [  -2.124842166900635   1.256874322891235  -2.738421201705933   1.675831675529480  -1.081720232963562  -0.424112081527710  -0.960969746112823];
 
         %Plot specifications
+        ColorCommanded=[0.93, 0.69, 0.13];
+        ColorTrials=[0.85, 0.33, 0.10];
         ColorInput='g';
-        ColorCommanded='b';
-        ColorTrials='r';
+%         ColorCommanded='b';
+%         ColorTrials='r';
         
         %File save specifications
         AdjustedIdentifier='adj';
         InputIdentifier='cap';
         TrajectoriesFolder = '/home/roboespas/roboespas/Common/Trajectories'
         
-        CommandMode = 'Stack' %'FRI' %
+        CommandMode = 'FRI' %'Stack' %'
     end
     properties(Access=private)
          %Properties for enabling not-connected mode
@@ -34,13 +36,13 @@ classdef IIWAControl < handle
         %TRAJECTORIES
         %Captured input trajectories
         traj_input
+        traj_resampled
         traj_input_no_pauses
         traj_input_circle
         traj_input_show
         circle_angvel
         %Adjusted trajectories
         traj_velocity_circle
-        traj_resampled
         traj_spline
         traj_mirrored
         traj_adjusted
@@ -111,8 +113,8 @@ classdef IIWAControl < handle
         function SendReferencePositionLeft(obj)
             if (obj.ROSConnected)
                 IiwaCommandFRI.SetVelocity(0.1);
-            	[traj_comm, traj_out, traj_theory] = obj.IiwaCommand.MoveJ(obj.ReferencePositionLeft);
-                IiwaPlotter.joint_position_error(traj_out, {traj_theory, traj_comm}, ['r', 'b']);
+            	[traj_comm, traj_out] = obj.IiwaCommand.MoveJ(obj.ReferencePositionLeft);
+                %IiwaPlotter.joint_position_error(traj_out, {traj_theory, traj_comm}, ['r', 'b']);
             end
         end
         function SendReferencePositionRight(obj)
@@ -123,8 +125,8 @@ classdef IIWAControl < handle
         end
         function SendInitialPosition(obj)
            	if (obj.ROSConnected)
-                if (~isempty(obj.traj_command))
-                    obj.IiwaCommand.MoveJ(obj.traj_command.q(1,:));
+                if (~isempty(obj.traj_mirrored))
+                    obj.IiwaCommand.MoveJ(obj.traj_mirrored.q(1,:));
                 else
                     ME=MException('IIWAControl:EmptyDataCommand', 'traj_command vacio');
                     throw(ME);
@@ -134,7 +136,7 @@ classdef IIWAControl < handle
         function [IDPatient, Arm] = SendReferenceTrajectory(obj)
             [IDPatient, Arm] = obj.SetNameData(obj.NameData);
             if (obj.ROSConnected)
-                [traj_command, obj.traj_reference] = obj.IiwaCommand.SendTraj(obj.traj_command);
+                [traj_command, obj.traj_reference] = obj.IiwaCommand.SendTraj(obj.traj_mirrored);
             else
                 pause(5);
             end
@@ -142,7 +144,7 @@ classdef IIWAControl < handle
         function [IDPatient, Arm] = SendTrialTrajectory(obj, i_trial)
             [IDPatient, Arm] = obj.SetNameData(obj.NameData);
             if (obj.ROSConnected)
-                [obj.traj_command, obj.trajs_trial{i_trial}] = obj.IiwaCommand.SendTraj(obj.traj_command);
+                [obj.traj_command, obj.trajs_trial{i_trial}] = obj.IiwaCommand.SendTraj(obj.traj_mirrored);
             else
                 pause(5);
             end
@@ -261,13 +263,11 @@ classdef IIWAControl < handle
                 if (~isempty(obj.traj_adjusted))
                     obj.CommandedSampleTime = IiwaCommandFRI.GetControlStepSize;
                     obj.traj_velocity_circle = obj.traj_adjusted.ChangeVelocity(w_out/obj.circle_angvel);
-                    obj.traj_resampled = obj.traj_velocity_circle.ChangeSampleTime(obj.CommandedSampleTime);
-                    obj.traj_spline = obj.traj_resampled.BoundedSpline(obj.SmoothingCommand, obj.nSegCommand);
+                    obj.traj_spline = obj.traj_velocity_circle.BoundedSpline(obj.SmoothingCommand, obj.nSegCommand);
                     traj_spline_pause = obj.traj_spline.AddPause(obj.CommandedMiddlePause);
                     obj.traj_mirrored = traj_spline_pause.MergeAfterwards(obj.traj_spline.MirrorTrajectory());
                     obj.traj_mirrored.name = 'mirrored';
-                    obj.traj_command = obj.traj_mirrored.FixCartesianCoordinates('XBC');
-                    obj.traj_command.name = 'command';
+                    obj.traj_mirrored = obj.traj_mirrored.FixCartesianCoordinates('XBC'); %For commanding cartesian velocities
                     if (~isempty(obj.traj_input))
                         obj.traj_input_show = obj.traj_input_no_pauses.ChangeVelocity(w_out/obj.circle_angvel);
                     else
@@ -372,20 +372,68 @@ classdef IIWAControl < handle
             if (obj.Outside==1)
                 display = figure;
             end
-            sgtitle(display, '3D Cartesian Position');
-            IiwaPlotter.cartesian_positions3d({obj.traj_input_show, obj.traj_velocity_circle, obj.traj_spline, obj.traj_mirrored}, ['b', 'r', 'g', 'm'], display);     
+            %sgtitle(display, '3D Cartesian Position');
+            IiwaPlotter.cartesian_positions3d({obj.traj_velocity_circle, obj.traj_spline, obj.traj_mirrored}, ['b', 'r', 'g', 'm'], display);     
         end
         function PlotJointPositionTrajectories(obj, i_trial, display)
             if (obj.Outside==1)
                 display = figure;
             end
-            sgtitle(display, 'Joint Position');
+            %sgtitle(display, 'Joint Position');
             if (obj.ROSConnected)
                 if (i_trial~=0)
-                    IiwaPlotter.joint_positions({obj.traj_input_show, obj.traj_command, obj.trajs_trial{i_trial}}, [obj.ColorInput, obj.ColorCommanded, obj.ColorTrials], display)
+                    IiwaPlotter.joint_positions({obj.traj_command, obj.trajs_trial{i_trial}}, {obj.ColorInput, obj.ColorCommanded, obj.ColorTrials}, display)
                 else
-                    IiwaPlotter.fill_joint_position(obj.traj_min, obj.traj_max, obj.ColorTrials, display);
-                    IiwaPlotter.joint_positions({obj.traj_min, obj.traj_mean, obj.traj_max, obj.traj_command}, [obj.ColorTrials, obj.ColorTrials, obj.ColorTrials, obj.ColorCommanded, '--'], display)
+%                     IiwaPlotter.fill_joint_position(obj.traj_min, obj.traj_max, obj.ColorTrials, display);
+%                     IiwaPlotter.joint_positions({obj.traj_min, obj.traj_mean, obj.traj_max, obj.traj_command}, {obj.ColorTrials, obj.ColorTrials, obj.ColorTrials, obj.ColorCommanded, '--'}, display)
+                    %q_command
+%                     display = figure(1);
+%                     IiwaPlotter.fill_joint_position(obj.traj_min, obj.traj_max, obj.ColorTrials, display);
+%                     IiwaPlotter.joint_positions({obj.traj_min, obj.traj_mean, obj.traj_max, obj.traj_command}, {obj.ColorTrials, obj.ColorTrials, obj.ColorTrials, obj.ColorCommanded, '--'}, display)
+%                     %q_precision
+%                     display = figure(2);
+%                     IiwaPlotter.fill_joint_position(obj.traj_min_error, obj.traj_max_error, obj.ColorTrials, display);
+%                     IiwaPlotter.joint_positions({obj.traj_min_error, obj.traj_mean_error, obj.traj_max_error}, {obj.ColorTrials, 'k', obj.ColorTrials}, display) 
+%                     IiwaPlotter.joint_position_rms(obj.traj_mean_error, obj.ColorTrials, display);
+%                     %q_repeatibility
+%                     display = figure(3);
+%                     IiwaPlotter.fill_joint_position(obj.traj_min_error_rep, obj.traj_max_error_rep, obj.ColorTrials, display);
+%                     IiwaPlotter.joint_positions({obj.traj_min_error_rep, obj.traj_mean_error_rep, obj.traj_max_error_rep}, {obj.ColorTrials, 'k', obj.ColorTrials}, display) 
+%                     IiwaPlotter.joint_position_rms(obj.traj_mean_error_rep, obj.ColorTrials, display);
+%                     %qd_command
+%                     display = figure(4);
+%                     IiwaPlotter.fill_joint_velocity(obj.traj_min, obj.traj_max, obj.ColorTrials, display);
+%                     IiwaPlotter.joint_velocities({obj.traj_min, obj.traj_mean, obj.traj_max, obj.traj_command}, {obj.ColorTrials, obj.ColorTrials,obj.ColorTrials, obj.ColorCommanded, '--'}, display)
+%                     %qd_precision
+%                     display = figure(5);
+%                     IiwaPlotter.fill_joint_velocity(obj.traj_min_error, obj.traj_max_error, obj.ColorTrials, display);
+%                     IiwaPlotter.joint_velocities({obj.traj_min_error, obj.traj_mean_error, obj.traj_max_error}, {obj.ColorTrials, 'k', obj.ColorTrials}, display) 
+%                     IiwaPlotter.joint_velocity_rms(obj.traj_mean_error, obj.ColorTrials, display);
+%                     %qd_repeatibility
+%                     display = figure(6);
+%                     IiwaPlotter.fill_joint_velocity(obj.traj_min_error_rep, obj.traj_max_error_rep, obj.ColorTrials, display);
+%                     IiwaPlotter.joint_velocities({obj.traj_min_error_rep, obj.traj_mean_error_rep, obj.traj_max_error_rep}, {obj.ColorTrials, 'k', obj.ColorTrials}, display) 
+%                     IiwaPlotter.joint_velocity_rms(obj.traj_mean_error_rep, obj.ColorTrials, display);
+%                     %x_command
+%                     display = figure(7);
+%                     IiwaPlotter.fill_cartesian_position(obj.traj_min, obj.traj_max, obj.ColorTrials, display);
+%                     IiwaPlotter.cartesian_positions({obj.traj_min, obj.traj_mean, obj.traj_max, obj.traj_command}, {obj.ColorTrials, obj.ColorTrials, obj.ColorTrials, obj.ColorCommanded, '--'}, display)
+%                     %x_precision
+%                     display = figure(8);
+%                     IiwaPlotter.cartesian_repeatibility_position_error(obj.traj_min_error, obj.traj_mean_error, obj.traj_max_error,  display)
+%                     %x_repeatibility
+%                     display = figure(9);
+%                     IiwaPlotter.cartesian_repeatibility_position_error(obj.traj_min_error_rep, obj.traj_mean_error_rep, obj.traj_max_error_rep,  display)
+%                     %xd_command
+%                     display = figure(10);
+%                     IiwaPlotter.fill_cartesian_velocity(obj.traj_min, obj.traj_max, obj.ColorTrials, display);
+%                     IiwaPlotter.cartesian_velocities({obj.traj_min, obj.traj_mean, obj.traj_max, obj.traj_command}, {obj.ColorTrials, obj.ColorTrials, obj.ColorTrials, obj.ColorCommanded, '--'}, display)
+%                     %xd_precision
+%                     display = figure(11);
+%                     IiwaPlotter.cartesian_repeatibility_velocity_error(obj.traj_min_error, obj.traj_mean_error, obj.traj_max_error,  display)
+%                     %xd_repeatibility
+%                     display = figure(12);
+%                     IiwaPlotter.cartesian_repeatibility_velocity_error(obj.traj_min_error_rep, obj.traj_mean_error_rep, obj.traj_max_error_rep,  display)
                 end
             end
         end
@@ -393,13 +441,13 @@ classdef IIWAControl < handle
             if (obj.Outside==1)
                 display = figure;
             end
-            sgtitle(display, 'Joint velocity');
+            %sgtitle(display, 'Joint velocity');
             if (obj.ROSConnected)
                 if (i_trial~=0)
-                    IiwaPlotter.joint_velocities({obj.traj_input_show, obj.traj_command, obj.trajs_trial{i_trial}}, [obj.ColorInput, obj.ColorCommanded, obj.ColorTrials], display)
+                    IiwaPlotter.joint_velocities({obj.traj_command, obj.trajs_trial{i_trial}, obj.traj_mirrored}, {obj.ColorInput, obj.ColorCommanded, obj.ColorTrials, '.'}, display)
                 else
                     IiwaPlotter.fill_joint_velocity(obj.traj_min, obj.traj_max, obj.ColorTrials, display);
-                    IiwaPlotter.joint_velocities({obj.traj_min, obj.traj_mean, obj.traj_max, obj.traj_command}, [obj.ColorTrials, obj.ColorTrials,obj.ColorTrials, obj.ColorCommanded, '--'], display)
+                    IiwaPlotter.joint_velocities({obj.traj_min, obj.traj_mean, obj.traj_max, obj.traj_command}, {obj.ColorTrials, obj.ColorTrials,obj.ColorTrials, obj.ColorCommanded, '--'}, display)
                 end
             end
         end
@@ -407,13 +455,13 @@ classdef IIWAControl < handle
             if (obj.Outside==1)
                 display = figure;
             end
-            sgtitle(display, 'Joint acceleration');
+            %sgtitle(display, 'Joint acceleration');
             if (obj.ROSConnected)
                 if (i_trial~=0)
-                    IiwaPlotter.joint_accelerations({obj.traj_input_show, obj.traj_command, obj.trajs_trial{i_trial}}, [obj.ColorInput, obj.ColorCommanded, obj.ColorTrials], display)
+                    IiwaPlotter.joint_accelerations({obj.traj_command, obj.trajs_trial{i_trial}}, {obj.ColorInput, obj.ColorCommanded, obj.ColorTrials}, display)
                 else 
                     IiwaPlotter.fill_joint_acceleration(obj.traj_min, obj.traj_max, obj.ColorTrials, display);
-                    IiwaPlotter.joint_accelerations({obj.traj_min, obj.traj_mean, obj.traj_max, obj.traj_command}, [obj.ColorTrials, obj.ColorTrials, obj.ColorTrials, obj.ColorCommanded, '--'], display)
+                    IiwaPlotter.joint_accelerations({obj.traj_min, obj.traj_mean, obj.traj_max, obj.traj_command}, {obj.ColorTrials, obj.ColorTrials, obj.ColorTrials, obj.ColorCommanded, '--'}, display)
                 end
             end
         end
@@ -421,13 +469,13 @@ classdef IIWAControl < handle
             if (obj.Outside==1)
                 display = figure;
             end
-            sgtitle(display, 'Cartesian position');
+            %sgtitle(display, 'Cartesian position');
             if (obj.ROSConnected)
                 if (i_trial~=0)
-                    IiwaPlotter.cartesian_positions({obj.traj_input_show, obj.traj_command, obj.trajs_trial{i_trial}}, [obj.ColorInput, obj.ColorCommanded, obj.ColorTrials], display)
+                    IiwaPlotter.cartesian_positions({obj.traj_command, obj.trajs_trial{i_trial}}, {obj.ColorInput, obj.ColorCommanded, obj.ColorTrials}, display)
                 else
                     IiwaPlotter.fill_cartesian_position(obj.traj_min, obj.traj_max, obj.ColorTrials, display);
-                    IiwaPlotter.cartesian_positions({obj.traj_min, obj.traj_mean, obj.traj_max, obj.traj_command}, [obj.ColorTrials, obj.ColorTrials, obj.ColorTrials, obj.ColorCommanded, '--'], display)
+                    IiwaPlotter.cartesian_positions({obj.traj_min, obj.traj_mean, obj.traj_max, obj.traj_command}, {obj.ColorTrials, obj.ColorTrials, obj.ColorTrials, obj.ColorCommanded, '--'}, display)
                 end
             end
         end
@@ -435,13 +483,13 @@ classdef IIWAControl < handle
             if (obj.Outside==1)
                 display = figure;
             end
-            sgtitle(display, 'Cartesian Velocity');
+            %sgtitle(display, 'Cartesian Velocity');
             if (obj.ROSConnected)
                 if (i_trial~=0)
-                    IiwaPlotter.cartesian_velocities({obj.traj_input_show, obj.traj_command, obj.trajs_trial{i_trial}}, [obj.ColorInput, obj.ColorCommanded, obj.ColorTrials], display)
+                    IiwaPlotter.cartesian_velocities({obj.traj_command, obj.trajs_trial{i_trial}}, {obj.ColorInput, obj.ColorCommanded, obj.ColorTrials}, display)
                 else
                     IiwaPlotter.fill_cartesian_velocity(obj.traj_min, obj.traj_max, obj.ColorTrials, display);
-                    IiwaPlotter.cartesian_velocities({obj.traj_min, obj.traj_mean, obj.traj_max, obj.traj_command}, [obj.ColorTrials, obj.ColorTrials, obj.ColorTrials, obj.ColorCommanded, '--'], display)
+                    IiwaPlotter.cartesian_velocities({obj.traj_min, obj.traj_mean, obj.traj_max, obj.traj_command}, {obj.ColorTrials, obj.ColorTrials, obj.ColorTrials, obj.ColorCommanded, '--'}, display)
                 end
             end
         end
@@ -449,10 +497,10 @@ classdef IIWAControl < handle
             if (obj.Outside==1)
                 display = figure;
             end
-            sgtitle(display, '3D Cartesian Trajectory');
+            %sgtitle(display, '3D Cartesian Trajectory');
             if (obj.ROSConnected)
                 if (i_trial~=0)
-                    IiwaPlotter.cartesian_positions3d({obj.traj_input_show, obj.traj_command, obj.trajs_trial{i_trial}}, [obj.ColorInput, obj.ColorCommanded, obj.ColorTrials], display)
+                    IiwaPlotter.cartesian_positions3d({obj.traj_command, obj.trajs_trial{i_trial}}, {obj.ColorInput, obj.ColorCommanded, obj.ColorTrials}, display)
                 else
                     IiwaPlotter.cartesian_positions3d(obj.trajs_trial, obj.ColorTrials*ones(1,size(obj.trajs_trial,2)), display);
                 end
@@ -463,14 +511,14 @@ classdef IIWAControl < handle
             if (obj.Outside==1)
                 display = figure;
             end
-            sgtitle(display, 'Joint Position Error');
+            %sgtitle(display, 'Joint Position Error');
             if (obj.ROSConnected)
                 if (i_trial~=0)
                     IiwaPlotter.joint_position_error(obj.traj_command, obj.trajs_trial{i_trial}, obj.ColorTrials, display);
                 else
-                    sgtitle(display, 'Joint Position Error Repeatibility Command - Trials');
+                    %sgtitle(display, 'Joint Position Error Repeatibility Command - Trials');
                     IiwaPlotter.fill_joint_position(obj.traj_min_error, obj.traj_max_error, obj.ColorTrials, display);
-                    IiwaPlotter.joint_positions({obj.traj_min_error, obj.traj_mean_error, obj.traj_max_error}, [obj.ColorTrials, 'k', obj.ColorTrials], display) 
+                    IiwaPlotter.joint_positions({obj.traj_min_error, obj.traj_mean_error, obj.traj_max_error}, {obj.ColorTrials, 'k', obj.ColorTrials}, display) 
                     IiwaPlotter.joint_position_rms(obj.traj_mean_error, obj.ColorTrials, display);
                 end
             end
@@ -479,14 +527,14 @@ classdef IIWAControl < handle
             if (obj.Outside==1)
                 display = figure;
             end
-            sgtitle(display, 'Joint Velocity Error');
+            %sgtitle(display, 'Joint Velocity Error');
             if (obj.ROSConnected)
                 if (i_trial~=0)
                     IiwaPlotter.joint_velocity_error(obj.traj_command, obj.trajs_trial{i_trial}, obj.ColorTrials, display);
                 else
-                    sgtitle(display, 'Joint Velocity Error Repeatibility Command - Trials');
+                    %sgtitle(display, 'Joint Velocity Error Repeatibility Command - Trials');
                     IiwaPlotter.fill_joint_velocity(obj.traj_min_error, obj.traj_max_error, obj.ColorTrials, display);
-                    IiwaPlotter.joint_velocities({obj.traj_min_error, obj.traj_mean_error, obj.traj_max_error}, [obj.ColorTrials, 'k', obj.ColorTrials], display) 
+                    IiwaPlotter.joint_velocities({obj.traj_min_error, obj.traj_mean_error, obj.traj_max_error}, {obj.ColorTrials, 'k', obj.ColorTrials}, display) 
                     IiwaPlotter.joint_velocity_rms(obj.traj_mean_error, obj.ColorTrials, display);
                 end
             end
@@ -495,14 +543,14 @@ classdef IIWAControl < handle
             if (obj.Outside==1)
                 display = figure;
             end
-            sgtitle(display, 'Joint Acceleration Error');
+            %sgtitle(display, 'Joint Acceleration Error');
             if (obj.ROSConnected)
                 if (i_trial~=0)
                     IiwaPlotter.joint_acceleration_error(obj.traj_command, obj.trajs_trial{i_trial}, obj.ColorTrials, display);
                 else
-                    sgtitle(display, 'Joint Acceleration Error Repeatibility Command - Trials');
+                    %sgtitle(display, 'Joint Acceleration Error Repeatibility Command - Trials');
                     IiwaPlotter.fill_joint_acceleration(obj.traj_min_error, obj.traj_max_error, obj.ColorTrials, display);
-                    IiwaPlotter.joint_accelerations({obj.traj_min_error, obj.traj_mean_error, obj.traj_max_error}, [obj.ColorTrials, 'k', obj.ColorTrials], display) 
+                    IiwaPlotter.joint_accelerations({obj.traj_min_error, obj.traj_mean_error, obj.traj_max_error}, {obj.ColorTrials, 'k', obj.ColorTrials}, display) 
                     IiwaPlotter.joint_acceleration_rms(obj.traj_mean_error, obj.ColorTrials, display);
                 end    
             end
@@ -511,16 +559,17 @@ classdef IIWAControl < handle
             if (obj.Outside==1)
                 display = figure;
             end
-            sgtitle(display, 'Cartesian Position Error');
+            %sgtitle(display, 'Cartesian Position Error');
             if (obj.ROSConnected)
                 if (i_trial~=0)
                     IiwaPlotter.cartesian_position_error(obj.traj_command, obj.trajs_trial{i_trial}, display);
                 else
-                    sgtitle(display, 'Cartesian Position Error Repeatibility Command - Trials');
+                    %sgtitle(display, 'Cartesian Position Error Repeatibility Command - Trials');
                     %TODO: Add Euclidean
-                    IiwaPlotter.fill_cartesian_position(obj.traj_min_error, obj.traj_max_error, obj.ColorTrials, display);
-                    IiwaPlotter.cartesian_positions({obj.traj_min_error, obj.traj_mean_error, obj.traj_max_error}, [obj.ColorTrials, 'k', obj.ColorTrials], display) 
-                    IiwaPlotter.cartesian_position_rms(obj.traj_mean_error, obj.ColorTrials, display);
+                    IiwaPlotter.cartesian_repeatibility_position_error(obj.traj_min_error, obj.traj_mean_error, obj.traj_max_error,  display)
+                    %IiwaPlotter.fill_cartesian_position(obj.traj_min_error, obj.traj_max_error, obj.ColorTrials, display);
+                    %IiwaPlotter.cartesian_positions({obj.traj_min_error, obj.traj_mean_error, obj.traj_max_error}, {obj.ColorTrials, 'k', obj.ColorTrials}, display) 
+                    %IiwaPlotter.cartesian_position_rms(obj.traj_mean_error, obj.ColorTrials, display);
                 end
             end
         end
@@ -528,16 +577,17 @@ classdef IIWAControl < handle
             if (obj.Outside==1)
                 display = figure;
             end
-            sgtitle(display, 'Cartesian Velocity Error');
+            %sgtitle(display, 'Cartesian Velocity Error');
             if (obj.ROSConnected)
                 if (i_trial~=0)
                     IiwaPlotter.cartesian_velocity_error(obj.traj_command, obj.trajs_trial{i_trial}, display);
                 else
-                    sgtitle(display, 'Cartesian Velocity Error Repeatibility Command - Trials');
+                    %sgtitle(display, 'Cartesian Velocity Error Repeatibility Command - Trials');
                     %TODO: Add Euclidean
-                    IiwaPlotter.fill_cartesian_velocity(obj.traj_min_error, obj.traj_max_error, obj.ColorTrials, display);
-                    IiwaPlotter.cartesian_velocities({obj.traj_min_error, obj.traj_mean_error, obj.traj_max_error}, [obj.ColorTrials, 'k', obj.ColorTrials], display)  
-                    IiwaPlotter.cartesian_velocity_rms(obj.traj_mean_error, obj.ColorTrials, display);
+                    IiwaPlotter.cartesian_repeatibility_velocity_error(obj.traj_min_error, obj.traj_mean_error, obj.traj_max_error,  display)
+%                     IiwaPlotter.fill_cartesian_velocity(obj.traj_min_error, obj.traj_max_error, obj.ColorTrials, display);
+%                     IiwaPlotter.cartesian_velocities({obj.traj_min_error, obj.traj_mean_error, obj.traj_max_error}, {obj.ColorTrials, 'k', obj.ColorTrials}, display)  
+%                     IiwaPlotter.cartesian_velocity_rms(obj.traj_mean_error, obj.ColorTrials, display);
                 end
             end
         end
@@ -547,9 +597,9 @@ classdef IIWAControl < handle
                 display = figure;
             end
             if(obj.ROSConnected)
-                sgtitle(display, 'Joint Position Error Repeatibility Mean - Trials');
+                %sgtitle(display, 'Joint Position Error Repeatibility Mean - Trials');
                 IiwaPlotter.fill_joint_position(obj.traj_min_error_rep, obj.traj_max_error_rep, obj.ColorTrials, display);
-                IiwaPlotter.joint_positions({obj.traj_min_error_rep, obj.traj_mean_error_rep, obj.traj_max_error_rep}, [obj.ColorTrials, 'k', obj.ColorTrials], display) 
+                IiwaPlotter.joint_positions({obj.traj_min_error_rep, obj.traj_mean_error_rep, obj.traj_max_error_rep}, {obj.ColorTrials, 'k', obj.ColorTrials}, display) 
                 IiwaPlotter.joint_position_rms(obj.traj_mean_error_rep, obj.ColorTrials, display);
             end
         end
@@ -558,9 +608,9 @@ classdef IIWAControl < handle
                 display = figure;
             end
            if(obj.ROSConnected)
-                sgtitle(display, 'Joint Velocity Error Repeatibility Mean - Trials');
+                %sgtitle(display, 'Joint Velocity Error Repeatibility Mean - Trials');
                 IiwaPlotter.fill_joint_velocity(obj.traj_min_error_rep, obj.traj_max_error_rep, obj.ColorTrials, display);
-                IiwaPlotter.joint_velocities({obj.traj_min_error_rep, obj.traj_mean_error_rep, obj.traj_max_error_rep}, [obj.ColorTrials, 'k', obj.ColorTrials], display) 
+                IiwaPlotter.joint_velocities({obj.traj_min_error_rep, obj.traj_mean_error_rep, obj.traj_max_error_rep}, {obj.ColorTrials, 'k', obj.ColorTrials}, display) 
                 IiwaPlotter.joint_velocity_rms(obj.traj_mean_error_rep, obj.ColorTrials, display);
             end
         end
@@ -569,9 +619,9 @@ classdef IIWAControl < handle
                 display = figure;
             end
             if(obj.ROSConnected)
-                sgtitle(display, 'Joint Acceleration Error Repeatibility Mean - Trials');
+                %sgtitle(display, 'Joint Acceleration Error Repeatibility Mean - Trials');
                 IiwaPlotter.fill_joint_acceleration(obj.traj_min_error_rep, obj.traj_max_error_rep, obj.ColorTrials, display);
-                IiwaPlotter.joint_accelerations({obj.traj_min_error_rep, obj.traj_mean_error_rep, obj.traj_max_error_rep}, [obj.ColorTrials, 'k', obj.ColorTrials], display) 
+                IiwaPlotter.joint_accelerations({obj.traj_min_error_rep, obj.traj_mean_error_rep, obj.traj_max_error_rep}, {obj.ColorTrials, 'k', obj.ColorTrials}, display) 
                 IiwaPlotter.joint_acceleration_rms(obj.traj_mean_error_rep, obj.ColorTrials, display);
             end
         end
@@ -580,11 +630,12 @@ classdef IIWAControl < handle
                 display = figure;
             end
             if(obj.ROSConnected)
-                sgtitle(display, 'Cartesian Position Error Repeatibility Mean - Trials');
+                %sgtitle(display, 'Cartesian Position Error Repeatibility Mean - Trials');
                 %TODO: Add Euclidean
-                IiwaPlotter.fill_cartesian_position(obj.traj_min_error_rep, obj.traj_max_error_rep, obj.ColorTrials, display);
-                IiwaPlotter.cartesian_positions({obj.traj_min_error_rep, obj.traj_mean_error_rep, obj.traj_max_error_rep}, [obj.ColorTrials, 'k', obj.ColorTrials], display) 
-                IiwaPlotter.cartesian_position_rms(obj.traj_mean_error_rep, obj.ColorTrials, display);
+                IiwaPlotter.cartesian_repeatibility_position_error(obj.traj_min_error_rep, obj.traj_mean_error_rep, obj.traj_max_error_rep,  display)
+                %IiwaPlotter.fill_cartesian_position(obj.traj_min_error_rep, obj.traj_max_error_rep, obj.ColorTrials, display);
+                %IiwaPlotter.cartesian_positions({obj.traj_min_error_rep, obj.traj_mean_error_rep, obj.traj_max_error_rep}, {obj.ColorTrials, 'k', obj.ColorTrials}, display) 
+                %IiwaPlotter.cartesian_position_rms(obj.traj_mean_error_rep, obj.ColorTrials, display);
             end
         end
         function PlotCartesianVelocityRepeatibilityError(obj, display, varargin)
@@ -592,11 +643,12 @@ classdef IIWAControl < handle
                 display = figure;
             end
             if(obj.ROSConnected)
-                sgtitle(display, 'Cartesian Velocity Error Repeatibility Mean - Trials');
+                %sgtitle(display, 'Cartesian Velocity Error Repeatibility Mean - Trials');
                 %TODO: Add Euclidean
-                IiwaPlotter.fill_cartesian_velocity(obj.traj_min_error_rep, obj.traj_max_error_rep, obj.ColorTrials, display);
-                IiwaPlotter.cartesian_velocities({obj.traj_min_error_rep, obj.traj_mean_error_rep, obj.traj_max_error_rep}, [obj.ColorTrials, 'k', obj.ColorTrials], display) 
-                IiwaPlotter.cartesian_velocity_rms(obj.traj_mean_error_rep, obj.ColorTrials, display);
+                IiwaPlotter.cartesian_repeatibility_velocity_error(obj.traj_min_error_rep, obj.traj_mean_error_rep, obj.traj_max_error_rep,  display)
+%                 IiwaPlotter.fill_cartesian_velocity(obj.traj_min_error_rep, obj.traj_max_error_rep, obj.ColorTrials, display);
+%                 IiwaPlotter.cartesian_velocities({obj.traj_min_error_rep, obj.traj_mean_error_rep, obj.traj_max_error_rep}, {obj.ColorTrials, 'k', obj.ColorTrials}, display) 
+%                 IiwaPlotter.cartesian_velocity_rms(obj.traj_mean_error_rep, obj.ColorTrials, display);
             end
         end 
     end

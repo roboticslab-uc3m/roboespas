@@ -31,6 +31,9 @@ class StackMoveJTrajAction
     ros::Subscriber qdot_sub;
     ros::Subscriber qtorque_sub;
     sensor_msgs::JointState joint_state;
+    bool capture = false;
+    std::vector<sensor_msgs::JointState> trajectory_read;
+
     public:
 
     StackMoveJTrajAction(std::string name) :
@@ -66,6 +69,10 @@ class StackMoveJTrajAction
         //Update stamp
         js.header=q_msg.header;
         joint_state = js;
+        if (capture)
+        {
+          trajectory_read.push_back(joint_state);
+        }
     }
     void callback_qdotSub(const iiwa_msgs::JointVelocity& qdot_msg)
     {
@@ -120,7 +127,6 @@ class StackMoveJTrajAction
         ROS_INFO("MoveJTraj action server started...");
         //Variables returned
         trajectory_msgs::JointTrajectory trajectory_commanded;
-        std::vector<sensor_msgs::JointState> trajectory_read;
         trajectory_msgs::JointTrajectory trajectory_desired = goal->trajectory_desired;
         //Read control_step_size
         double control_step_size;
@@ -145,6 +151,8 @@ class StackMoveJTrajAction
         WakeUpRobot();
         ros::Time contTime;
         ros::Duration sleepDur;
+        trajectory_read.clear();
+        capture = true;
         ros::Time tStartTraj = ros::Time::now();
         while (id < trajectory_desired.points.size())
         {
@@ -171,7 +179,6 @@ class StackMoveJTrajAction
             jPos.position.a6=q_next[5];
             jPos.position.a7=q_next[6];
             //Fill read position and commanded position
-            trajectory_read.push_back(joint_state);
             point_command.time_from_start = ros::Time::now()-tStartTraj;
             trajectory_commanded.points.push_back(point_command);
             //Command
@@ -181,6 +188,7 @@ class StackMoveJTrajAction
             //cout << "id: " << id << " q_next: " << q_next[5] << " t: " << time_from_start.toSec() << "sleep: " << sleepDur.toSec() << endl;
             sleepDur.sleep();
         }
+        capture = false;
         //Keep capturing for 0.5 seconds
         int nsamples = 0.5/control_step_size;
         nsamples=std::max(nsamples, 1);

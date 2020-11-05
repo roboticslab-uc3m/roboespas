@@ -31,6 +31,8 @@ class StackMoveJVelTrajAction
     ros::Subscriber qdot_sub;
     ros::Subscriber qtorque_sub;
     sensor_msgs::JointState joint_state;
+    bool capture = false;
+    std::vector<sensor_msgs::JointState> trajectory_read;
     public:
 
     StackMoveJVelTrajAction(std::string name) :
@@ -65,6 +67,10 @@ class StackMoveJVelTrajAction
         //Update stamp
         js.header=q_msg.header;
         joint_state = js;
+        if (capture)
+        {
+          trajectory_read.push_back(joint_state);
+        }
     }
     void callback_qdotSub(const iiwa_msgs::JointVelocity& qdot_msg)
     {
@@ -119,7 +125,6 @@ class StackMoveJVelTrajAction
         ROS_INFO("MoveJVelTraj action server started...");
         //Variables returned
         trajectory_msgs::JointTrajectory trajectory_commanded;
-        std::vector<sensor_msgs::JointState> trajectory_read;
         trajectory_msgs::JointTrajectory trajectory_desired = goal->trajectory_desired;
         //Read control_step_size
         double control_step_size;
@@ -175,11 +180,12 @@ class StackMoveJVelTrajAction
         qdot_pub.publish(qdot_traj[0]);
         ros::Time::sleepUntil(endTime);
         //Start capturing the trajectory
+        trajectory_read.clear();
+        capture = true;
         startTime=ros::Time::now();
         //Send the rest of the messages
         for (int i=1; i<npoints; i++)
         {
-            trajectory_read.push_back(joint_state);
             qdot_pub.publish(qdot_traj[i]);
             ros::Time endTime = startTime+ros::Duration(stamps[i]);
             ros::Time::sleepUntil(endTime);
@@ -256,6 +262,7 @@ class StackMoveJVelTrajAction
            trajectory_read.push_back(joint_state);
            ros::Duration(control_step_size).sleep();
         }
+        capture = false;
         as_result.trajectory_commanded = trajectory_desired;
         as_result.trajectory_read = trajectory_read;
         as.setSucceeded(as_result);

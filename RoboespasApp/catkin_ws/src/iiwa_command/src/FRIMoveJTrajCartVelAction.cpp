@@ -212,19 +212,21 @@ class FRIMoveJTrajCartVelAction
         }*/
         joint_state = getCurrentJointState();
         vector<double> q_curr {joint_state.position[0], joint_state.position[1], joint_state.position[2], joint_state.position[3], joint_state.position[4], joint_state.position[5], joint_state.position[6]};
-        for (int i=0; i<cart_vel_desired.size(); i++)
+        for (int i=0; i<cart_vel_desired.size()-1; i++)
         {
           ros::Time tCurr = ros::Time::now();
           ros::Duration stamp = tCurr-tStart;
-          geometry_msgs::Twist x_ref = cart_pos_desired[i].twist;
+
+          geometry_msgs::Twist x_ref = cart_pos_desired[i+1].twist;
           geometry_msgs::Twist xdot_ref = cart_vel_desired[i].twist;
           joint_state = getCurrentJointState();
-          geometry_msgs::Twist x_curr = IiwaScrewTheory::ForwardKinematics(joint_state.position);
-          geometry_msgs::Twist e_x = IiwaScrewTheory::ScrewA2B_S(x_curr, x_ref);
-          e_x = MultiplyTwist(e_x, 1/control_step_size);
-          geometry_msgs::Twist xdot_com = SumTwist(xdot_ref, MultiplyTwist(e_x, kp));
+          //geometry_msgs::Twist x_curr = IiwaScrewTheory::ForwardKinematics(joint_state.position);
+          //geometry_msgs::Twist e_x = IiwaScrewTheory::ScrewA2B_S(x_curr, x_ref);
+          //e_x = MultiplyTwist(e_x, 1/control_step_size);
+          //geometry_msgs::Twist xdot_com = SumTwist(xdot_ref, MultiplyTwist(e_x, kp));
           //cout << "xdot_com: [" << xdot_com.linear.x << "," << xdot_com.linear.y << "," << xdot_com.linear.z << "," << xdot_com.angular.x << "," << xdot_com.angular.y << "," << xdot_com.angular.z << "]" << endl;
-          vector<double> qdot = IiwaScrewTheory::InverseDifferentialKinematicsPoint(joint_state.position, xdot_com);
+          //TODO: Volver a añadir kp
+          vector<double> qdot = IiwaScrewTheory::InverseDifferentialKinematicsPoint(joint_state.position, cart_pos_desired[i].twist, cart_pos_desired[i+1].twist);//xdot_com);
           //cout << "q_curr: " << q_curr[0] << ", " << q_curr[1] << ", " << q_curr[2] << ", " << q_curr[3] << ", " << q_curr[4] << ", " << q_curr[5] << ", " << q_curr[6] << endl;
           //cout << "qdot_com: " << qdot[0] << ", " << qdot[1] << ", " << qdot[2] << ", " << qdot[3] << ", " << qdot[4] << ", " << qdot[5] << ", " << qdot[6] << endl;
           q_command[0] = q_curr[0] + qdot[0]*control_step_size;

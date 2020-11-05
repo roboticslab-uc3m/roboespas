@@ -16,7 +16,7 @@ classdef IiwaTrajectory
     end
     properties (Constant)
         MinCartVelocity = 0.02 %m/s
-        PointsForCircle = 15;
+        PointsForCircle = 20;
     end 
     methods
         function obj = IiwaTrajectory(varargin) %lbr, name, tWaypoints, qWaypoints, t)
@@ -86,7 +86,8 @@ classdef IiwaTrajectory
                 obj.xdot = [];
                 obj.xdot = zeros(obj.npoints,6);
                 for i=1:obj.npoints
-                    obj.xdot(i,:) = GeoJacobianS([IiwaRobot.Twist; obj.q(i,:)])*obj.qdot(i,:)';
+                    Jst = GeoJacobianS([IiwaRobot.Twist; obj.q(i,:)]);
+                    obj.xdot(i,:)=(Jst*obj.qdot(i,:)')';
                 end
             end
             if (obj.npoints==1)
@@ -110,13 +111,13 @@ classdef IiwaTrajectory
                 obj.t=0;
             end
             qdot_med = sub_q./css; %Mean velocities at css/2, css/2+css, css/2 + css*2, ...
-            %qdot_= (qdot_med(1:end-1,:)+qdot_med(2:end,:))./2;
-            obj.qdot = [qdot_med; zeros(1, IiwaRobot.n_joints)];%[zeros(1, IiwaRobot.n_joints); qdot_; zeros(1, IiwaRobot.n_joints)];
+            qdot_= (qdot_med(1:end-1,:)+qdot_med(2:end,:))./2;
+            obj.qdot = [zeros(1, IiwaRobot.n_joints); qdot_; zeros(1, IiwaRobot.n_joints)];
             sub_qdot = obj.qdot(2:end,:)-obj.qdot(1:end-1,:);
             sub_qdot = medfilt1(sub_qdot, round(obj.npoints/30));
             qdotdot_med = sub_qdot./css; %Mean velocities at css/2, css/2+css, css/2 + css*2, ...
             qdotdot_ = (qdotdot_med(1:end-1,:)+qdotdot_med(2:end,:))./2;
-            obj.qdotdot = [qdotdot_med; zeros(1,IiwaRobot.n_joints)];%[zeros(1, IiwaRobot.n_joints); qdotdot_; zeros(1, IiwaRobot.n_joints)];
+            obj.qdotdot = [zeros(1, IiwaRobot.n_joints); qdotdot_; zeros(1, IiwaRobot.n_joints)];
         end
         function obj = CompleteEffort(obj, modeID)
             %TODO:Fix
@@ -135,10 +136,13 @@ classdef IiwaTrajectory
         function obj = CompleteJoint(obj, qini)
             obj.q(1,:)=qini;
             for i=1:size(obj.x,1)-1
-                obj.xdot(i,:) = IiwaScrewTheory.screwA2B_A(obj.x(i,:), obj.x(i+1,:))/(obj.t(i+1)-obj.t(i));
-                xdot_S = IiwaScrewTheory.tfscrew_A2S(obj.xdot(i,:), obj.x(i,:));
-                obj.qdot(i,:) = IiwaScrewTheory.IDK_point(obj.q(i,:), xdot_S);
-                obj.q(i+1,:) = obj.q(i,:) + obj.qdot(i,:)*(obj.t(i+1)-obj.t(i));
+                %obj.q(i+1,:) = IiwaScrewTheory.IDK_IK_norot(obj.x(i+1,1:3), obj.q(i,:));
+                obj.q(i+1,:) = IiwaScrewTheory.IDK_position(obj.x(i+1,:), obj.q(i,:), (obj.t(i+1)-obj.t(i)));
+               
+%                 obj.xdot(i,:) = IiwaScrewTheory.screwA2B_A(obj.x(i,:), obj.x(i+1,:))/(obj.t(i+1)-obj.t(i));
+%                 xdot_S = IiwaScrewTheory.tfscrew_A2S(obj.xdot(i,:), obj.x(i,:));
+%                 obj.qdot(i,:) = IiwaScrewTheory.IDK_point(obj.q(i,:), xdot_S);
+%                 obj.q(i+1,:) = obj.q(i,:) + obj.qdot(i,:)*(obj.t(i+1)-obj.t(i));
             end
             obj.xdot(size(obj.x,1),:)=zeros(6,1);
             obj.qdot(size(obj.x,1),:)=zeros(size(IiwaRobot.Twist,2),1);
@@ -147,7 +151,7 @@ classdef IiwaTrajectory
         function obj = DeleteInitialEndPauses(obj)
             %Does not affect pp field, better apply before or inside bounded_spline function
             obj.CompleteCartesian();
-            xdot_euc_pos=vecnorm(obj.xdot(:,1:3)');%vecnorm(obj.xdot.pos);
+            xdot_euc_pos=vecnorm(obj.xdot(:,2:3)');%vecnorm(obj.xdot.pos);
             min_cart_vel = obj.MinCartVelocity;%median(xdot_euc_pos); %obj.MinCartVelocity)
             indices_1=find(xdot_euc_pos>min_cart_vel);
             if (~isempty(indices_1))
@@ -209,7 +213,7 @@ classdef IiwaTrajectory
             t_ = linspace(a,b,obj.npoints)';
             XY = [(C(1)+R*cos(t_)) (C(2)+R*sin(t_))];   
             %hold on;
-            plot(XY(:,1), XY(:,2))
+            %plot(XY(:,1), XY(:,2))
             %Find circunference angle and velocity
             u = [0 pstart-[C(1) C(2)]];
             v = [0 pend-[C(1) C(2)]];
@@ -221,8 +225,8 @@ classdef IiwaTrajectory
             obj.x(:, coords_used+3)=ones(size(obj.x(:,coords_used+3))).*obj.x(1,coords_used+3);
             q_ini = IiwaScrewTheory.IDK_IK_norot(obj.x(1,:), obj.q(1,:));
             obj = obj.CompleteJoint(q_ini);
-            obj = obj.CompleteCartesianVel();
             obj = obj.CompleteVelAcc();
+            obj = obj.CompleteCartesianVel();
         end
         function obj = AddPause(obj, t_pause)
             sample_time = mean(obj.t(2:end)-obj.t(1:end-1));
@@ -235,6 +239,18 @@ classdef IiwaTrajectory
             obj.qdotdot = [obj.qdotdot; repmat([0 0 0 0 0 0 0], npoints_added, 1)];
             obj.xdot = [obj.xdot; repmat([0 0 0 0 0 0 ], npoints_added, 1)];
             obj.xdotdot = [obj.xdotdot; repmat([0 0 0 0 0 0 ], npoints_added, 1)];
+        end
+        function obj = AddPauseBefore(obj, t_pause)
+            sample_time = mean(obj.t(2:end)-obj.t(1:end-1));
+            obj.t = [(0:sample_time:t_pause)'; obj.t+t_pause];
+            npoints_added = length(obj.t)-obj.npoints;
+            obj.npoints = length(obj.t);
+            obj.q = [repmat(obj.q(1,:), npoints_added, 1); obj.q];
+            obj.x = [repmat(obj.x(1,:), npoints_added, 1); obj.x];
+            obj.qdot = [repmat([0 0 0 0 0 0 0], npoints_added, 1); obj.qdot];
+            obj.qdotdot = [repmat([0 0 0 0 0 0 0], npoints_added, 1); obj.qdotdot];
+            obj.xdot = [repmat([0 0 0 0 0 0 ], npoints_added, 1); obj.xdot];
+            obj.xdotdot = [repmat([0 0 0 0 0 0 ], npoints_added, 1); obj.xdotdot];
         end
         function obj = MirrorTrajectory(obj)
             obj.q = flipud(obj.q);
@@ -252,9 +268,11 @@ classdef IiwaTrajectory
             obj.t = [obj.t; obj.t(end)+traj_added.t+mean(mean(traj_added.t(2:end)-traj_added.t(1:end-1)))];
         end
         function obj = ChangeVelocity(obj, v)
+            tsample = mean(obj.t(2:end)-obj.t(1:end-1));
             obj.t = obj.t./v;
             obj = obj.CompleteVelAcc();
             obj = obj.CompleteCartesianVel();
+            obj = obj.ChangeSampleTime(tsample);
         end
         function obj = BoundedSpline(obj, smoothing, nSegments)
             if (isempty(obj.t))
@@ -272,10 +290,10 @@ classdef IiwaTrajectory
             [A1, b1] = IiwaTrajectory.computeEqCstContinuity(tKnot, nState);
             lowBnd.pos = q_(:,1)';
             lowBnd.vel = zeros(1, size(q_,1));
-            lowBnd.acc = [];%zeros(1, size(q,1));
+            lowBnd.acc = zeros(1, size(q_,1)); %[];% 
             uppBnd.pos = q_(:,end)';
             uppBnd.vel = zeros(1, size(q_,1));
-            uppBnd.acc = [];%zeros(1, size(q,1));
+            uppBnd.acc = zeros(1, size(q_,1)); %[];% 
             [A2, b2] = IiwaTrajectory.computeEqCstBoundary(lowBnd, uppBnd, tKnot);
             coeff = IiwaTrajectory.solveQpEq(H,f,[A1;A2],[b1;b2]);
             nPoly = 4;
@@ -296,12 +314,58 @@ classdef IiwaTrajectory
             qdotpp = IiwaTrajectory.ppDer(qpp);
             qdotdotpp = IiwaTrajectory.ppDer(qdotpp);
             % Fill output
+%             %%CSAPE
+%             tPoints = length(obj.t);
+%             nPoints = nSegments+1;
+%             x_ = obj.t(1:round(tPoints/nPoints):end); 
+%             y_ = obj.q(1:round(tPoints/nPoints):end,:)';
+% 
+%             pp3 = csape(x_,y_, 'complete', [0 0 0 0 0 0 0; 0 0 0 0 0 0 0]');
+%             dpp3 = fnder(pp3,1);
+%             ddpp3 = fnder(dpp3,1);
+% 
+%             q_pp = ppval(pp3,obj.t)';
+%             qd_pp = ppval(dpp3, obj.t)';
+%             qdd_pp = ppval(ddpp3, obj.t)';
+% 
+%             q_knot = ppval(pp3, x_)';
+%             qd_knot = ppval(dpp3, x_)';
+%             qdd_knot = ppval(ddpp3, x_)';
+%             
+%             obj.name = 'spline';
+%             obj.q = q_pp;
+%             obj.qdot = qd_pp;
+%             obj.qdotdot = qdd_pp;
+%             obj = obj.CompleteCartesian();
+  
             obj = IiwaTrajectory('spline', length(t_));
             obj.t=t_';
             obj.q=(ppval(qpp, t_))';
             obj.qdot=(ppval(qdotpp, t_))';
             obj.qdotdot=(ppval(qdotdotpp, t_))';
             obj = obj.CompleteCartesian();
+%             Copyright (c) 2017, Matthew Kelly
+%             All rights reserved.
+% 
+%             Redistribution and use in source and binary forms, with or without
+%             modification, are permitted provided that the following conditions are met:
+% 
+%             * Redistributions of source code must retain the above copyright notice, this
+%               list of conditions and the following disclaimer.
+% 
+%             * Redistributions in binary form must reproduce the above copyright notice,
+%               this list of conditions and the following disclaimer in the documentation
+%               and/or other materials provided with the distribution
+%             THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+%             AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+%             IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+%             DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+%             FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+%             DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+%             SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+%             CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+%             OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+%             OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         end
         function obj = GetFirstNPoints(obj, npoints)
             obj.t = obj.t(1:npoints);
@@ -311,9 +375,6 @@ classdef IiwaTrajectory
             obj.qdotdot = obj.qdotdot(1:npoints,:);
             obj.xdot = obj.xdot(1:npoints,:);
             obj.npoints = npoints;
-            if (~isempty(obj.effort))
-                obj.effort=obj.effort(1:npoints,:);
-            end
         end
         function obj = FixCartesianCoordinates(obj, coordinates)
             %Does not modify joint coordinates
@@ -379,11 +440,29 @@ classdef IiwaTrajectory
             traj_command = traj_command.ChangeSampleTime(sample_time_used);
             npoints(i_traj+1) = traj_command.npoints;
             npoints_used = min(npoints);
-            %Delete the rest of the points
+            %Set to the same amount of points to allign them
+            for i_traj=1:size(trajectories,2)
+                trajs{i_traj} = trajectories{i_traj}.GetFirstNPoints(npoints_used);
+            end
+            traj_comm= traj_command.GetFirstNPoints(npoints_used);
+            %Allign command with first captured trajectory
+            for d=1:round(1/sample_time_used)    
+                e(d) = mean(vecnorm((trajs{1}.q(d:end,:)-traj_comm.q(1:end-d+1,:))'));
+            end
+            [m, id] = min(e);
+            traj_command = traj_command.AddPauseBefore(id*sample_time_used);
+            %Delete points not used
+            for i_traj=1:size(trajectories,2)
+                npoints(i_traj)=trajectories{i_traj}.npoints;
+            end
+            npoints(i_traj+1) = traj_command.npoints;
+            npoints_used = min(npoints);
+            %Set to the same amount of points to allign them
             for i_traj=1:size(trajectories,2)
                 trajectories{i_traj} = trajectories{i_traj}.GetFirstNPoints(npoints_used);
             end
-            traj_command = traj_command.GetFirstNPoints(npoints_used);
+            traj_command= traj_command.GetFirstNPoints(npoints_used);
+
             %Get minimum and maximum trajectory
             traj_min = IiwaTrajectory('min', npoints_used);
             traj_max = IiwaTrajectory('max', npoints_used);
@@ -538,15 +617,36 @@ classdef IiwaTrajectory
             traj_mean_error_rep.qdotdot = traj_mean_error_rep.qdotdot./size(trajectories,2);
             traj_mean_error_rep.x = traj_mean_error_rep.x./size(trajectories,2);
             traj_mean_error_rep.xdot = traj_mean_error_rep.xdot./size(trajectories,2);
+            
+            traj_min_error.x(:,4:6)=wrapToPi(traj_min_error.x(:,4:6));
+            traj_mean_error.x(:,4:6)=wrapToPi(traj_mean_error.x(:,4:6));     
+            traj_max_error.x(:,4:6)=wrapToPi(traj_max_error.x(:,4:6));
+            traj_min_error_rep.x(:,4:6)=wrapToPi(traj_min_error_rep.x(:,4:6));
+            traj_mean_error_rep.x(:,4:6)=wrapToPi(traj_mean_error_rep.x(:,4:6));     
+            traj_max_error_rep.x(:,4:6)=wrapToPi(traj_max_error_rep.x(:,4:6));
+            
+            
+            traj_mean_error.x(abs(traj_mean_error.x(:,4:6))>0.1745,4:6)=0;
+            traj_min_error.x(abs(traj_min_error.x(:,4:6))>0.1745,4:6)=0;
+            traj_max_error.x(abs(traj_max_error.x(:,4:6))>0.1745,4:6)=0;
+            traj_mean_error_rep.x(abs(traj_mean_error_rep.x(:,4:6))>0.1745,4:6)=0;
+            traj_min_error_rep.x(abs(traj_min_error_rep.x(:,4:6))>0.1745,4:6)=0;
+            traj_max_error_rep.x(abs(traj_max_error_rep.x(:,4:6))>0.1745,4:6)=0;
+            
+            traj_mean_error.x=traj_mean_error.x(1:npoints_used,:);
+            traj_min_error.x=traj_min_error.x(1:npoints_used,:);
+            traj_max_error.x=traj_max_error.x(1:npoints_used,:);
+            traj_mean_error_rep.x=traj_mean_error_rep.x(1:npoints_used,:);
+            traj_min_error_rep.x=traj_min_error_rep.x(1:npoints_used,:);
+            traj_max_error_rep.x=traj_max_error_rep.x(1:npoints_used,:);
         end
     end
     methods (Static, Access=private)
         function [C, R] = CircleFitByPerps(XY)
             %% Find segments and perpendicular lines
-            figure;
-            plot(XY(:,1), XY(:,2), 'x');
-            hold on;
-            axis equal;
+            %figure;
+            %plot(XY(:,1), XY(:,2), 'kx', 'MarkerSize', 5)
+            %hold on;
             margin=0.10;
             xmin=min(XY(:,1))-margin;
             xmax=max(XY(:,1))+margin;
@@ -563,7 +663,7 @@ classdef IiwaTrajectory
                 seg.center.x=mean(seg.x);
                 seg.center.y=mean(seg.y);
 %                 if (bool_plot)
-                      plot(seg.x, seg.y);
+%                      plot(seg.x, seg.y);
 %                 end
                 %Find perpendicular line between (xmin, xmax)
                 y_=-1/seg.slope*(x_-seg.center.x)+seg.center.y;
@@ -581,7 +681,7 @@ classdef IiwaTrajectory
                 perp.intercept=B(1);
                 perp.slope=B(2);
 %                 if (bool_plot)
-                      plot(perp.x, perp.y);
+%                      plot(perp.x, perp.y);
 %                 end
                 segs(i)=seg;
                 perps(i)=perp;
@@ -602,13 +702,13 @@ classdef IiwaTrajectory
                 R=0.01;
             else
 %             if (bool_plot)
-                  plot(intersections(:,1), intersections(:,2), 'x');
+%                  plot(intersections(:,1), intersections(:,2), '.');
 %             end
 
             %% Find center and radius of circumference
                 C=mean(intersections);
 %             if (bool_plot)
-                  plot(C(1), C(2), 'X', 'MarkerSize', 10);
+                  %plot(C(1), C(2), 'X', 'MarkerSize', 10);
 %             end
 
             %% Find radius of circumference
