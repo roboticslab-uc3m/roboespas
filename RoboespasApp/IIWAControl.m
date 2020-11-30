@@ -1,6 +1,6 @@
 classdef IIWAControl < handle
     properties(Constant)
-        Outside = 1;
+        Outside = 0;
          %Capture trajectory initial positions
         ReferencePositionRight= [-1.7910    1.1126   -2.1927    1.8522   -1.2179   -0.8831   -0.2125];%-1.428907871246338   1.280634284019470  -2.738452911376953   1.561375141143799  -0.955803275108337  -0.486742466688156  -0.421205967664719];
         ReferencePositionLeft = [  -2.124842166900635   1.256874322891235  -2.738421201705933   1.675831675529480  -1.081720232963562  -0.424112081527710  -0.960969746112823];
@@ -17,7 +17,7 @@ classdef IIWAControl < handle
         InputIdentifier='cap';
         TrajectoriesFolder = '/home/roboespas/roboespas/Common/Trajectories'
         
-        CommandMode = 'FRI' %'Stack' %'
+        CommandMode = 'Stack' %''FRI' %
     end
     properties(Access=private)
          %Properties for enabling not-connected mode

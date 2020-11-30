@@ -32,7 +32,7 @@ classdef IiwaCommandFRI < handle
         end
         function [traj_comm, traj_out] = SendTraj(traj_des)
             %Interface to select a specific mode of commanding trajectories
-            [traj_comm, traj_out] = IiwaCommandFRI.MoveJCartVelTraj(traj_des);
+            [traj_comm, traj_out] = IiwaCommandFRI.MoveJTraj(traj_des);
         end
         function [traj_comm, traj_out] = MoveJTraj(traj_des)
             persistent MoveJTraj_cli;

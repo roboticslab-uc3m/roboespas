@@ -35,10 +35,10 @@ classdef IiwaCommandStack < handle
                 MoveJ_cli.FeedbackFcn = @(~,msg) (1);
             end
             MoveJ_msg.JointPosition=q;
-            while (~MoveJ_cli.IsServerConnected)
-                pause(0.01);
-            end
-            resultMsg = sendGoalAndWait(MoveJ_cli, MoveJ_msg, 300);
+%             while (~MoveJ_cli.IsServerConnected)
+%                 pause(0.01);
+%             end
+            resultMsg = sendGoalAndWait(MoveJ_cli, MoveJ_msg, 300)
             traj_comm = IiwaTrajectory('commanded', resultMsg.TrajectoryCommanded);
             traj_out = IiwaTrajectory('output', resultMsg.TrajectoryRead);
         end
