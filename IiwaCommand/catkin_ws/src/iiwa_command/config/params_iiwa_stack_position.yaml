@@ -1,5 +1,0 @@
-/iiwa_command/control_step_size: 0.001
-/iiwa_command/velocity: 1 #from 0 to 1, where 1 is the maximum limit
-/iiwa_command/robot_mode: iiwa_stack
-/iiwa_command/control_type: joint_position #joint_position*/joint_torque
-/iiwa_command/idk_error_factor: 0.1

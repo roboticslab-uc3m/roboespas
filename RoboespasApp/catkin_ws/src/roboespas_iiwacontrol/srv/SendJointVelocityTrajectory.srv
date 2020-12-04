@@ -1,5 +1,0 @@
-string name
-string folder
----
-bool success
-trajectory_msgs/JointTrajectory trajectory_sent
