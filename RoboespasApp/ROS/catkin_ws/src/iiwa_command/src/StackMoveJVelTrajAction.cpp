@@ -199,73 +199,13 @@ class StackMoveJVelTrajAction
         qdot_end.velocity.a6 = trajectory_desired.points[npoints-1].velocities[5];
         qdot_end.velocity.a7 = trajectory_desired.points[npoints-1].velocities[6];
         qdot_pub.publish(qdot_end);
-        ros::Duration(0.001).sleep();
-        /*
-        vector<double> direction(7,0.0);
-        for (int i=0; i< npoints; i++)
-        {
-            //Convert vector into iiwa_msgs::JointPosition
-            iiwa_msgs::JointVelocity qdot;
-            for (int j=0; j<7; j++)
-            {
-                if (direction[j]==0.0 && trajectory_desired.points[i].velocities[j] > 1e-5)
-                {
-                    direction[j] = 1;
-                }
-                else if (direction[j]==0.0 && trajectory_desired.points[i].velocities[j] < -1e-5)
-                {
-                    direction[j] = -1;
-                }
-            }
-            qdot.velocity.a1 = trajectory_desired.points[i].velocities[0];
-            qdot.velocity.a2 = trajectory_desired.points[i].velocities[1];
-            qdot.velocity.a3 = trajectory_desired.points[i].velocities[2];
-            qdot.velocity.a4 = trajectory_desired.points[i].velocities[3];
-            qdot.velocity.a5 = trajectory_desired.points[i].velocities[4];
-            qdot.velocity.a6 = trajectory_desired.points[i].velocities[5];
-            qdot.velocity.a7 = trajectory_desired.points[i].velocities[6];
-            qdot_traj.push_back(qdot);
-            //Add stamp
-            ros::Duration stamp=trajectory_desired.points[i+1].time_from_start; //First stamp is not being used as it is 0.
-            stamps.push_back(stamp);
-        }
-        //Publish first message to start the robot
-        WakeUpRobot(direction);
-        //Start capturing the trajectory
-        ros::Time endTime;
-        ros::Time startTime=ros::Time::now();
-        //Send the messages
-        for (int i=0; i < npoints-1; i++)
-        {
-            trajectory_read.push_back(joint_state);
-            qdot_pub.publish(qdot_traj[i]);
-            ros::Time endTime = startTime+ros::Duration(stamps[i]);
-            ros::Time::sleepUntil(endTime);
-        }
-        cout << "np: "<< npoints << endl;
-        //Stop the robot just in case the trajectory was not well constructed, but it should have a zero at the end to match the number of velocities, positions and stamps.
-        iiwa_msgs::JointVelocity qdot_end;
-        qdot_end.velocity.a1 = 0;
-        qdot_end.velocity.a2 = 0;
-        qdot_end.velocity.a3 = 0;
-        qdot_end.velocity.a4 = 0;
-        qdot_end.velocity.a5 = 0;
-        qdot_end.velocity.a6 = 0;
-        qdot_end.velocity.a7 = 0;
-        qdot_pub.publish(qdot_end);
-        ros::Duration(control_step_size).sleep();*/
         //Keep capturing for 0.5 seconds
-        int nsamples = 0.5/control_step_size;
-        nsamples=std::max(nsamples, 1);
-        for (int i=0; i<nsamples; i++)
-        {
-           trajectory_read.push_back(joint_state);
-           ros::Duration(control_step_size).sleep();
-        }
+        ros::Duration(0.5).sleep();
         capture = false;
+        ros::Duration(1).sleep();
         as_result.trajectory_commanded = trajectory_desired;
         as_result.trajectory_read = trajectory_read;
-        as.setSucceeded(as_result);
         ROS_INFO("MoveJVelTraj action server finished.");
+        as.setSucceeded(as_result);
     }
 };

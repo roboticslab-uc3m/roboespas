@@ -14,7 +14,7 @@ classdef IiwaTrajectory
         name
         npoints
     end
-    properties (Constant)
+    properties (Access = private, Constant)
         MinCartVelocity = 0.02 %m/s
         PointsForCircle = 20;
     end 
@@ -72,6 +72,11 @@ classdef IiwaTrajectory
                 end
             end
             obj=obj.CompleteCartesian();
+        end
+        function obj = Substract(obj, traj)
+            ts_obj = mean(obj.t(2:end)-obj.t(1:end-1));
+            ts_traj = mean(traj.t(2:end)-traj.t(1:end-1));
+            
         end
         function obj = CompleteCartesian(obj)
             obj.x = [];
@@ -192,9 +197,6 @@ classdef IiwaTrajectory
             %fixed_plane = 'X', 'Y' or 'Z'
             if (~(strcmp(fixed_plane, 'X')==1 || strcmp(fixed_plane, 'Y')==1 || strcmp(fixed_plane, 'Z')))
                 MException('IiwaTrajectory:FitToCircleWrongPlane', 'Fixed_plane must be a string "X", "Y" or "Z"');
-            end
-            while(~isempty(display.Children))
-                delete(display.Children(1))
             end
             ax = axes(display);
             coord_names=['X', 'Y', 'Z'];
@@ -443,6 +445,20 @@ classdef IiwaTrajectory
         end      
     end
     methods(Static, Access=public)
+        function [d_s, d_id] = GetDelay(traj_ref, traj)
+            %Sample time for both trajectories should be the same or almost
+            %the same for this function to work correctly
+            
+            min_size = min([size(traj_ref.t,1)]);
+            sample_time_ref = mean(traj_ref.t(2:end)-traj_ref.t(1:end-1));
+            sample_time_traj = mean(traj.t(2:end)-traj.t(1:end-1));
+            sample_time_used = mean([sample_time_ref, sample_time_traj]);
+            for d=1:round(1/sample_time_used)    
+                e(d) = mean(vecnorm((traj.q(d:end,:)-traj_ref.q(1:end-d+1,:))'));
+            end
+            [m, d_id] = min(e);
+            d_s = d_id*sample_time_used;
+        end
         function [traj_min, traj_mean, traj_max, traj_min_error, traj_mean_error, traj_max_error, traj_min_error_rep, traj_mean_error_rep, traj_max_error_rep] = MinMeanMaxTrajectories(trajectories, traj_command)
             %GetSampleTime of each of them
             for i_traj=1:size(trajectories,2)

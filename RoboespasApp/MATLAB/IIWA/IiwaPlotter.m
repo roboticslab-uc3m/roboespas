@@ -110,7 +110,7 @@ classdef IiwaPlotter < handle
             end
         end
         function joint_velocities(trajectories, colors, varargin)
-            s = [1,3,5,7,2,4,6]; %2, 3, 4, 5, 6, 7];% %Subplot order
+            s = [1,3,5,7,2,4,6]; 
             ni = 4;
             nj = 2;
             if (~iscell(trajectories))
@@ -159,9 +159,9 @@ classdef IiwaPlotter < handle
             end
         end
         function joint_accelerations(trajectories, colors, varargin)
-            s = [1,2, 3, 4, 5, 6, 7];%3,5,7,2,4,6]; %Subplot order
-            ni = 2;
-            nj = 4;
+            s = [1,3,5,7,2,4,6];
+            ni = 4;
+            nj = 2;
             if (~iscell(trajectories))
                 trajectories={trajectories};
             end
@@ -192,48 +192,45 @@ classdef IiwaPlotter < handle
                         end
                     end
                 end
-                if (j == 1 && isempty(varargin))
-                    title(ax(j), 'Joint acceleration (rad/s2)', 'FontSize', 12)
-                end
-                if (j == IiwaRobot.n_joints || ~isempty(varargin))
-                    xlabel(ax(j), 'Time [s]', 'FontSize', 12);
-                end
-                if j == 7
-                    %legend(ax(j), leg, 'FontSize', 12);
-                end
-                title(ax(j), ['J', num2str(j)], 'FontSize', 12)
-                ylabel(ax(j), '[deg/s2]', 'FontSize', 12);
+                xlabel(ax(j), 'Time [s]', 'FontSize', 12);
+                title(ax(j), ['$\ddot{J}_', num2str(j), '$'], 'FontSize', 12)
+                ylabel(ax(j), '[deg/$s^2$]', 'FontSize', 12);
                 grid(ax(j), 'on')
             end
         end
-        function joint_efforts(trajectories, colors)
+        function joint_efforts(trajectories, colors, varargin)
+            s = [1,3,5,7,2,4,6];
+            ni = 4;
+            nj = 2;
             if (~iscell(trajectories))
                 trajectories={trajectories};
             end
             if(~iscell(colors))
                 colors={colors};
             end
-            figure;
+            if (isempty(varargin))
+                figure;
+            else
+                display = varargin{1};
+            end
             leg={};
             for j = 1:IiwaRobot.n_joints
-                subplot(IiwaRobot.n_joints,1,j);
+                if (isempty(varargin))
+                    ax(j) = subplot(ni,nj,s(j));
+                else
+                    ax(j) = subplot(ni,nj,s(j), 'Parent', display);
+                end
                 for ntraj=1:size(trajectories,2)
                     if (~isempty(trajectories{ntraj}.qdot))
-                        plot(trajectories{ntraj}.t, trajectories{ntraj}.effort(:,j), 'Color', colors{ntraj});
-                        hold on;
+                        plot(ax(j), trajectories{ntraj}.t, trajectories{ntraj}.effort(:,j), 'Color', colors{ntraj});
+                        hold(ax(j), 'on');
                         leg=[leg trajectories{ntraj}.name];
                     end
                 end
-                if j == 1
-                    %legend(leg, 'FontSize', 12);
-                    title('Joint effort (Nm)', 'FontSize', 12)
-                end
-                if j == IiwaRobot.n_joints
-                    xlabel('Time [s]', 'FontSize', 12);
-                end
-                s = sprintf('J%d',j);
-                ylabel(s, 'FontSize', 12);
-                grid on;
+                xlabel(ax(j), 'Time [s]', 'FontSize', 12);
+                title(ax(j), ['$T_', num2str(j), '$'], 'FontSize', 12)
+                ylabel(ax(j), '[N$\cdot$m]', 'FontSize', 12);
+                grid(ax(j), 'on')
             end
         end
         function joint_efforts_mat(efforts, t, color)

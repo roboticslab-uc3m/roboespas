@@ -199,9 +199,9 @@ class StackMoveJTrajAction
         }
         //ros::Duration time_passed = ros::Time::now() - tStartTraj;
         //cout << time_passed.toSec() << endl;
+        ROS_INFO("MoveJTraj action server finished.");
         as_result.trajectory_commanded = trajectory_commanded;
         as_result.trajectory_read = trajectory_read;
         as.setSucceeded(as_result);
-        ROS_INFO("MoveJTraj action server finished.");
     }
 };

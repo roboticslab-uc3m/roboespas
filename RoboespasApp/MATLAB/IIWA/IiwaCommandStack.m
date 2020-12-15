@@ -38,7 +38,6 @@ classdef IiwaCommandStack < handle
             while (~MoveJ_cli.IsServerConnected)
                 pause(0.01);
             end
-            %pause(0.5);
             resultMsg = sendGoalAndWait(MoveJ_cli, MoveJ_msg, 300);
             traj_comm = IiwaTrajectory('commanded', resultMsg.TrajectoryCommanded);
             traj_out = IiwaTrajectory('output', resultMsg.TrajectoryRead);
