@@ -27,13 +27,13 @@ function init_ros(varargin)
         else
             [~, result] = system('ipconfig');
             id_ipv4 = strfind(result, 'IPv4');
-            id_nextline = strfind(result, 'Mascara');
+            id_nextline = strfind(result, 'Máscara');
             ros_ip = extractBetween(result,id_ipv4(1)+34,id_nextline(1)-5);
             ros_ip = ros_ip{1};
             ros_master_uri = strcat('http://', ros_ip,':11311');
         end
     end
-
+    ros_master_uri = 'http://160.69.69.100:11311';
     setenv('ROS_MASTER_URI', ros_master_uri);
     setenv('ROS_IP', ros_ip);
     % Inicializa el nodo global y el ROS master
