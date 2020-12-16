@@ -125,7 +125,14 @@ classdef IiwaCommandFRI < handle
             rosparam('set', '/iiwa_command/control_cart_vel/kp', kp);
         end
         function SetVelocity(v)
-            %disp('Velocity not available in FRI mode');
+             if (v<0 || v>1)
+                ME = MException('IiwaCommandStack:WrongVelocity', 'Given velocity must belong [0,1]');
+                throw(ME)
+            end
+            rosparam('set', "/iiwa_command/velocity", v);
+        end
+        function v= GetVelocity()
+            v = rosparam('get', '/iiwa_command/velocity');
         end
         function SetAcceleration(a)
             %disp('Acceleration not available in FRI mode');

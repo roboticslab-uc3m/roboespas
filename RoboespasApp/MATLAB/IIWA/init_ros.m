@@ -13,30 +13,29 @@ function init_ros(varargin)
     else
         if (isunix)
             network_name = 'enp3s0';% 'wlp2s0';
-            [~, ros_ip] = system(['(ifconfig |grep -A 1 "', network_name, '" |tail -1 |cut -d ":" -f 2| cut -d " " -f 1)']);
-            if (isempty(ros_ip))
-                network_name = 'enp3s0';
-                [~, ros_ip] = system(['(ifconfig |grep -A 1 "', network_name, '" |tail -1 |cut -d ":" -f 2| cut -d " " -f 1)']);
-                if (isempty(ros_ip))
-                    network_name = 'enp0s25';
-                    [~, ros_ip] = system(['(ifconfig |grep -A 1 "', network_name, '" |tail -1 |cut -d ":" -f 2| cut -d " " -f 1)']);
-                end
-            end
-            ros_ip = ros_ip(1:end-1);
-            ros_master_uri = strcat('http://', ros_ip,':11311');
+            [~, ros_ip] = system('ifconfig');
+%             ['(ifconfig |grep -A 1 "', network_name, '" |tail -1 |cut -d ":" -f 2| cut -d " " -f 1)']);
+%             if (isempty(ros_ip))
+%                 network_name = 'enp3s0';
+%                 [~, ros_ip] = system(['(ifconfig |grep -A 1 "', network_name, '" |tail -1 |cut -d ":" -f 2| cut -d " " -f 1)']);
+%                 if (isempty(ros_ip))
+%                     network_name = 'enp0s25';
+%                     [~, ros_ip] = system(['(ifconfig |grep -A 1 "', network_name, '" |tail -1 |cut -d ":" -f 2| cut -d " " -f 1)']);
+%                 end
+%             end
+%             ros_ip = ros_ip(1:end-1);
+%             ros_master_uri = strcat('http://', ros_ip,':11311');
         else
             [~, result] = system('ipconfig');
-            id_ipv4 = strfind(result, 'IPv4');
-            id_nextline = strfind(result, 'Máscara');
-            ros_ip = extractBetween(result,id_ipv4(1)+34,id_nextline(1)-5);
-            ros_ip = ros_ip{1};
-            ros_master_uri = strcat('http://', ros_ip,':11311');
+        end
+        ros_master_uri = 'http://160.69.69.100:11311';
+        if (contains(result, '160.69.69.100'))
+            ros_ip = '160.69.69.100';
+        elseif (contains(result, '160.69.69.73'))
+            ros_ip = '160.69.69.73';
         end
     end
     %Fix:Trucado
-    ros_master_uri = 'http://160.69.69.100:11311';
-    ros_ip = '160.69.69.100'; %73';
-    %
     setenv('ROS_MASTER_URI', ros_master_uri);
     setenv('ROS_IP', ros_ip);
     % Inicializa el nodo global y el ROS master

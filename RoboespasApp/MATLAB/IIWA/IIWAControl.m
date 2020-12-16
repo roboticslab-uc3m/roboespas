@@ -99,7 +99,7 @@ classdef IIWAControl < handle
             if (contains(cell2mat(rosnode('list')), 'stack'))
                 obj.CommandMode = 'Stack';
                 obj.IiwaCommand = IiwaCommandStack;
-            elseif(contains(cell2mat(rosnode('list')), 'FRI'))
+            elseif(contains(cell2mat(rosnode('list')), 'fri'))
                 obj.CommandMode = 'FRI';
                 obj.IiwaCommand = IiwaCommandFRI;
             else
@@ -127,7 +127,7 @@ classdef IIWAControl < handle
         end
         function SendInitialPosition(obj)
            	if (obj.ROSConnected)
-                obj.IiwaCommand.SetVelocity(1);
+                obj.IiwaCommand.SetVelocity(0.1);
                 if (~isempty(obj.traj_mirrored))
                     obj.IiwaCommand.MoveJ(obj.traj_mirrored.q(1,:));
                 else
