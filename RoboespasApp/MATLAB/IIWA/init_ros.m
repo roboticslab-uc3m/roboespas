@@ -33,6 +33,9 @@ function init_ros(varargin)
             ros_ip = '160.69.69.100';
         elseif (contains(result, '160.69.69.73'))
             ros_ip = '160.69.69.73';
+        else
+            ME = MException('InitROS:WrongIP', 'Set IP to 160.69.69.100 or 160.69.69.73');
+            throw(ME);
         end
     end
     %Fix:Trucado
