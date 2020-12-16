@@ -33,7 +33,10 @@ function init_ros(varargin)
             ros_master_uri = strcat('http://', ros_ip,':11311');
         end
     end
+    %Fix:Trucado
     ros_master_uri = 'http://160.69.69.100:11311';
+    ros_ip = '160.69.69.100'; %73';
+    %
     setenv('ROS_MASTER_URI', ros_master_uri);
     setenv('ROS_IP', ros_ip);
     % Inicializa el nodo global y el ROS master

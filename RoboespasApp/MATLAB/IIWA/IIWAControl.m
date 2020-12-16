@@ -15,7 +15,6 @@ classdef IIWAControl < handle
         InputIdentifier='cap';
         TrajectoriesFolder = '/home/roboespas/roboespas/RoboespasApp/Results/IIWATrajectories/CurrentTrajectories';
         
-        CommandMode = 'Stack' %''FRI' %
         CommandedSampleTime = 0.005 %Seconds
     end
     properties(Access=private)
@@ -28,7 +27,8 @@ classdef IIWAControl < handle
         NameMovement = 'flexext'
         
         %Object used to control robot
-        IiwaCommand %Can be IiwaCommandStack or IiwaCommandFri (TODO:  or IiwaCommandGazebo)
+        CommandMode = 'Stack' % 'Stack' or 'FRI', stablished automatically depending on the existing ROS nodes. If ROS not connected, 'Stack' is chosen, although it does not matter
+        IiwaCommand % Object of type IiwaCommandStack or IiwaCommandFRI, depending on CommandMode
         
         %TRAJECTORIES
         %Captured input trajectories
@@ -89,14 +89,18 @@ classdef IIWAControl < handle
             IiwaPlotter.Initialize();
         end
 %% PUBLIC METHODS
-        function ConnectROS(obj)
+        function CommandMode = ConnectROS(obj)
             init_ros;
             obj.ROSConnected=1;
             clear IiwaCommandStack;
+            clear IiwaCommandFRI;
             clear IiwaMsgTransformer;
-            if (strcmp(obj.CommandMode,'Stack'))
+           
+            if (contains(cell2mat(rosnode('list')), 'stack'))
+                obj.CommandMode = 'Stack';
                 obj.IiwaCommand = IiwaCommandStack;
-            elseif(strcmp(obj.CommandMode, 'FRI'))
+            elseif(contains(cell2mat(rosnode('list')), 'FRI'))
+                obj.CommandMode = 'FRI';
                 obj.IiwaCommand = IiwaCommandFRI;
             else
                 ME=MException('IIWAControl:IiwaCommandMode', 'IIWAControl.CommandMode must be "FRI" or "Stack"');
@@ -106,6 +110,7 @@ classdef IIWAControl < handle
             obj.IiwaCommand.SetVelocity(1);
             obj.IiwaCommand.SetAcceleration(1);
             obj.IiwaCommand.SetJerk(1);
+            CommandMode = obj.CommandMode;
         end
         % ROBOT MOVEMENT FUNCTIONS
         function SendReferencePositionLeft(obj)

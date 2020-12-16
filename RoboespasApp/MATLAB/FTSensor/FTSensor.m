@@ -129,7 +129,10 @@ classdef FTSensor < handle
                 FTSensor=[];
             end
         end
-        function PlotFT(obj, origin, arg, display)
+        function PlotFT(obj, arg, display, origin)
+            if (~exist('origin', 'var'))
+                origin='results';
+            end
             switch(origin)
                 case 'results'
                     i_trial = arg;

@@ -5,7 +5,7 @@ classdef DelsysSensors < handle
         DelsysReference
         
         Movement 
-        SensorsPosition 
+        SensorsPosition = zeros(16,3);
         
         EMG % EMG.Values && EMG.Timestamps 
         IMU % IMU.Values && IMU.Timestamps
@@ -77,7 +77,7 @@ classdef DelsysSensors < handle
                 else
                     display.Name = 'EMG realTime';
                 end
-                plotHandleEMG = obj.PlotEMG('realTime', 1, display);
+                plotHandleEMG = obj.PlotEMG(1, display, 'realTime');
                 obj.DelsysComm.StartEMGplot(plotHandleEMG);
             end
         end
@@ -118,8 +118,11 @@ classdef DelsysSensors < handle
         end
         
         % Plot functions
-        function plotHandleEMG = PlotEMG(obj, origin, arg, display)
+        function plotHandleEMG = PlotEMG(obj, arg, display, origin)
             % Plot recorded EMG signals for each sensor
+            if (~exist('origin', 'var'))
+                origin='results';
+            end
             plotHandleEMG = 1;
             switch(origin)
                 case 'results'
@@ -170,7 +173,10 @@ classdef DelsysSensors < handle
                     throw(ME);
             end
         end
-        function PlotACC(obj, origin, arg, display)
+        function PlotACC(obj, arg, display, origin)
+            if (~exist('origin', 'var'))
+                origin='results';
+            end
             % Plot recorded acceleration signals (Accelerometer) for each sensor
             switch(origin)
                 case 'results'
@@ -202,7 +208,10 @@ classdef DelsysSensors < handle
                     throw(ME);
             end
         end
-        function PlotGYRO(obj, origin, arg, display)
+        function PlotGYRO(obj, arg, display, origin)
+            if (~exist('origin', 'var'))
+                origin='results';
+            end
             % Plot recorded angular velocity (gyroscope) signals for each sensor 
             switch(origin)
                 case 'results'
@@ -236,6 +245,9 @@ classdef DelsysSensors < handle
         end
         
         % Utilities
+        function ClearTrials(obj)
+            obj.DelsysTrial = [];
+        end
         function delsysSensors = GetStruct(obj, i_trial)
             if(obj.DelsysSensorsConnected)
                 delsysSensors.Reference = obj.DelsysReference;
@@ -463,7 +475,7 @@ classdef DelsysSensors < handle
                 plot(ax(i), obj.DataMean.EMGrms.t, obj.DataMin.EMGrms.data(i,:), 'b');
                 plot(ax(i), obj.DataMean.EMGrms.t, obj.DataMean.EMGrms.data(i,:), 'b', 'LineWidth', 1);
                 xlabel(ax(i), 'Tiempo [s]')
-                ylabel(ax(i), 'Amplitud [V]')
+                ylabel(ax(i), '$EMG [V]$')
                 title(ax(i), [str, ': ', DelsysTrial{1}.(str).Muscle], 'FontSize', 12)
             end
             sgtitle(display, 'Repetibilidad EMG');
@@ -485,7 +497,7 @@ classdef DelsysSensors < handle
                 plot(ax(1+3*(i-1)), obj.DataMean.tIMU, obj.DataMin.acc.x(i,:), 'r');
                 plot(ax(1+3*(i-1)), obj.DataMean.tIMU, obj.DataMean.acc.x(i,:), 'r', 'LineWidth', 1);
                 xlabel(ax(1+3*(i-1)), 'Tiempo [s]')
-                ylabel(ax(1+3*(i-1)), 'Aceleración [m/s^{2}]')
+                ylabel(ax(1+3*(i-1)), '$\dot{XYZ} [m/s^{2}]$')
                 title(ax(1), {'Eje X', ''}, 'FontSize', 13)
                 if(strcmp(display.Type, 'uitab'))
                     drawnow;
@@ -517,7 +529,7 @@ classdef DelsysSensors < handle
                 plot(ax(2+3*(i-1)), obj.DataMean.tIMU, obj.DataMin.acc.y(i,:), 'b');
                 plot(ax(2+3*(i-1)), obj.DataMean.tIMU, obj.DataMean.acc.y(i,:), 'b', 'LineWidth', 1);
                 xlabel(ax(2+3*(i-1)), 'Tiempo [s]')
-                ylabel(ax(2+3*(i-1)), 'Aceleración [m/s^{2}]')
+                ylabel(ax(2+3*(i-1)), '$\dot{XYZ} [m/s^{2}]$')
                 title(ax(2), {'Eje Y', ''}, 'FontSize', 13)
                 
                 ax(3+3*(i-1)) = subplot(numSensors, 3, 3+3*(i-1), 'Parent', display);
@@ -528,7 +540,7 @@ classdef DelsysSensors < handle
                 plot(ax(3+3*(i-1)), obj.DataMean.tIMU, obj.DataMin.acc.z(i,:), 'g');
                 plot(ax(3+3*(i-1)), obj.DataMean.tIMU, obj.DataMean.acc.z(i,:), 'g', 'LineWidth', 1);
                 xlabel(ax(3+3*(i-1)), 'Tiempo [s]')
-                ylabel(ax(3+3*(i-1)), 'Aceleración [m/s^{2}]')
+                ylabel(ax(3+3*(i-1)), '$\dot{XYZ} [m/s^{2}]$')
                 title(ax(3), {'Eje Z', ''}, 'FontSize', 13)
             end
         end
@@ -549,7 +561,7 @@ classdef DelsysSensors < handle
                 plot(ax(1+3*(i-1)), obj.DataMean.tIMU, obj.DataMin.gyro.x(i,:), 'r');
                 plot(ax(1+3*(i-1)), obj.DataMean.tIMU, obj.DataMean.gyro.x(i,:), 'r', 'LineWidth', 1);
                 xlabel(ax(1+3*(i-1)), 'Tiempo [s]')
-                ylabel(ax(1+3*(i-1)), 'Velocidad angular [rad/s]')
+                ylabel(ax(1+3*(i-1)), '$\omega [rad/s]$')
                 title(ax(1), {'Eje X', ''}, 'FontSize', 13);
                 if(strcmp(display.Type, 'uitab'))
                     drawnow;
@@ -582,7 +594,7 @@ classdef DelsysSensors < handle
                 plot(ax(2+3*(i-1)), obj.DataMean.tIMU, obj.DataMin.gyro.y(i,:), 'b');
                 plot(ax(2+3*(i-1)), obj.DataMean.tIMU, obj.DataMean.gyro.y(i,:), 'b', 'LineWidth', 1);
                 xlabel(ax(2+3*(i-1)), 'Tiempo [s]')
-                ylabel(ax(2+3*(i-1)), 'Velocidad angular [rad/s]')
+                ylabel(ax(2+3*(i-1)), '$\omega [rad/s]$')
                 title(ax(2), {'Eje Y', ''}, 'FontSize', 13)
                 
                 ax(3+3*(i-1)) = subplot(numSensors, 3, 3+3*(i-1), 'Parent', display);
@@ -594,7 +606,7 @@ classdef DelsysSensors < handle
                 plot(ax(3+3*(i-1)), obj.DataMean.tIMU, obj.DataMin.gyro.z(i,:), 'g');
                 plot(ax(3+3*(i-1)), obj.DataMean.tIMU, obj.DataMean.gyro.z(i,:), 'g', 'LineWidth', 1);
                 xlabel(ax(3+3*(i-1)), 'Tiempo [s]')
-                ylabel(ax(3+3*(i-1)), 'Velocidad angular [rad/s]')
+                ylabel(ax(3+3*(i-1)), '$\omega [rad/s]$')
                 title(ax(3), {'Eje Z', ''}, 'FontSize', 13);    
             end
         end
@@ -613,7 +625,7 @@ classdef DelsysSensors < handle
                     'Color', [0.56 0.75 0.87], 'LineWidth', 0.35)
                 plot(ax(i), DelsysTrial.(str).EMG.Timestamps, DelsysTrial.(str).EMG.Filtered, 'LineWidth', 2, 'Color', 'r')
                 xlabel(ax(i), 'Tiempo [s]')
-                ylabel(ax(i), 'Amplitud [V]')
+                ylabel(ax(i), '$EMG [V]$')
                 legend(ax(i), 'EMG capturada', 'RMS EMG')
 %                     title([str, ': ', SensorsMuscles{i}], 'FontSize', 12)
                 title(ax(i), [str, ': ', DelsysTrial.(str).Muscle], 'FontSize', 12)
@@ -633,7 +645,7 @@ classdef DelsysSensors < handle
                 plot(ax(i), DelsysTrial.(str).IMU.Timestamps, DelsysTrial.(str).IMU.Acc(2,:), 'Color', 'b')
                 plot(ax(i), DelsysTrial.(str).IMU.Timestamps, DelsysTrial.(str).IMU.Acc(3,:), 'Color', 'g')
                 xlabel(ax(i), 'Tiempo [s]')
-                ylabel(ax(i), 'Aceleración [m/s^{2}]')
+                ylabel(ax(i), '$\dot{XYZ} [m/s^{2}]$')
                 legend(ax(i), 'X', 'Y', 'Z')
                 title(ax(i), [str, ': ', DelsysTrial.(str).Muscle], 'FontSize', 12)
             end
@@ -653,7 +665,7 @@ classdef DelsysSensors < handle
                 plot(ax(i), DelsysTrial.(str).IMU.Timestamps, DelsysTrial.(str).IMU.Gyro(3,:), 'Color', 'g')
                 legend(ax(i), 'X', 'Y', 'Z')
                 xlabel(ax(i), 'Tiempo [s]')
-                ylabel(ax(i), 'Velocidad Angular [rad/s]')
+                ylabel(ax(i), '$\omega [rad/s]$')
                 title(ax(i), [str, ': ', DelsysTrial.(str).Muscle], 'FontSize', 12)
             end
             sgtitle(display, 'Velocidad angular');
