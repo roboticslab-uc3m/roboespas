@@ -13,7 +13,7 @@ classdef IIWAControl < handle
         %File save specifications
         AdjustedIdentifier='adj';
         InputIdentifier='cap';
-        TrajectoriesFolder = '/home/roboespas/roboespas/RoboespasApp/Results/IIWATrajectories/CurrentTrajectories';
+        TrajectoriesFolder = [cell2mat(extractBetween(fileparts(which(mfilename)), 1, strfind(fileparts(which(mfilename)), 'RoboespasApp')+strlength('RoboespasApp'))), 'Results/IIWATrajectories/CurrentTrajectories'];
         
         CommandedSampleTime = 0.005 %Seconds
     end
@@ -328,10 +328,10 @@ classdef IIWAControl < handle
             numbersinnamedata=regexp(name_data, '\d*', 'match');
             IDPatient=str2double(numbersinnamedata{1});
             obj.CapturedDate=[numbersinnamedata{2}, '_', numbersinnamedata{3}];
-            if (contains(name_data, '_L_'))
-                Arm='L';
-            elseif (contains(name_data, '_R_'))
-                Arm='R';
+            if (contains(name_data, '_I_'))
+                Arm='I';
+            elseif (contains(name_data, '_D_'))
+                Arm='D';
             end
         end
         function SetSmoothingParameters(obj, smoothing)
