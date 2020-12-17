@@ -15,7 +15,7 @@ classdef IiwaRoboespas < handle
         %Posiciones iniciales para la captura de trayectorias según el
         %brazo seleccionado
         ReferencePositionRight = [-1.7910, 1.1126, -2.1927, 1.8522, -1.2179, -0.8831, -0.2125];
-        ReferencePositionLeft = [-2.124842166900635, 1.256874322891235, -2.738421201705933, 1.675831675529480, -1.081720232963562, -0.424112081527710, -0.960969746112823];
+        ReferencePositionLeft = [-2.7635, 1.1307, -2.1927, 1.8343, -1.2077, -0.8865, -1.2047];
 
         %Colores escogidos para las gráfica
         ColorCommanded=[0.93, 0.69, 0.13];
