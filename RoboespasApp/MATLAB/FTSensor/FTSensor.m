@@ -1,7 +1,7 @@
 classdef FTSensor < handle
     properties(Constant)
         %Simulink filename
-        SimulinkFilename='ReadGagesLong';
+        SimulinkFilename='ReadFT';
         %Sensor Data
         Serial='FT17951';
         NumGages=6;
@@ -32,7 +32,7 @@ classdef FTSensor < handle
         MaxFiles=10;
         
         ColorLightBlue = [152/256, 163/256, 243/256];   
-        PathSaveCaptures = 'G:\Mi unidad\ROBOESPAS_COLABORATIVE\RoboespasMatlab\Develop\Common\FTSensor_Tmp\gages_simout_'
+        PathSaveCaptures = [cell2mat(extractBetween(fileparts(which(mfilename)), 1, strfind(fileparts(which(mfilename)), 'RoboespasApp')+strlength('RoboespasApp'))), 'Results/FTSensor_Tmp/gages_simout_'];
     end
     properties(Access=private)
         FTSensorConnected
