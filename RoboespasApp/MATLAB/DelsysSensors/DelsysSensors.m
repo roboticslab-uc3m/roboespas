@@ -499,15 +499,15 @@ classdef DelsysSensors < handle
                 xlabel(ax(1+3*(i-1)), 'Tiempo [s]')
                 ylabel(ax(1+3*(i-1)), '$\dot{XYZ} [m/s^{2}]$')
                 title(ax(1), {'Eje X', ''}, 'FontSize', 13)
-                if(strcmp(display.Type, 'uitab'))
+                if(strcmp(display.Type, 'uipanel'))
                     drawnow;
                     w = display.Position(3)*(ax(1+3*(i-1)).OuterPosition(3)/3);
                     h = display.Position(4)*(ax(1+3*(i-1)).Position(4)*2/3);
                     xpos = (display.Position(3)*ax(1+3*(i-1)).OuterPosition(1))-w*3/2.8;
                     ypos = display.Position(2)+display.Position(4)*(ax(1+3*(i-1)).Position(2)+ ax(1+3*(i-1)).Position(4)/2) - h/2;
                     pos = [xpos, ypos, w, h];
-                    uilabel(display, 'Text', {['Sensor ',num2str(i),': '], DelsysTrial{1}.(str).Muscle}, 'Position', pos, 'FontSize', 15, ...
-                        'HorizontalAlignment', 'center', 'BackgroundColor', obj.ColorLightBlue);
+                    %uilabel(display, 'Text', {['Sensor ',num2str(i),': '], DelsysTrial{1}.(str).Muscle}, 'Position', pos, 'FontSize', 15, ...
+                    %    'HorizontalAlignment', 'center', 'BackgroundColor', obj.ColorLightBlue);
                 else
                     display.WindowState = 'maximized';
                     drawnow;
@@ -563,15 +563,15 @@ classdef DelsysSensors < handle
                 xlabel(ax(1+3*(i-1)), 'Tiempo [s]')
                 ylabel(ax(1+3*(i-1)), '$\omega [rad/s]$')
                 title(ax(1), {'Eje X', ''}, 'FontSize', 13);
-                if(strcmp(display.Type, 'uitab'))
+                if(strcmp(display.Type, 'uipanel'))
                     drawnow;
                     w = display.Position(3)*(ax(1+3*(i-1)).OuterPosition(3)/3);
                     h = display.Position(4)*(ax(1+3*(i-1)).Position(4)*2/3);
                     xpos = (display.Position(3)*ax(1+3*(i-1)).OuterPosition(1))-w*3/2.8;
                     ypos = display.Position(2)+display.Position(4)*(ax(1+3*(i-1)).Position(2)+ ax(1+3*(i-1)).Position(4)/2) - h/2;
                     pos = [xpos, ypos, w, h];
-                    uilabel(display, 'Text', {['Sensor ',num2str(i),': '], DelsysTrial{1}.(str).Muscle}, 'Position', pos, 'FontSize', 15, ...
-                        'HorizontalAlignment', 'center', 'BackgroundColor', obj.ColorLightBlue);
+                    %uilabel(display, 'Text', {['Sensor ',num2str(i),': '], DelsysTrial{1}.(str).Muscle}, 'Position', pos, 'FontSize', 15, ...
+                    %    'HorizontalAlignment', 'center', 'BackgroundColor', obj.ColorLightBlue);
                 else
                     display.WindowState = 'maximized';
                     drawnow;
