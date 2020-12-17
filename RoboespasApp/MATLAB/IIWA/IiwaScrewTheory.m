@@ -17,11 +17,11 @@ classdef IiwaScrewTheory < handle
                 joint_position=joint_position';
             end
             % Build TwMag for each point
-            TwMag=[IiwaRobot.Twist; joint_position(1:size(IiwaRobot.Twist,2))'];
+            TwMag=[IiwaParameters.Twist; joint_position(1:size(IiwaParameters.Twist,2))'];
             % Calculate HstR (4by4 matrix) for that joint position
             HstR = IiwaScrewTheory.ForwardKinematicsPOE(TwMag);
             % Transform the matrix into [pos; eul] form (1by6 vec)
-            Hst=HstR*IiwaRobot.Hst0;
+            Hst=HstR*IiwaParameters.Hst0;
             cartesian_position(1:3) = Hst(1:3, 4);
             cartesian_position(4:6) = rotm2eul(Hst(1:3, 1:3), 'XYZ');
         end
@@ -33,10 +33,10 @@ classdef IiwaScrewTheory < handle
             if (size(q_curr,2)~=7)
                 q_curr=q_curr';
             end
-            Jst = IiwaScrewTheory.GeoJacobianS([IiwaRobot.Twist; q_curr]);
+            Jst = IiwaScrewTheory.GeoJacobianS([IiwaParameters.Twist; q_curr]);
             Jst_i = pinv(Jst); % inv(Jst);%
             qdot = (Jst_i*xdot_S')';
-            far_ratio = abs(qdot)./abs(IiwaRobot.ThDotmax);
+            far_ratio = abs(qdot)./abs(IiwaParameters.ThDotmax);
             farest = max(far_ratio);
             if (farest>1)
                 %disp('Limited qdot');
@@ -108,7 +108,7 @@ classdef IiwaScrewTheory < handle
                 traj.q(i+1,:) = traj.q(i,:) + traj.qdot(i,:)*(traj.t(i+1)-traj.t(i));
             end
             traj.xdot(size(traj.x,1),:)=zeros(6,1);
-            traj.qdot(size(traj.x,1),:)=zeros(size(IiwaRobot.Twist,2),1);
+            traj.qdot(size(traj.x,1),:)=zeros(size(IiwaParameters.Twist,2),1);
         end
         function traj = FillCartesianPositionsFromJointPositions(traj)
             for i=1:size(traj.q,1)
@@ -261,7 +261,7 @@ classdef IiwaScrewTheory < handle
             if (size(q_curr,2)~=7)
                 q_curr=q_curr';
             end
-            Jst = IiwaScrewTheory.GeoJacobianS([IiwaRobot.Twist; q_curr]);
+            Jst = IiwaScrewTheory.GeoJacobianS([IiwaParameters.Twist; q_curr]);
             xdot_S = (Jst*qdot')';
         end
         function xdot_A = GetCartesianVelocityStraightLine(qini, xgoal, ttotal)
@@ -272,10 +272,10 @@ classdef IiwaScrewTheory < handle
     %Dynamics
     methods (Static, Access='public')
         function Tdyn = InverseDynamics(q, qdot, qdotdot)
-            Twist = IiwaRobot.Twist;
+            Twist = IiwaParameters.Twist;
             TwMag = [Twist; q];
-            LiMas = IiwaRobot.LiMas;
-            PoAcc = IiwaRobot.PoAcc;
+            LiMas = IiwaParameters.LiMas;
+            PoAcc = IiwaParameters.PoAcc;
             MtST24RJsl = MInertiaJsl(TwMag,LiMas);
             CtdtST24RAij = CCoriolisAij(TwMag,LiMas,qdot);
             NtST24RWre = NPotentialWre(TwMag,LiMas,PoAcc);
@@ -286,9 +286,9 @@ classdef IiwaScrewTheory < handle
 %             Tdyn = Mt*qdotdot' + Ctdt*qdot' + Nt;
         end
     	function Mt = MInertia(q)
-            LiMas = IiwaRobot.LiMas;
-            n_joints = IiwaRobot.n_joints;
-            Twist = IiwaRobot.Twist;
+            LiMas = IiwaParameters.LiMas;
+            n_joints = IiwaParameters.n_joints;
+            Twist = IiwaParameters.Twist;
             TwMag = [Twist; q];
             if (strcmp(IiwaScrewTheory.MInertiaMode, 'jsl')==1)
                 Mt = zeros(n_joints);
@@ -323,9 +323,9 @@ classdef IiwaScrewTheory < handle
         end
         function Ctdt = CCoriolis(q, qdot)
             %aij
-            n = IiwaRobot.n_joints;
-            TwMag = [IiwaRobot.Twist; q];
-            LiMas = IiwaRobot.LiMas;
+            n = IiwaParameters.n_joints;
+            TwMag = [IiwaParameters.Twist; q];
+            LiMas = IiwaParameters.LiMas;
             Ctdt = zeros(n);
             for i = 1:n
                 for j = 1:n
@@ -341,9 +341,9 @@ classdef IiwaScrewTheory < handle
             end
         end
         function Nt = NPotential(q)
-            LiMas = IiwaRobot.LiMas;
-            n_joints = IiwaRobot.n_joints;
-            Twist = IiwaRobot.Twist;
+            LiMas = IiwaParameters.LiMas;
+            n_joints = IiwaParameters.n_joints;
+            Twist = IiwaParameters.Twist;
             TwMag = [Twist; q];
             if (strcmp(IiwaScrewTheory.NPotentialMode, 'difsym')==1)
             	syms t1 t2 t3 t4 t5 t6 t7; % maximum for a robot with 7 DOF
@@ -355,7 +355,7 @@ classdef IiwaScrewTheory < handle
                 for i = 1:n_joints
                     Hsli0 = IiwaScrewTheory.trvP2tform(LiMas(1:3,i));
                     Hslit = IiwaScrewTheory.ForwardKinematicsPOE(TwMagSym(:,1:i))*Hsli0;
-                    VtSym = VtSym + diag(LiMas(7,i)*(IiwaRobot.PoAcc))*Hslit(1:3,4);
+                    VtSym = VtSym + diag(LiMas(7,i)*(IiwaParameters.PoAcc))*Hslit(1:3,4);
                 end
                 for i = 1:n_joints
                     NtSym(i) = diff(VtSym(1),ThSym(i));
@@ -365,7 +365,7 @@ classdef IiwaScrewTheory < handle
                 NtSym = simplify(NtSym);
                 Nt = - double(subs(NtSym, ThSym, TwMag(7,1:n_joints)));
             elseif (strcmp(IiwaScrewTheory.NPotentialMode, 'aij')==1)
-                Eg = [IiwaRobot.PoAcc; 0; 0; 0];
+                Eg = [IiwaParameters.PoAcc; 0; 0; 0];
                 Nt = zeros(n_joints,1);
                 for i = 1:n_joints
                     for l = i:n_joints
@@ -380,8 +380,8 @@ classdef IiwaScrewTheory < handle
                 end
             elseif (strcmp(IiwaScrewTheory.NPotentialMode, 'gwrench')==1)
                 forcetype = 'tra';
-                MagnG = norm(IiwaRobot.PoAcc);
-                AxisG = IiwaRobot.PoAcc/MagnG;
+                MagnG = norm(IiwaParameters.PoAcc);
+                AxisG = IiwaParameters.PoAcc/MagnG;
                 Wrench = zeros(6,n_joints);
                 for i = 1:n_joints
                     Hsli0 = IiwaScrewTheory.trvP2tform(LiMas(1:3,i));
@@ -407,10 +407,10 @@ classdef IiwaScrewTheory < handle
             % Li: Id of that link
             % JslL = (Ad(Hsl0)^-1)*[Ai1*E1 ... Aii*Ei 0 ... 0] (6xn)
             % where Aij = Aij2Adjoint and En are the Twists.
-            JslT = zeros(6,IiwaRobot.n_joints);
+            JslT = zeros(6,IiwaParameters.n_joints);
             AdHsli0 = IiwaScrewTheory.tform2adjoint(Hsli0);
-            for j = 1:IiwaRobot.n_joints
-                JslT(:,j) = AdHsli0\(IiwaScrewTheory.Aij2adjoint(Li,j,TwMag)*IiwaRobot.Twist(:,j));
+            for j = 1:IiwaParameters.n_joints
+                JslT(:,j) = AdHsli0\(IiwaScrewTheory.Aij2adjoint(Li,j,TwMag)*IiwaParameters.Twist(:,j));
             end
         end
         function Ad = Aij2adjoint(i,j,TwMag)
