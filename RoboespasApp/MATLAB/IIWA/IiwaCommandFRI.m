@@ -9,6 +9,7 @@ classdef IiwaCommandFRI < handle
     
     methods
         function obj = IiwaCommandFRI()
+            
             %IIWACOMMANDFRI Construct an instance of this class
             %   Detailed explanation goes here
         end

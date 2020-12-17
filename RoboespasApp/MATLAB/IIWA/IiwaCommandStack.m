@@ -158,9 +158,18 @@ classdef IiwaCommandStack < handle
             t = rosparam("get", "/iiwa_command/control_step_size");
         end
         function GravityCompensationMode(mode, coordinates)
-            %Mode: 'joint', 'cartesian', 'stop'
-            %Coordinates: 'X', 'Y', 'XY', 'XYZABC', ... if in cartesian
-            %mode, if in joint mode or stop mode, its ignored
+            %Función que permite interactuar con el servicio
+            %'iiwa/configuration/configureSmartServo' del iiwa_stack de
+            %manera sencilla. 
+            %% Parámetros: 
+            %* mode: Puede ser 'joint', que liberará las articulaciones del
+            %robot completamente, 'cartesian', que liberará sólo ciertos
+            %ejes cartesianos, o 'stop', que bloqueará el robot.
+            %* coordinates: En modo 'cartesian', será un string conteniendo
+            %los ejes en los que se quiere permitir el movimiento, por
+            %ejemplo 'XYZABC' para permitirlo en todos los ejes, o 'X'
+            %para solo permitir el desplazamiento en X. En los otros dos
+            %modos, este parámetro se ignora.
             persistent config_cli;
             persistent config_msg;
             persistent controlmode_msg;

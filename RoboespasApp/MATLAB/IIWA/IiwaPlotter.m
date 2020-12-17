@@ -37,8 +37,8 @@ classdef IiwaPlotter < handle
             end
             figure;
             leg={};
-            for j = 1:IiwaRobot.n_joints
-                subplot(IiwaRobot.n_joints,1,j);
+            for j = 1:IiwaParameters.n_joints
+                subplot(IiwaParameters.n_joints,1,j);
                 for ntraj=1:size(trajectories,2)
                     if (~isempty(trajectories{ntraj}.q))
                         stamps = trajectories{ntraj}.t(2:end)-trajectories{ntraj}.t(1:end-1);
@@ -51,7 +51,7 @@ classdef IiwaPlotter < handle
                     %legend(leg, 'FontSize', 12);
                     title('Time stamp difference (second)', 'FontSize', 12)
                 end
-                if j == IiwaRobot.n_joints
+                if j == IiwaParameters.n_joints
                     xlabel('Time [s]', 'FontSize', 12);
                 end
                 s = sprintf('J%d',j);
@@ -60,7 +60,7 @@ classdef IiwaPlotter < handle
             end
         end
         function joint_positions(trajectories, colors, varargin)
-            s = [1,3,5,7,2,4,6]; %[1,2,3,4,5,6,7]; %Subplot order
+            s = [1,3,5,7,2,4,6]; %Subplot order
             ni = 4;
             nj = 2;
             if (~iscell(trajectories))
@@ -76,7 +76,7 @@ classdef IiwaPlotter < handle
             end
             leg={};
             ax = zeros(1,7);
-            for j = 1:IiwaRobot.n_joints
+            for j = 1:IiwaParameters.n_joints
                 if (isempty(varargin))
                     ax(j) = subplot(ni,nj,s(j));
                 else
@@ -98,7 +98,7 @@ classdef IiwaPlotter < handle
                 end
                 if (j == 7)
                     xlabel(ax(j), 'Time [s]', 'Interpreter', 'latex',  'FontSize', 12, 'FontWeight', 'bold');
-                	%%legend(ax(j), leg, 'FontSize', 12);
+                	legend(ax(j), leg, 'FontSize', 12);
                 end
                 if (j == 1 && isempty(varargin))
                     title(ax(j), 'Joint position (deg)', 'FontSize', 12)
@@ -126,7 +126,7 @@ classdef IiwaPlotter < handle
             end
             leg={};
             ax = zeros(1,7);
-            for j = 1:IiwaRobot.n_joints
+            for j = 1:IiwaParameters.n_joints
                 if (isempty(varargin))
                     ax(j) = subplot(ni,nj,s(j));
                 else
@@ -151,7 +151,7 @@ classdef IiwaPlotter < handle
                 end
                 if (j == 7)
                     xlabel(ax(j), 'Time [s]', 'Interpreter', 'latex',  'FontSize', 12, 'FontWeight', 'bold');
-                	%%legend(ax(j), leg, 'FontSize', 12);
+                	legend(ax(j), leg, 'FontSize', 12);
                 end
                 title(ax(j), ['$\dot{J_', num2str(j), '}$'], 'FontSize', 12)
                 ylabel(ax(j), '[deg/s]', 'FontSize', 12);
@@ -175,7 +175,7 @@ classdef IiwaPlotter < handle
             end
             leg={};
             ax = zeros(1,7);
-            for j = 1:IiwaRobot.n_joints
+            for j = 1:IiwaParameters.n_joints
                 if (isempty(varargin))
                     ax(j) = subplot(ni,nj,s(j));
                 else
@@ -192,7 +192,13 @@ classdef IiwaPlotter < handle
                         end
                     end
                 end
-                xlabel(ax(j), 'Time [s]', 'FontSize', 12);
+                if (j==4)
+                    xlabel(ax(j), 'Time [s]', 'Interpreter', 'latex',  'FontSize', 12, 'FontWeight', 'bold');
+                end
+                if (j == 7)
+                    xlabel(ax(j), 'Time [s]', 'Interpreter', 'latex',  'FontSize', 12, 'FontWeight', 'bold');
+                	legend(ax(j), leg, 'FontSize', 12);
+                end
                 title(ax(j), ['$\ddot{J}_', num2str(j), '$'], 'FontSize', 12)
                 ylabel(ax(j), '[deg/$s^2$]', 'FontSize', 12);
                 grid(ax(j), 'on')
@@ -214,7 +220,7 @@ classdef IiwaPlotter < handle
                 display = varargin{1};
             end
             leg={};
-            for j = 1:IiwaRobot.n_joints
+            for j = 1:IiwaParameters.n_joints
                 if (isempty(varargin))
                     ax(j) = subplot(ni,nj,s(j));
                 else
@@ -222,26 +228,32 @@ classdef IiwaPlotter < handle
                 end
                 for ntraj=1:size(trajectories,2)
                     if (~isempty(trajectories{ntraj}.qdot))
-                        plot(ax(j), trajectories{ntraj}.t, trajectories{ntraj}.effort(:,j), 'Color', colors{ntraj});
+                        plot(ax(j), trajectories{ntraj}.t, trajectories{ntraj}.effort(:,j), 'Color', colors{ntraj}, 'LineWidth', IiwaPlotter.LineWidth);
                         hold(ax(j), 'on');
                         leg=[leg trajectories{ntraj}.name];
                     end
                 end
-                xlabel(ax(j), 'Time [s]', 'FontSize', 12);
+                if (j==4)
+                    xlabel(ax(j), 'Time [s]', 'Interpreter', 'latex',  'FontSize', 12, 'FontWeight', 'bold');
+                end
+                if (j == 7)
+                    xlabel(ax(j), 'Time [s]', 'Interpreter', 'latex',  'FontSize', 12, 'FontWeight', 'bold');
+                	legend(ax(j), leg, 'FontSize', 12);
+                end
                 title(ax(j), ['$T_', num2str(j), '$'], 'FontSize', 12)
                 ylabel(ax(j), '[N$\cdot$m]', 'FontSize', 12);
                 grid(ax(j), 'on')
             end
         end
         function joint_efforts_mat(efforts, t, color)
-            for j = 1:IiwaRobot.n_joints
-                subplot(IiwaRobot.n_joints,1,j);
+            for j = 1:IiwaParameters.n_joints
+                subplot(IiwaParameters.n_joints,1,j);
                 plot(t, efforts(:,j), color);
                 hold on;
                 if j == 1
                     title('Joint effort (Nm)', 'FontSize', 12)
                 end
-                if j == IiwaRobot.n_joints
+                if j == IiwaParameters.n_joints
                     xlabel('Time [s]', 'FontSize', 12);
                 end
                 s = sprintf('J%d',j);
@@ -251,7 +263,7 @@ classdef IiwaPlotter < handle
         end
         function joint_efforts_compare(traj_comm, traj_output)
             figure;
-            for j=1:IiwaRobot.n_joints
+            for j=1:IiwaParameters.n_joints
                 subplot(7,1,j);
                 plot(traj_comm.t, traj_comm.effort(:,j), IiwaPlotter.ColorCommanded);
                 hold on;
@@ -260,7 +272,7 @@ classdef IiwaPlotter < handle
                     %legend('Commanded joint effort(N)','Output joint effort', 'FontSize', 12);
                     title('Commanded and output efforts', 'FontSize', 12)
                 end
-                if j == IiwaRobot.n_joints
+                if j == IiwaParameters.n_joints
                     xlabel('Time [s]', 'FontSize', 12);
                 end
                 s = sprintf('J%d',j);
@@ -327,7 +339,7 @@ classdef IiwaPlotter < handle
                     end
                 end
                 if (coord == 6)
-                	%legend(ax(coord), leg{1:size(trajectories,2)}, 'FontSize', 12);
+                	legend(ax(coord), leg{1:size(trajectories,2)}, 'FontSize', 12);
                 end
                 if (coord==6)
                     xlabel(ax(coord), 'Time [s]', 'FontSize', 12, 'FontWeight', 'bold');
@@ -377,7 +389,7 @@ classdef IiwaPlotter < handle
                 else
                     display = varargin{1};
                 end
-                leg={}
+                leg={};
                 for ntraj = 1:size(trajectories,2)
                     if (~isempty(varargin))
                         ax = subplot(1,1,1,'Parent', display);
@@ -387,7 +399,7 @@ classdef IiwaPlotter < handle
                     if (ntraj==1)
                         hold(ax, 'off')
                     end
-                    plot3(ax, trajectories{ntraj}.x(:,1), trajectories{ntraj}.x(:,2), trajectories{ntraj}.x(:,3), char('Color', colors{ntraj}), 'LineWidth', IiwaPlotter.LineWidth);
+                    plot3(ax, trajectories{ntraj}.x(:,1), trajectories{ntraj}.x(:,2), trajectories{ntraj}.x(:,3), 'Color', colors{ntraj}, 'LineWidth', IiwaPlotter.LineWidth);
                     hold(ax, 'on');
                     leg=[leg trajectories{ntraj}.name];
                 end
@@ -401,6 +413,8 @@ classdef IiwaPlotter < handle
                 grid(ax, 'on');
                 view(ax, [-120, 30]);
                 axis(ax, 'equal');
+                hold(ax, 'on');
+                legend(ax, leg, 'Location', 'South', 'FontSize', 12);
             end 
         end
         function cartesian_velocities(trajectories, colors, varargin)
@@ -438,9 +452,6 @@ classdef IiwaPlotter < handle
                         end
                     end
                 end
-                if (coord == 6)
-                	%%legend(ax(coord), leg{1:size(trajectories,2)}, 'FontSize', 12);
-                end
                 if (coord == 4 || coord == 5 || coord ==6)
                     xlabel(ax(coord), 'Time [s]',  'FontSize', 12, 'FontWeight', 'bold');
                 end
@@ -467,7 +478,7 @@ classdef IiwaPlotter < handle
                     end
                 end
                 if (coord == 6)
-                	%legend(ax(coord), leg{1:size(trajectories,2)}, 'FontSize', 12);
+                	legend(ax(coord), leg{1:size(trajectories,2)}, 'FontSize', 12);
                 end
                 xlabel(ax(coord), 'Time [s]', 'FontSize', 12, 'FontWeight', 'bold');
                 title(ax(coord), ['$\dot{', IiwaPlotter.CoordNames(coord), '}$'], 'FontSize', 12, 'FontWeight', 'bold');
@@ -580,27 +591,6 @@ classdef IiwaPlotter < handle
             end
         end
         %% PLOT ERRORS
-%         function [delays, data_out, t_out] = fix_delay_q(baseline, baseline_t, data, data_t)
-%              %Fix delay
-%             ts_baseline = timeseries(baseline, baseline_t);
-%             ts_traj = timeseries(data, data_t);
-%             [ts_baseline, ts_traj] =synchronize(ts_baseline, ts_traj, 'Uniform', 'Interval', mean(baseline_t(2:end)-baseline_t(1:end-1)));
-%             
-%             delays = finddelay(ts_baseline.Data, ts_traj.Data);
-%             elem_delete = min(delays);
-%             for j=1:IiwaRobot.n_joints
-%                 d=delays(j);
-%                 if (d~=0)
-%                     trajectory_out.q(1:trajectory.npoints-d,j) = trajectory.q(1+d:end, j);
-%                     trajectory_out.q(trajectory.npoints-d+1:end,j) = ones(d-elem_delete,1)*trajectory.q(end-d,j);
-%                 else
-%                     trajectory_out.q(:,j)=trajectory.q(:,j);
-%                 end
-%             end
-%             trajectory_out.t=trajectory.t(1:end-elem_delete);
-%             trajectory_out = trajectory_out.CompleteCartesian();
-%             trajectory_out = trajectory_out.CompleteVelAcc();
-%         end
         function joint_position_error(traj_baseline, trajectories, colors, varargin)
             s = [1,3,5,7,2,4,6]; %Subplot order
             if (~iscell(trajectories))
@@ -626,7 +616,7 @@ classdef IiwaPlotter < handle
                     [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Uniform', 'interval', (st_baseline+st_traj)*2);
                 end
                 ts_error = ts_trajectory_used-ts_baseline_used;
-                for j = 1:IiwaRobot.n_joints
+                for j = 1:IiwaParameters.n_joints
                     if (isempty(varargin))
                         ax(j) = subplot(4,2,s(j));
                     else
@@ -641,10 +631,15 @@ classdef IiwaPlotter < handle
                         plot(ax(j), ts_error.Time, rad2deg(ts_error.Data(:,j)), 'Color', colors{ntraj}, 'LineStyle', '.');
                         leg=[leg trajectories{ntraj}.name];
                     end
-                    %legend(ax(j), ['Error_{', trajectories{ntraj}.name, '}'], ['rms_{', trajectories{ntraj}.name, '} = ', num2str(rms_error(j),3), 'deg'], 'FontSize', 12);
+                    if (j==4)
+                        xlabel(ax(j), 'Time [s]', 'Interpreter', 'latex',  'FontSize', 12, 'FontWeight', 'bold');
+                    end
+                    if (j == 7)
+                        xlabel(ax(j), 'Time [s]', 'Interpreter', 'latex',  'FontSize', 12, 'FontWeight', 'bold');
+                        legend(ax(j), {'RMS', 'Error'}, 'FontSize', 12);
+                    end
                     title(ax(j), ['J', num2str(j)], 'FontSize', 12)
                     ylabel(ax(j), '[deg]', 'FontSize', 12);
-                    xlabel(ax(j), 'Time [s]', 'FontSize', 12);
                     grid(ax(j),'on');
                 end
             end
@@ -665,7 +660,7 @@ classdef IiwaPlotter < handle
             leg={};
             ax = zeros(1,7);
             for ntraj = 1:size(trajectories,2)
-                for j = 1:IiwaRobot.n_joints
+                for j = 1:IiwaParameters.n_joints
                     if (isempty(varargin))
                         ax(j) = subplot(4,2,s(j));
                     else
@@ -694,7 +689,7 @@ classdef IiwaPlotter < handle
             leg={};
             ax = zeros(1,7);
             for ntraj = 1:size(trajectories,2)
-                for j = 1:IiwaRobot.n_joints
+                for j = 1:IiwaParameters.n_joints
                     if (isempty(varargin))
                         ax(j) = subplot(4,2,s(j));
                     else
@@ -723,7 +718,7 @@ classdef IiwaPlotter < handle
             leg={};
             ax = zeros(1,7);
             for ntraj = 1:size(trajectories,2)
-                for j = 1:IiwaRobot.n_joints
+                for j = 1:IiwaParameters.n_joints
                     if (isempty(varargin))
                         ax(j) = subplot(4,2,s(j));
                     else
@@ -843,7 +838,7 @@ classdef IiwaPlotter < handle
                     [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Uniform', 'interval', (st_baseline+st_traj)*2);
                 end
                 ts_error = ts_trajectory_used-ts_baseline_used;
-                for j = 1:IiwaRobot.n_joints
+                for j = 1:IiwaParameters.n_joints
                     if (isempty(varargin))
                         ax(j) = subplot(4,2,s(j));
                     else
@@ -858,10 +853,15 @@ classdef IiwaPlotter < handle
                         plot(ax(j), ts_error.Time, rad2deg(ts_error.Data(:,j)), 'Color', colors{ntraj}, 'LineStyle', '.');
                         leg=[leg trajectories{ntraj}.name];
                     end
-                    %legend(ax(j), ['Error_{', trajectories{ntraj}.name, '}'], ['rms_{', trajectories{ntraj}.name, '} = ', num2str(rms_error(j),3), 'deg/s'], 'FontSize', 12);
+                    if (j==4)
+                        xlabel(ax(j), 'Time [s]', 'Interpreter', 'latex',  'FontSize', 12, 'FontWeight', 'bold');
+                    end
+                    if (j == 7)
+                        xlabel(ax(j), 'Time [s]', 'Interpreter', 'latex',  'FontSize', 12, 'FontWeight', 'bold');
+                        legend(ax(j), {'RMS', 'Error'}, 'FontSize', 12);
+                    end
                     title(ax(j), ['J', num2str(j)], 'FontSize', 12)
                     ylabel(ax(j), '[deg/s]', 'FontSize', 12);
-                    xlabel(ax(j), 'Time [s]', 'FontSize', 12);
                     grid(ax(j),'on');
                 end
             end
@@ -891,7 +891,7 @@ classdef IiwaPlotter < handle
                     [ts_baseline_used, ts_trajectory_used] = synchronize(ts_baseline, ts_trajectory, 'Uniform', 'interval', (st_baseline+st_traj)*2);
                 end
                 ts_error = ts_trajectory_used-ts_baseline_used;
-                for j = 1:IiwaRobot.n_joints
+                for j = 1:IiwaParameters.n_joints
                     if (isempty(varargin))
                         ax(j) = subplot(4,2,s(j));
                     else
@@ -917,9 +917,6 @@ classdef IiwaPlotter < handle
         function cartesian_position_error(traj_baseline, trajectories, varargin)
             if (~iscell(trajectories))
                 trajectories={trajectories};
-            end
-            if(~iscell(colors))
-                colors={colors};
             end
             if (isempty(varargin))
                 figure;
@@ -969,9 +966,6 @@ classdef IiwaPlotter < handle
         function cartesian_velocity_error(traj_baseline, trajectories, varargin)
             if (~iscell(trajectories))
                 trajectories={trajectories};
-            end
-            if(~iscell(colors))
-                colors={colors};
             end
             if (isempty(varargin))
                 figure;
@@ -1227,8 +1221,8 @@ classdef IiwaPlotter < handle
             [ts_des, ts_comm] = synchronize(ts_des, ts_comm, 'Union');
             end
             ts_pdTorque=ts_comm-ts_des;
-            for j = 1:IiwaRobot.n_joints
-                subplot(IiwaRobot.n_joints,1,j);
+            for j = 1:IiwaParameters.n_joints
+                subplot(IiwaParameters.n_joints,1,j);
                 plot(traj_des.t, traj_des.effort(:,j), IiwaPlotter.ColorDesired); hold on
                 plot(ts_pdTorque.Time, ts_pdTorque.Data(:,j), IiwaPlotter.ColorOthers);
                 plot(traj_comm.t, traj_comm.effort(:,j), IiwaPlotter.ColorCommanded);
@@ -1236,7 +1230,7 @@ classdef IiwaPlotter < handle
                     %legend('Torque desired (N)','PD torque','Total torque', 'FontSize', 12);
                     title('Commanded and output efforts with PD efforts', 'FontSize', 12)
                 end
-                if j == IiwaRobot.n_joints
+                if j == IiwaParameters.n_joints
                     xlabel('Time [s]', 'FontSize', 12);
                 end
                 s = sprintf('J%d',j);
@@ -1263,14 +1257,14 @@ classdef IiwaPlotter < handle
         end
         function joint_position(joint_position, t)
             if (mod(t, IiwaPlotter.TimePlot)==0)
-                for j = 1:IiwaRobot.n_joints
-                    subplot(IiwaRobot.n_joints,1,j);
+                for j = 1:IiwaParameters.n_joints
+                    subplot(IiwaParameters.n_joints,1,j);
                     hold on
                     plot(t, joint_position(:,j), 'Color', IiwaPlotter.ColorCommanded, 'LineStyle', '.'); 
                     if j == 1
                         title(['Joint positions from 0 to ', num2str(t), ' (rad)'], 'FontSize', 12)
                     end
-                    if j == IiwaRobot.n_joints
+                    if j == IiwaParameters.n_joints
                         xlabel('Time [s]', 'FontSize', 12);
                     end
                     s = sprintf('J%d',j);
@@ -1301,12 +1295,12 @@ classdef IiwaPlotter < handle
            % Time between points plotted. You may need to change this depending on 
            % your computer's resources
            if (mod(t, IiwaPlotter.TimePlot)==0)
-                for j=1:IiwaRobot.n_joints
-                    subplot(IiwaRobot.n_joints,1,j);
+                for j=1:IiwaParameters.n_joints
+                    subplot(IiwaParameters.n_joints,1,j);
                     if j == 1
                         title(['Joint efforts from 0 to ', num2str(t), ' (rad)'], 'FontSize', 12)
                     end
-                    if j == IiwaRobot.n_joints
+                    if j == IiwaParameters.n_joints
                         xlabel('Time [s]', 'FontSize', 12);
                     end
                     s = sprintf('e%d',j);
@@ -1319,7 +1313,7 @@ classdef IiwaPlotter < handle
         end
         %% TODO: Change to trajectories cell
         function effortWithPD_compare_big(traj_comm, traj_output, traj_withoutPD)
-            for i=1:IiwaRobot.n_joints
+            for i=1:IiwaParameters.n_joints
                 figure;hold on;
                 plot(traj_comm.t,traj_comm.effort(:,i), IiwaPlotter.ColorCommanded);
                 plot(traj_withoutPD.t,traj_withoutPD.effort(:,i), IiwaPlotter.ColorOthers);
@@ -1338,31 +1332,17 @@ classdef IiwaPlotter < handle
 
             ts_error = ts_comm-ts_output;
                 
-            for j=1:IiwaRobot.n_joints
+            for j=1:IiwaParameters.n_joints
 
-                subplot(IiwaRobot.n_joints,1,j);
+                subplot(IiwaParameters.n_joints,1,j);
                 plot(ts_error.Time, ts_error.Data(:,j), IiwaPlotter.ColorErrors);
                 if j == 1
                     %legend('Error joint effort(N)', 'FontSize', 12);
                     title('Error between commanded and output efforts', 'FontSize', 12)
                 end
-                if j == IiwaRobot.n_joints
+                if j == IiwaParameters.n_joints
                     xlabel('Time [s]', 'FontSize', 12);
                 end
-                s = sprintf('J%d',j);
-                ylabel(s, 'FontSize', 12);
-                grid on;
-            end
-        end
-        function joint_positions_compare_big(traj_comm, traj_output)
-            for j = 1:IiwaRobot.n_joints
-                figure;
-                plot(traj_comm.t, traj_comm.q(:,j), IiwaPlotter.ColorCommanded); 
-                hold on
-                plot(traj_output.t, traj_output.q(:,j), IiwaPlotter.ColorOutput); 
-                %legend('Commanded joint position (rad)','Output joint position', 'FontSize', 12);
-                title('Commanded and output joint positions', 'FontSize', 12)
-                xlabel('Time [s]', 'FontSize', 12);
                 s = sprintf('J%d',j);
                 ylabel(s, 'FontSize', 12);
                 grid on;

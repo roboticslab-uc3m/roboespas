@@ -91,7 +91,7 @@ classdef IiwaTrajectory
                 obj.xdot = [];
                 obj.xdot = zeros(obj.npoints,6);
                 for i=1:obj.npoints
-                    Jst = GeoJacobianS([IiwaRobot.Twist; obj.q(i,:)]);
+                    Jst = GeoJacobianS([IiwaParameters.Twist; obj.q(i,:)]);
                     obj.xdot(i,:)=(Jst*obj.qdot(i,:)')';
                 end
             end
@@ -117,12 +117,12 @@ classdef IiwaTrajectory
             end
             qdot_med = sub_q./css; %Mean velocities at css/2, css/2+css, css/2 + css*2, ...
             qdot_= (qdot_med(1:end-1,:)+qdot_med(2:end,:))./2;
-            obj.qdot = [zeros(1, IiwaRobot.n_joints); qdot_; zeros(1, IiwaRobot.n_joints)];
+            obj.qdot = [zeros(1, IiwaParameters.n_joints); qdot_; zeros(1, IiwaParameters.n_joints)];
             sub_qdot = obj.qdot(2:end,:)-obj.qdot(1:end-1,:);
             sub_qdot = medfilt1(sub_qdot, round(obj.npoints/30));
             qdotdot_med = sub_qdot./css; %Mean velocities at css/2, css/2+css, css/2 + css*2, ...
             qdotdot_ = (qdotdot_med(1:end-1,:)+qdotdot_med(2:end,:))./2;
-            obj.qdotdot = [zeros(1, IiwaRobot.n_joints); qdotdot_; zeros(1, IiwaRobot.n_joints)];
+            obj.qdotdot = [zeros(1, IiwaParameters.n_joints); qdotdot_; zeros(1, IiwaParameters.n_joints)];
         end
         function obj = CompleteEffort(obj, modeID)
             %TODO:Fix
@@ -150,7 +150,7 @@ classdef IiwaTrajectory
 %                 obj.q(i+1,:) = obj.q(i,:) + obj.qdot(i,:)*(obj.t(i+1)-obj.t(i));
             end
             obj.xdot(size(obj.x,1),:)=zeros(6,1);
-            obj.qdot(size(obj.x,1),:)=zeros(size(IiwaRobot.Twist,2),1);
+            obj.qdot(size(obj.x,1),:)=zeros(size(IiwaParameters.Twist,2),1);
             obj.CompleteCartesian();
         end
         function obj = DeleteInitialEndPauses(obj)
@@ -395,6 +395,9 @@ classdef IiwaTrajectory
             obj.qdot = obj.qdot(1:npoints,:);
             obj.qdotdot = obj.qdotdot(1:npoints,:);
             obj.xdot = obj.xdot(1:npoints,:);
+            if (~isempty(obj.effort))
+                obj.effort = obj.effort(1:npoints,:);
+            end
             obj.npoints = npoints;
         end
         function obj = FixCartesianCoordinates(obj, coordinates)
@@ -448,7 +451,6 @@ classdef IiwaTrajectory
         function [d_s, d_id] = GetDelay(traj_ref, traj)
             %Sample time for both trajectories should be the same or almost
             %the same for this function to work correctly
-            
             min_size = min([size(traj_ref.t,1)]);
             sample_time_ref = mean(traj_ref.t(2:end)-traj_ref.t(1:end-1));
             sample_time_traj = mean(traj.t(2:end)-traj.t(1:end-1));
@@ -1049,4 +1051,3 @@ classdef IiwaTrajectory
         end
     end
 end
-
