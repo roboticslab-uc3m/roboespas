@@ -193,16 +193,16 @@ classdef IiwaTrajectory
             obj = obj.CompleteVelAcc();
             obj = obj.CompleteCartesian();
         end
-        function [obj, C, R, arc, w, e_rms] = FitToCircle(obj, fixed_plane, display)
+        function [obj, C, R, arc, w, e_rms] = FitToCircle(obj, fixed_coordinate, display)
             %fixed_plane = 'X', 'Y' or 'Z'
-            if (~(strcmp(fixed_plane, 'X')==1 || strcmp(fixed_plane, 'Y')==1 || strcmp(fixed_plane, 'Z')))
+            if (~(strcmp(fixed_coordinate, 'X')==1 || strcmp(fixed_coordinate, 'Y')==1 || strcmp(fixed_coordinate, 'Z')))
                 MException('IiwaTrajectory:FitToCircleWrongPlane', 'Fixed_plane must be a string "X", "Y" or "Z"');
             end
             ax = axes(display);
             coord_names=['X', 'Y', 'Z'];
             %Find points in the plane used
             coords_used = [1 2 3];
-            coord_fixed = strfind(coord_names, fixed_plane);
+            coord_fixed = strfind(coord_names, fixed_coordinate);
             coords_used(coord_fixed)=[];
             points3D = obj.x(1:ceil(obj.npoints/obj.PointsForCircle):end, 1:3);
             points2D = points3D(:, coords_used);

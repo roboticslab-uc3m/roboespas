@@ -57,7 +57,6 @@ classdef IiwaCommandFRI < handle
             traj_comm = IiwaTrajectory('commanded', resultMsg.TrajectoryCommanded);
             traj_out = IiwaTrajectory('output', resultMsg.TrajectoryRead);
         end
-        
         function [traj_comm, traj_out] = MoveJCartVelTraj(traj_des)
             %First move to first joint_position
 %             for i=1:traj_des.npoints
