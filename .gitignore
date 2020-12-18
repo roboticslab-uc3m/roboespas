@@ -59,7 +59,6 @@ CATKIN_IGNORE
 *.jar
 *.md5
 *.fig
-*.png
 other/
 Common/ScrewTheoryRobotics-MECHANICS-Illustrated
 
