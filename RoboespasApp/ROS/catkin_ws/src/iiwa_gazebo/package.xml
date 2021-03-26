@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package>
+  <name>iiwa_gazebo</name>
+  <version>1.5.0</version>
+  <description>Based on Salvo Virga iiwa_gazebo+iiwa_control package, and including a new plugin, allows to load a KUKA LBR IIWA robot onto Gazebo and control it</description>
+  <author email="acasanov@pa.uc3m.es">Ana Casanova, Salvo Virga</author>
+  <maintainer email="acasanov@pa.uc3m.es">Ana Casanova</maintainer>
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>trajectory_msgs</build_depend>
+  <run_depend>iiwa_description</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>gazebo_ros</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>trajectory_msgs</run_depend>
+  <export>
+        <gazebo_ros plugin_path="${prefix}/lib" gazebo_media_path="${prefix}" />
+  </export>
+
+</package>

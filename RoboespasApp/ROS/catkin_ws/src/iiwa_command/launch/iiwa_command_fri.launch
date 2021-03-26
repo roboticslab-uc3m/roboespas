@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<launch>
+
+    <arg name="hardware_interface" default="PositionJointInterface"/>
+    <arg name="robot_name" default="iiwa"/>
+    <arg name="model" default="iiwa14ManetaFT"/>
+    <!-- Tool ManetaFT-->
+    <arg name="tool_name" default="ManetaFT"/>
+    <param name="/iiwa/toolName" type="string" value="$(arg tool_name)"/>
+
+    <!-- IiwaDescription -->
+    <include file="$(find iiwa_description)/launch/$(arg model)_upload.launch">
+        <arg name="hardware_interface" value="$(arg hardware_interface)"/>
+        <arg name="robot_name" value="$(arg robot_name)"/>
+    </include>
+
+    <!--rosparam command="load" file="$(find roboespas_iiwacontrol)/config/params.yaml"/-->
+    <rosparam command="load" file="$(find iiwa_command)/config/params_fri_position.yaml"/>
+    <rosparam command="load" file="$(find iiwa_command)/config/iiwa_robot_parameters.yaml"/>
+
+    <!--node pkg="iiwa_command" name = "iiwa_command_fri" type="iiwa_command_fri" respawn="true" output="screen" launch-prefix="xterm -e" /-->
+    <node pkg="iiwa_command" name = "iiwa_command_fri" type="iiwa_command_fri" respawn="true" output="screen" launch-prefix="xterm -e" />
+    <node pkg="iiwa_command" name = "msg_transform_helper" type="msg_transform_helper" respawn="true" output="screen" launch-prefix="xterm -e" />
+
+</launch>

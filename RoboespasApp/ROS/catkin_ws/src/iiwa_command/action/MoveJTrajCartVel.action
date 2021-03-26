@@ -1,0 +1,9 @@
+geometry_msgs/TwistStamped[] cart_pos_desired
+geometry_msgs/TwistStamped[] cart_vel_desired
+---
+trajectory_msgs/JointTrajectory trajectory_commanded
+sensor_msgs/JointState[] trajectory_read
+---
+trajectory_msgs/JointTrajectoryPoint point_commanded
+sensor_msgs/JointState joint_state
+float64 time_from_start

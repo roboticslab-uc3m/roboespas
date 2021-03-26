@@ -52,11 +52,13 @@ CATKIN_IGNORE
 
 #Added
 .catkin_workspace
-RoboespasApp/catkin_ws/devel/
-RoboespasApp/catkin_ws/build
-RoboespasApp/catkin_ws/src/roboespas_iiwacontrol/data/
-IiwaCommand/catkin_ws/src/CMakeLists.txt
 
 *.log
 *.asv
 *.mat
+*.jar
+*.md5
+*.fig
+other/
+Common/ScrewTheoryRobotics-MECHANICS-Illustrated
+
