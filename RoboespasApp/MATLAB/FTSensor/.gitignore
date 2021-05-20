@@ -1,0 +1,2 @@
+# Dont sync recorded sensor data
+*.mat
